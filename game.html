@@ -51,6 +51,7 @@
 
             this.name = 'Bob';
             this.credits = 0;
+            this.ore = 0;
             this.qDown = false;
         }
 
@@ -120,7 +121,8 @@
                     // draw asteroid info
                     ctx.fillStyle = 'white';
                     ctx.font = '12px Arial';
-                    ctx.fillText('Asteroid', this.pos.x, this.pos.y - 20);
+                    ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
+                                 this.pos.x - this.size, this.pos.y - this.size - 10);
 
                 }
             };
@@ -169,6 +171,16 @@
             };
 
             this.update = () => {
+                move();
+                mine();
+            };
+
+            // PRIVATE METHODS
+
+            const img = new Image();
+            img.src = 'SpaceShipSmall.png';
+
+            const move = () => {
                 if (this.mode === 'direct') {
                     const dir = this.target.sub(this.pos);
                     if (dir.length() > this.size) {
@@ -190,20 +202,17 @@
                 }
             };
 
-            this.mine = (asteroid) => {
-                const dir = this.pos.sub(asteroid.pos).length;
-                if (dir < this.miningRange + asteroid.size) {
-                    asteroids.splice(asteroids.indexOf(asteroid), 1); // mine and remove
-                    // add some resources to inventory depending on size
-                    // and multiplied by some small random variance
-                }
-            }
-
-            // PRIVATE METHODS
-
-            const img = new Image();
-            img.src = 'SpaceShipSmall.png';
+            const mine = () => {
+                node.children.filter(c => c instanceof AsteroidField)[0].asteroids.forEach((a) => {
+                    const dir = this.pos.sub(a.pos).length;
+                    if (dir < this.miningRange + a.size) {
+                        asteroids.splice(asteroids.indexOf(asteroid), 1);
+                        player.ore += asteroid.size * (1 + Math.random() * 0.2);
+                    }   
+                });
+            };
         }
+
 
 
         function UI() {
@@ -357,7 +366,7 @@
         const node = new Node();
 
         ///////////////
-        // functions //
+        // FUNCTIONS //
         ///////////////
 
         function initialSetup() {
@@ -369,6 +378,13 @@
             node.children.push(player);
             node.children.push(spaceship);
             node.children.push(ui);
+
+            canvas.addEventListener('keyup', (event) => {
+                if (event.key === 'q') {
+                    console.log('Q button released');
+                    player.qDown = false;
+                }
+            });
 
             canvas.addEventListener('keydown', (event) => {
                 const selected = asteroidField.asteroids.filter(a => a.selected);
@@ -398,34 +414,25 @@
                         console.log('no asteroid selected');
                     }
                 }
-                // turn target to function insstead and add mode arg
-                // which can be approach, orbit
-                // D = warp
-                // some UI for warping?
-                // no gates. space is small instances that you can warp between.
-
-
-                // usually at planets, moons, or structures in space.
-                // display these buttons as squares in UI.
-
-                // pressing the button should show the button being pressed
-                // by slowly highliting it.
-                // make the UI nicer. see through layer
             });
-
 
             canvas.addEventListener('click', (event) => {
                 console.log('clicked at ' + event.x + ', ' + event.y);
+                let select = undefined;
                 asteroidField.asteroids.forEach((a) => {
                     const dist = new Vec(event.x, event.y).sub(a.pos).length();
                     if (dist < a.size) {
                         console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
-                        a.selected = true;
+                        select = a;
                     }
                     if (player.qDown) { 
                         spaceship.target = a.pos;
                     }
                 });
+                if (select) {
+                    asteroidField.asteroids.forEach((a) => { a.selected = false; });
+                    select.selected = true;
+                }
             });
         }
 
@@ -446,6 +453,7 @@
 </html>
 
 <!-- notes
+
 first mission. given a frigate.
 we're under attack. please help.
 take out this frigate by locking them up, flying to them, and firing your guns.
@@ -470,4 +478,16 @@ as you kill and loot and sell, you get xp and credits.
 xp has some inherent bonuses to the skills you level
 and credits can be used to buy ships and components.
 credits carry over between deaths.
+
+controls:
+D = warp
+some UI for warping?
+no gates. space is small instances that you can warp between.
+usually at planets, moons, or structures in space.
+display these buttons as squares in UI.
+
+ressing the button should show the button being pressed
+by slowly highliting it.
+make the UI nicer. see through layer
+
 -->
