@@ -139,15 +139,11 @@
             this.hull = 30;
             this.size = 30;
             this.acceleration = 0.1;
-            this.angle = 0;
             this.vel = new Vec(0, 0);
             this.pos = new Vec(canvas.width / 2, canvas.height / 2);
-            this.target = this.pos;
+            this.target = this.pos.clone();
             this.miningRange = 50;
             this.mode = 'direct'; // 'direct' or 'orbit'
-            this.orbitRadius = 100; // distance to maintain from asteroid
-            this.orbitSpeed = 0.02; // speed of orbit rotation
-            this.orbitAngle = 0;    // current angle in orbit
 
             // PUBLIC METHODS
 
@@ -165,12 +161,13 @@
                 ctx.setLineDash([]);
                 ctx.strokeStyle = 'blue';
                 ctx.moveTo(0, 0);
-                ctx.lineTo(0, -this.vel * 20);
+                ctx.lineTo(this.vel.x * 10, this.vel.y * 10);
                 ctx.stroke();
                 ctx.restore();
             };
 
             this.update = () => {
+                console.log(this.pos.toString());
                 move();
                 mine();
             };
@@ -184,23 +181,19 @@
                 if (this.mode === 'direct') {
                     const dir = this.target.sub(this.pos);
                     if (dir.length() > this.size) {
-                        const len = dir.normalize();
-                        this.vel.add(len.scale(this.acceleration));
-                        this.pos.add(this.vel);
+                        const normalizedDir = dir.normalize();
+                        const scaledDir = normalizedDir.scale(this.acceleration);
+                        this.vel = this.vel.add(scaledDir);
+                        this.pos = this.pos.add(this.vel);
                         this.angle = Math.atan2(this.vel.y, this.vel.x);
                     } else {
-                        this.vel = new Vec(0, 0);
+                        this.vel.set(0, 0);
                     };
                 } else if (this.mode === 'orbit') {
-                    this.orbitAngle += this.orbitSpeed;
-                    const orbit = this.target.add(new Vec(Math.cos(this.orbitAngle) * this.orbitRadius,
-                                         Math.sin(this.orbitAngle) * this.orbitRadius));
-                    const direction = orbit.sub(this.pos).normalize();
-                    this.vel.add(direction.scale(this.acceleration));
-                    this.pos.add(this.vel);
-                    this.angle = this.orbitAngle + Math.PI / 2;
+                    // implment orbit mode here     
                 }
             };
+
 
             const mine = () => {
                 node.children.filter(c => c instanceof AsteroidField)[0].asteroids.forEach((a) => {
@@ -317,45 +310,60 @@
                     this.x + v.x,
                     this.y + v.y,
                 );
-            }
+            };
 
             this.sub = (v) => {
                 return new Vec(
                     this.x - v.x,
                     this.y - v.y,
                 );
-            }
+            };
 
             this.scale = (n) => {
                 return new Vec(
                     this.x * n,
                     this.y * n,
                 );
-            }
+            };
 
             this.length = () => {
                 return Math.sqrt(
                     this.x * this.x +
                     this.y * this.y
                 );
-            }
+            };
 
             this.normalize = () => {
                 const len = this.length();
                 if (len === 0) return new Vec();
                 return this.scale(1 / len);
-            }
+            };
 
             this.dot = (v) => {
                 return this.x * v.x + this.y * v.y;
-            }
+            };
 
             this.cross = (v) => {
                 return this.x * v.y - this.y * v.x;
-            }
+            };
+
+            this.toString = () => {
+                return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+            };
+
+            this.clone = () => {
+                return new Vec(this.x, this.y);
+            };
+
+            this.set = (x, y) => {
+                this.x = x;
+                this.y = y;
+            };
         }
 
         ////////////
+
+
         // FIELDS //
         ////////////
 
@@ -405,11 +413,7 @@
                     if (selected.length > 0) {
                         spaceship.mode = 'orbit';
                         spaceship.target = selected[0].pos;
-                        spaceship.orbitAngle = Math.atan2(
-                            spaceship.pos.y - selected[0].pos.y,
-                            spaceship.pos.x - selected[0].pos.x);
-
-
+                        // TODO
                     } else {
                         console.log('no asteroid selected');
                     }
