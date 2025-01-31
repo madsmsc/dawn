@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="#" />
+    <title>dawn</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: darkblue;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas tabindex="1" id="gameCanvas"></canvas>
+    <script type="module">
+
+        /////////////
+        // CLASSES //
+        /////////////
+
+        function Node() {
+            // FIELDS 
+
+            this.children = [];
+
+            // PUBLIC METHODS
+
+            this.update = (delta) => {
+                this.children.forEach(child => child.update(delta));
+            };
+
+            this.draw = () => {
+                this.children.forEach(child => child.draw());
+            };
+        }
+
+        function Player() {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS 
+
+            this.name = 'Bob';
+            this.credits = 0;
+            this.qDown = false;
+        }
+
+        function AsteroidField() {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS 
+
+            this.maxAsteroids = 5;
+            this.asteroids = [];
+
+            // PUBLIC METHODS
+
+            this.update = (delta) => {
+                if (this.asteroids.length < this.maxAsteroids) {
+                    this.asteroids.push(new Asteroid());
+                }
+            };
+
+            this.draw = () => {
+                this.asteroids.forEach(a => a.draw());
+            };
+        }
+
+
+        function Asteroid() {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS
+
+            this.size = Math.random() * 20 + 30;
+            this.points = [];
+            this.pos = new Vec(Math.random() * canvas.width, 
+                               Math.random() * canvas.height);
+            this.rotationSpeed = Math.random() * 0.008;
+            this.rotation = 0;
+            this.selected = false;
+
+            // PUBLIC METHODS
+
+            this.update = () => {
+                this.rotation = (this.rotation + this.rotationSpeed) % (Math.PI * 2);
+            };
+
+            this.draw = () => {
+                ctx.fillStyle = 'gray';
+                ctx.strokeStyle = 'black';
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                if (this.selected) {
+                    // draw selection border
+                    ctx.beginPath();
+                    ctx.setLineDash([10]);
+                    ctx.strokeStyle = 'green';
+                    ctx.lineWidth = 3;
+                    const off = this.size + 5;
+                    ctx.moveTo(this.pos.x - off, this.pos.y - off);
+                    ctx.lineTo(this.pos.x + off, this.pos.y - off);
+                    ctx.lineTo(this.pos.x + off, this.pos.y + off);
+                    ctx.lineTo(this.pos.x - off, this.pos.y + off);
+                    ctx.closePath();
+                    ctx.stroke();
+                    // draw asteroid info
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.fillText('Asteroid', this.pos.x, this.pos.y - 20);
+
+                }
+            };
+        }
+
+        function Spaceship() {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS 
+
+            this.type = 'frigate';
+            this.shield = 50;
+            this.hull = 30;
+            this.size = 30;
+            this.acceleration = 0.1;
+            this.angle = 0;
+            this.vel = new Vec(0, 0);
+            this.pos = new Vec(canvas.width / 2, canvas.height / 2);
+            this.target = this.pos;
+            this.miningRange = 50;
+            this.mode = 'direct'; // 'direct' or 'orbit'
+            this.orbitRadius = 100; // distance to maintain from asteroid
+            this.orbitSpeed = 0.02; // speed of orbit rotation
+            this.orbitAngle = 0;    // current angle in orbit
+
+            // PUBLIC METHODS
+
+            this.draw = () => {
+                ctx.save();
+                // position correctly
+                ctx.translate(this.pos.x, this.pos.y);
+                // ctx.rotate(this.angle + Math.PI/2.0);
+                // ctx.translate(-this.size*1.5, -this.size*1.5);
+                // draw ship
+                ctx.drawImage(img, 0, 0);
+                // draw vector
+                ctx.translate(this.size * 1.5, 0);
+                ctx.lineWidth = 3;
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'blue';
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -this.vel * 20);
+                ctx.stroke();
+                ctx.restore();
+            };
+
+            this.update = () => {
+                if (this.mode === 'direct') {
+                    const dir = this.target.sub(this.pos);
+                    if (dir.length() > this.size) {
+                        const len = dir.normalize();
+                        this.vel.add(len.scale(this.acceleration));
+                        this.pos.add(this.vel);
+                        this.angle = Math.atan2(this.vel.y, this.vel.x);
+                    } else {
+                        this.vel = new Vec(0, 0);
+                    };
+                } else if (this.mode === 'orbit') {
+                    this.orbitAngle += this.orbitSpeed;
+                    const orbit = this.target.add(new Vec(Math.cos(this.orbitAngle) * this.orbitRadius,
+                                         Math.sin(this.orbitAngle) * this.orbitRadius));
+                    const direction = orbit.sub(this.pos).normalize();
+                    this.vel.add(direction.scale(this.acceleration));
+                    this.pos.add(this.vel);
+                    this.angle = this.orbitAngle + Math.PI / 2;
+                }
+            };
+
+            this.mine = (asteroid) => {
+                const dir = this.pos.sub(asteroid.pos).length;
+                if (dir < this.miningRange + asteroid.size) {
+                    asteroids.splice(asteroids.indexOf(asteroid), 1); // mine and remove
+                    // add some resources to inventory depending on size
+                    // and multiplied by some small random variance
+                }
+            }
+
+            // PRIVATE METHODS
+
+            const img = new Image();
+            img.src = 'SpaceShipSmall.png';
+        }
+
+
+        function UI() {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS 
+
+            this.fpsCount = 0;
+            this.fpsTime = 0;
+            this.fpsDisplay = 0;
+
+            // PUBLIC METHODS
+
+            this.update = (delta) => {
+                this.fpsCount++;
+                this.fpsTime += delta;
+                if (this.fpsTime >= 1000) {
+                    this.fpsDisplay = this.fpsCount;
+                    this.fpsCount = 0;
+                    this.fpsTime = 0;
+                }
+            };
+
+            this.draw = () => {
+                ctx.font = '20px Arial';
+                drawFps();
+                drawInfos();
+                drawModules();
+                drawMenus();
+            }
+
+            // PRIVATE METHODS
+
+            const drawPanel = (pos, w, h) => {
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'black';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(pos.x, pos.y, w, h);
+
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pos.x, pos.y, w, h);
+            };
+
+            const drawTexts = (texts, pos) => {
+                ctx.fillStyle = 'white';
+                const voff = 30;
+                texts.forEach((text, i) => {
+                    ctx.fillText(text, pos.x, pos.y + voff * i);
+                });
+            };
+
+            const drawIcon = () => {
+                // ctx.globalAlpha = 0.5
+            };
+
+            const drawFps = () => {
+                // upper left panel
+                drawPanel({ x: 0, y: 0 }, 100, 50);
+                drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
+            };
+
+            const drawInfos = () => {
+                // lower left panel
+                const player = node.children.find(c => c instanceof Player);
+                const spaceship = node.children.find(c => c instanceof Spaceship);
+                drawPanel({ x: 0, y: canvas.height - 150 }, 150, 200);
+                drawTexts(['credits: ' + player.credits,
+                'ship: ' + spaceship.type,
+                'shield: ' + spaceship.shield,
+                'hull: ' + spaceship.hull],
+                    { x: 0, y: canvas.height - 100 });
+            };
+
+            const drawModules = () => {
+                // lower middle panel
+                const w = 400;
+                const h = 40;
+                drawPanel({ x: canvas.width / 2 - w / 2, y: canvas.height - h }, w, h);
+                drawTexts(['A:approach     S:orbit     D:warp'],
+                    { x: canvas.width / 2 - w / 3, y: canvas.height - h / 2 });
+            };
+
+            const drawMenus = () => {
+                // lower right panel
+                const w = 80;
+                const h = 100;
+                drawPanel({ x: canvas.width - w, y: canvas.height - h }, w, h);
+                drawTexts(['inv', 'sett', 'exit'],
+                    { x: canvas.width - w / 1.3, y: canvas.height - h / 1.3 }
+                );
+            };
+        }
+
+        function Vec(x = 0, y = 0) {
+            this.x = x;
+            this.y = y;
+
+            this.add = (v) => {
+                return new Vec(
+                    this.x + v.x,
+                    this.y + v.y,
+                );
+            }
+
+            this.sub = (v) => {
+                return new Vec(
+                    this.x - v.x,
+                    this.y - v.y,
+                );
+            }
+
+            this.scale = (n) => {
+                return new Vec(
+                    this.x * n,
+                    this.y * n,
+                );
+            }
+
+            this.length = () => {
+                return Math.sqrt(
+                    this.x * this.x +
+                    this.y * this.y
+                );
+            }
+
+            this.normalize = () => {
+                const len = this.length();
+                if (len === 0) return new Vec();
+                return this.scale(1 / len);
+            }
+
+            this.dot = (v) => {
+                return this.x * v.x + this.y * v.y;
+            }
+
+            this.cross = (v) => {
+                return this.x * v.y - this.y * v.x;
+            }
+        }
+
+        ////////////
+        // FIELDS //
+        ////////////
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const node = new Node();
+
+        ///////////////
+        // functions //
+        ///////////////
+
+        function initialSetup() {
+            const asteroidField = new AsteroidField();
+            const player = new Player();
+            const spaceship = new Spaceship();
+            const ui = new UI();
+            node.children.push(asteroidField);
+            node.children.push(player);
+            node.children.push(spaceship);
+            node.children.push(ui);
+
+            canvas.addEventListener('keydown', (event) => {
+                const selected = asteroidField.asteroids.filter(a => a.selected);
+                if (event.key === 'q') {
+                    if (player.qDown) return;
+                    console.log('Q button pressed - click to move');
+                    player.qDown = true;
+                } else if (event.key === 'a') {
+                    console.log('A button pressed - moving to target');
+                    if (selected.length > 0) {
+                        spaceship.mode = 'direct';
+                        spaceship.target = selected[0].pos;
+                    } else {
+                        console.log('no asteroid selected');
+                    }
+                } else if (event.key === 's') {
+                    console.log('S button pressed - orbiting target');
+                    if (selected.length > 0) {
+                        spaceship.mode = 'orbit';
+                        spaceship.target = selected[0].pos;
+                        spaceship.orbitAngle = Math.atan2(
+                            spaceship.pos.y - selected[0].pos.y,
+                            spaceship.pos.x - selected[0].pos.x);
+
+
+                    } else {
+                        console.log('no asteroid selected');
+                    }
+                }
+                // turn target to function insstead and add mode arg
+                // which can be approach, orbit
+                // D = warp
+                // some UI for warping?
+                // no gates. space is small instances that you can warp between.
+
+
+                // usually at planets, moons, or structures in space.
+                // display these buttons as squares in UI.
+
+                // pressing the button should show the button being pressed
+                // by slowly highliting it.
+                // make the UI nicer. see through layer
+            });
+
+
+            canvas.addEventListener('click', (event) => {
+                console.log('clicked at ' + event.x + ', ' + event.y);
+                asteroidField.asteroids.forEach((a) => {
+                    const dist = new Vec(event.x, event.y).sub(a.pos).length();
+                    if (dist < a.size) {
+                        console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
+                        a.selected = true;
+                    }
+                    if (player.qDown) { 
+                        spaceship.target = a.pos;
+                    }
+                });
+            });
+        }
+
+        function gameLoop(delta) {
+            node.update(delta);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            node.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        initialSetup();
+        requestAnimationFrame(gameLoop);
+    </script>
+
+</body>
+
+</html>
+
+<!-- notes
+first mission. given a frigate.
+we're under attack. please help.
+take out this frigate by locking them up, flying to them, and firing your guns.
+
+second mission: our buddies need help too.
+kill three frigates. these frigates are equipped with short range weapons.
+stay out of range of their weapons while just staying in range of yours.
+kite as necessary and take them down.
+
+third mission. it doesn't seem like there any way out of this alive.
+too many ships are warping in and our ward drive is down.
+let's go do fighting. after all, a good fight is what it's all about.
+
+welcome back pilot. you have awoken in another clone.
+here's how a station works. you have been given a new frigate and 
+a choice between weapons. a few more fighting missions follow
+explaining more mechanics and dropping some cool loot.
+
+then comes crafting. there are 2 aspects. mining and manufactoring.
+levels are trained in both.
+as you kill and loot and sell, you get xp and credits.
+xp has some inherent bonuses to the skills you level
+and credits can be used to buy ships and components.
+credits carry over between deaths.
+-->
