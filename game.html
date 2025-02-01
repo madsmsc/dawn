@@ -72,7 +72,9 @@
             };
 
             this.draw = () => {
+                ctx.save();
                 this.asteroids.forEach(a => a.draw());
+                ctx.restore();
             };
         }
 
@@ -98,20 +100,29 @@
             };
 
             this.draw = () => {
-                ctx.fillStyle = 'gray';
-                ctx.strokeStyle = 'black';
+                ctx.save();
                 ctx.setLineDash([]);
+                ctx.lineWidth = 1;
+                ctx.fillStyle = 'rgba(55, 55, 55, 1)';
+                ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
                 ctx.beginPath();
                 ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+
                 // DEBUGGING! draw the index of the asteroid in the asteroid field
+                ctx.save();
                 ctx.fillStyle = 'white';
                 ctx.font = '22px Arial';
-                const asteroids = node.children.filter(c => c instanceof AsteroidField)[0].asteroids;
+                const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
                 ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
+                ctx.restore();
+
 
                 if (this.selected) {
                     // draw selection border
+                    ctx.save();
                     ctx.beginPath();
                     ctx.setLineDash([10]);
                     ctx.strokeStyle = 'green';
@@ -123,11 +134,19 @@
                     ctx.lineTo(this.pos.x - off, this.pos.y + off);
                     ctx.closePath();
                     ctx.stroke();
+                    ctx.restore();
+
+                    // Reset canvas state after selection
+                    ctx.setLineDash([]);
+                    ctx.lineWidth = 1;
+
                     // draw asteroid info
+                    ctx.save();
                     ctx.fillStyle = 'white';
                     ctx.font = '12px Arial';
                     ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
                                  this.pos.x - this.size, this.pos.y - this.size - 10);
+                    ctx.restore();
                 }
             };
         }
@@ -173,7 +192,10 @@
 
             this.update = () => {
                 move();
-                mine();
+                const ui = node.children.find(c => c instanceof UI);
+                if (ui.k2down) {
+                    mine();
+                }
             };
 
             // PRIVATE METHODS
@@ -200,11 +222,15 @@
 
 
             const mine = () => {
-                node.children.filter(c => c instanceof AsteroidField)[0].asteroids.forEach((a) => {
-                    const dir = this.pos.sub(a.pos).length;
-                    if (dir < this.miningRange + a.size) {
-                        asteroids.splice(asteroids.indexOf(asteroid), 1);
-                        player.ore += asteroid.size * (1 + Math.random() * 0.2);
+                const player = node.children.find(c => c instanceof Player);
+                const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
+                asteroids.forEach((a, i) => {
+                    const dist = this.pos.sub(a.pos).length();
+                    const range = this.miningRange + a.size;
+                    if (dist < range) {
+                        asteroids.splice(i, 1);
+                        player.ore += a.size * (1 + Math.random() * 0.2);
+                        console.log('mining! player.ore: ' + player.ore);
                     }   
                 });
             };
@@ -224,6 +250,9 @@
             this.qDown = false;
             this.aDown = false;
             this.sDown = false;
+            this.k1down = false;
+            this.k2down = false;
+            this.k3down = false;
 
             // PUBLIC METHODS
 
@@ -258,14 +287,16 @@
                 ctx.strokeRect(pos.x, pos.y, w, h);
             };
 
-            const drawTexts = (texts, pos, off = 30, hor = false, selected = 0) => {
-                ctx.fillStyle = 'white';
+            const drawTexts = (texts, pos, off = 30, hor = false, selected = -1, color = 'white') => {
+                let lastLength = 0
                 texts.forEach((text, i) => {
-                    const x = pos.x + (hor ? off * i + text.length*10*i : 0);
+                    const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
                     const y = pos.y + (hor ? 0 : off * i);
-                    ctx.fillStyle = 'white';
+                    if (i === selected) ctx.fillStyle = 'blue';
+                    else ctx.fillStyle = color;
                     ctx.font = '14px Arial';
                     ctx.fillText(text, x, y);
+                    lastLength += text.length;
                 });
             };
 
@@ -295,9 +326,11 @@
                 const w = 180;
                 const h = 35;
                 drawPanel({ x: canvas.width / 2 - w*1.1, y: canvas.height - h }, w, h);
-                drawTexts(['actions'], { x: canvas.width / 2 - w/1.5, y: canvas.height - h});
-                drawTexts(['approach', 'orbit', 'warp'],
-                    { x: canvas.width / 2 - w, y: canvas.height - h / 2.5 }, 20, true);
+                drawTexts(['actions'], { x: canvas.width / 2 - w/1.5, y: canvas.height - h}, 10, false, -1, 'gray');
+                const ui = node.children.find(c => c instanceof UI);
+                const selected = ui.qDown ? 0 : ui.aDown ? 1 : ui.sDown ? 2 : -1;
+                drawTexts(['fly-to', 'approach', 'orbit'],
+                    { x: canvas.width / 2 - w*1.05, y: canvas.height - h / 2.5 }, 12, true, selected);
             };
 
             const drawModules = () => {
@@ -305,9 +338,11 @@
                 const w = 160;
                 const h = 35;
                 drawPanel({ x: canvas.width / 2 + w/3, y: canvas.height - h }, w, h);
-                drawTexts(['modules'], { x: canvas.width / 2 + w/1.5, y: canvas.height - h});
+                drawTexts(['modules'], { x: canvas.width / 2 + w/1.5, y: canvas.height - h}, 10, false, -1, 'gray');
+                const ui = node.children.find(c => c instanceof UI);
+                const selected = ui.k1down ? 0 : ui.k2down ? 1 : ui.k3down ? 2 : -1;
                 drawTexts(['Jump', 'Mine', 'Fire'],
-                    { x: canvas.width / 2 + w / 2.5, y: canvas.height - h / 2.5 }, 20, true);
+                    { x: canvas.width / 2 + w / 2.5, y: canvas.height - h / 2.5 }, 20, true, selected);
             };
 
             const drawMenus = () => {
@@ -315,6 +350,7 @@
                 const w = 80;
                 const h = 100;
                 drawPanel({ x: canvas.width - w, y: canvas.height - h }, w, h);
+                drawTexts(['actions'], { x: canvas.width - w, y: canvas.height - h}, 10, false, -1, 'gray');
                 drawTexts(['inv', 'sett', 'exit'],
                     { x: canvas.width - w / 1.3, y: canvas.height - h / 1.3 });
             };
@@ -413,6 +449,12 @@
                     ui.aDown = false;
                 } else if (event.key === 's') {
                     ui.sDown = false;
+                } else if (event.key === '1') {
+                    ui.k1down = false;
+                } else if (event.key === '2') {
+                    ui.k2down = false;
+                } else if (event.key === '3') {
+                    ui.k3down = false;
                 }
             });
 
@@ -438,6 +480,12 @@
                     } else {
                         console.log('no asteroid selected');
                     }
+                } else if (event.key === '1') {
+                    ui.k1down = true;
+                } else if (event.key === '2') {
+                    ui.k2down = true;
+                } else if (event.key === '3') {
+                    ui.k3down = true;
                 }
             });
 
@@ -445,13 +493,15 @@
                 console.log('clicked at ' + event.x + ', ' + event.y);
                 let select = undefined;
                 asteroidField.asteroids.forEach((a) => {
-                    const dist = new Vec(event.x, event.y).sub(a.pos).length();
+                    const clickPos = new Vec(event.x, event.y);
+                    const dist = clickPos.sub(a.pos).length();
                     if (dist < a.size) {
                         console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
                         select = a;
                     }
-                    if (player.qDown) { 
-                        spaceship.target = a.pos;
+
+                    if (ui.qDown) { 
+                        spaceship.target = clickPos;
                     }
                 });
                 if (select) {
@@ -503,6 +553,10 @@ as you kill and loot and sell, you get xp and credits.
 xp has some inherent bonuses to the skills you level
 and credits can be used to buy ships and components.
 credits carry over between deaths.
+
+keep ship in the middle and move the screen instead.
+
+move all the node.children logic into class initializer.
 
 controls:
 D = warp
