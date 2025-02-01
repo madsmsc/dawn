@@ -10,7 +10,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: darkblue;
+            background: rgb(13, 13, 32);
         }
 
         canvas {
@@ -167,7 +167,6 @@
             };
 
             this.update = () => {
-                console.log(this.pos.toString());
                 move();
                 mine();
             };
@@ -231,9 +230,9 @@
             };
 
             this.draw = () => {
-                ctx.font = '20px Arial';
                 drawFps();
                 drawInfos();
+                drawActions();
                 drawModules();
                 drawMenus();
             }
@@ -251,11 +250,14 @@
                 ctx.strokeRect(pos.x, pos.y, w, h);
             };
 
-            const drawTexts = (texts, pos) => {
+            const drawTexts = (texts, pos, off = 30, hor = false, selected = 0) => {
                 ctx.fillStyle = 'white';
-                const voff = 30;
                 texts.forEach((text, i) => {
-                    ctx.fillText(text, pos.x, pos.y + voff * i);
+                    const x = pos.x + (hor ? off * i + text.length*10*i : 0);
+                    const y = pos.y + (hor ? 0 : off * i);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText(text, x, y);
                 });
             };
 
@@ -273,21 +275,31 @@
                 // lower left panel
                 const player = node.children.find(c => c instanceof Player);
                 const spaceship = node.children.find(c => c instanceof Spaceship);
-                drawPanel({ x: 0, y: canvas.height - 150 }, 150, 200);
+                drawPanel({ x: 0, y: canvas.height - 120 }, 100, 120);
                 drawTexts(['credits: ' + player.credits,
-                'ship: ' + spaceship.type,
-                'shield: ' + spaceship.shield,
-                'hull: ' + spaceship.hull],
-                    { x: 0, y: canvas.height - 100 });
+                           'ship: ' + spaceship.type,
+                           'shield: ' + spaceship.shield,
+                           'hull: ' + spaceship.hull], { x: 10, y: canvas.height - 100 });
+            };
+
+            const drawActions = () => {
+                // lower middle panel
+                const w = 180;
+                const h = 35;
+                drawPanel({ x: canvas.width / 2 - w*1.1, y: canvas.height - h }, w, h);
+                drawTexts(['actions'], { x: canvas.width / 2 - w/1.5, y: canvas.height - h});
+                drawTexts(['approach', 'orbit', 'warp'],
+                    { x: canvas.width / 2 - w, y: canvas.height - h / 2.5 }, 20, true);
             };
 
             const drawModules = () => {
                 // lower middle panel
-                const w = 400;
-                const h = 40;
-                drawPanel({ x: canvas.width / 2 - w / 2, y: canvas.height - h }, w, h);
-                drawTexts(['A:approach     S:orbit     D:warp'],
-                    { x: canvas.width / 2 - w / 3, y: canvas.height - h / 2 });
+                const w = 160;
+                const h = 35;
+                drawPanel({ x: canvas.width / 2 + w/3, y: canvas.height - h }, w, h);
+                drawTexts(['modules'], { x: canvas.width / 2 + w/1.5, y: canvas.height - h});
+                drawTexts(['Jump', 'Mine', 'Fire'],
+                    { x: canvas.width / 2 + w / 2.5, y: canvas.height - h / 2.5 }, 20, true);
             };
 
             const drawMenus = () => {
@@ -296,8 +308,7 @@
                 const h = 100;
                 drawPanel({ x: canvas.width - w, y: canvas.height - h }, w, h);
                 drawTexts(['inv', 'sett', 'exit'],
-                    { x: canvas.width - w / 1.3, y: canvas.height - h / 1.3 }
-                );
+                    { x: canvas.width - w / 1.3, y: canvas.height - h / 1.3 });
             };
         }
 
