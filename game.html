@@ -52,7 +52,6 @@
             this.name = 'Bob';
             this.credits = 0;
             this.ore = 0;
-            this.qDown = false;
         }
 
         function AsteroidField() {
@@ -86,8 +85,8 @@
 
             this.size = Math.random() * 20 + 30;
             this.points = [];
-            this.pos = new Vec(Math.random() * canvas.width, 
-                               Math.random() * canvas.height);
+            this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
+                               Math.random() * (canvas.height-40) + 20);
             this.rotationSpeed = Math.random() * 0.008;
             this.rotation = 0;
             this.selected = false;
@@ -105,6 +104,12 @@
                 ctx.beginPath();
                 ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
+                // DEBUGGING! draw the index of the asteroid in the asteroid field
+                ctx.fillStyle = 'white';
+                ctx.font = '22px Arial';
+                const asteroids = node.children.filter(c => c instanceof AsteroidField)[0].asteroids;
+                ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
+
                 if (this.selected) {
                     // draw selection border
                     ctx.beginPath();
@@ -123,7 +128,6 @@
                     ctx.font = '12px Arial';
                     ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
                                  this.pos.x - this.size, this.pos.y - this.size - 10);
-
                 }
             };
         }
@@ -138,7 +142,7 @@
             this.shield = 50;
             this.hull = 30;
             this.size = 30;
-            this.acceleration = 0.1;
+            this.acceleration = 0.05;
             this.vel = new Vec(0, 0);
             this.pos = new Vec(canvas.width / 2, canvas.height / 2);
             this.target = this.pos.clone();
@@ -151,17 +155,18 @@
                 ctx.save();
                 // position correctly
                 ctx.translate(this.pos.x, this.pos.y);
-                // ctx.rotate(this.angle + Math.PI/2.0);
-                // ctx.translate(-this.size*1.5, -this.size*1.5);
+                ctx.rotate(this.angle + Math.PI/2.0);
+                ctx.translate(-this.size*1.5, -this.size*1.5);
                 // draw ship
                 ctx.drawImage(img, 0, 0);
                 // draw vector
                 ctx.translate(this.size * 1.5, 0);
                 ctx.lineWidth = 3;
                 ctx.setLineDash([]);
-                ctx.strokeStyle = 'blue';
+                ctx.strokeStyle = 'lightblue';
                 ctx.moveTo(0, 0);
-                ctx.lineTo(this.vel.x * 10, this.vel.y * 10);
+                const speed = this.vel.length();
+                ctx.lineTo(0, -speed * 10);
                 ctx.stroke();
                 ctx.restore();
             };
@@ -216,6 +221,9 @@
             this.fpsCount = 0;
             this.fpsTime = 0;
             this.fpsDisplay = 0;
+            this.qDown = false;
+            this.aDown = false;
+            this.sDown = false;
 
             // PUBLIC METHODS
 
@@ -400,19 +408,21 @@
 
             canvas.addEventListener('keyup', (event) => {
                 if (event.key === 'q') {
-                    console.log('Q button released');
-                    player.qDown = false;
+                    ui.qDown = false;
+                } else if (event.key === 'a') {
+                    ui.aDown = false;
+                } else if (event.key === 's') {
+                    ui.sDown = false;
                 }
             });
 
             canvas.addEventListener('keydown', (event) => {
                 const selected = asteroidField.asteroids.filter(a => a.selected);
                 if (event.key === 'q') {
-                    if (player.qDown) return;
-                    console.log('Q button pressed - click to move');
-                    player.qDown = true;
+                    if (ui.qDown) return;
+                    ui.qDown = true;
                 } else if (event.key === 'a') {
-                    console.log('A button pressed - moving to target');
+                    ui.aDown = true;
                     if (selected.length > 0) {
                         spaceship.mode = 'direct';
                         spaceship.target = selected[0].pos;
@@ -420,7 +430,7 @@
                         console.log('no asteroid selected');
                     }
                 } else if (event.key === 's') {
-                    console.log('S button pressed - orbiting target');
+                    ui.sDown = true;
                     if (selected.length > 0) {
                         spaceship.mode = 'orbit';
                         spaceship.target = selected[0].pos;
