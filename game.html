@@ -186,7 +186,11 @@
             this.pos = new Vec(canvas.width / 2, canvas.height / 2);
             this.target = this.pos.clone();
             this.miningRange = 50;
-            this.mode = 'direct'; // 'direct' or 'orbit'
+            this.mode = Constants.MOVE.APPROACH;
+            this.modules = [new Module('laser weapon', Constants.SPRITE.FIRE),
+                            new Module('mining laser', Constants.SPRITE.MINE),
+                            new Module('warp drive', Constants.SPRITE.WARP)]
+            this.inventory = [];
 
             // PUBLIC METHODS
 
@@ -249,12 +253,29 @@
                     const range = this.miningRange + a.size;
                     if (dist < range) {
                         asteroids.splice(i, 1);
-                        player.ore += a.size * (1 + Math.random() * 0.2);
-                        console.log('mining! player.ore: ' + player.ore);
+                        const oreModule = this.inventory.find(m => m.name === 'ore');
+                        const amount = a.size * (1 + Math.random() * 0.2);
+                        if (oreModule) {
+                            oreModule.amount += amount;
+                        } else {
+                            this.inventory.push(new Module('ore', Constants.SPRITE.MINE, amount));
+                        }
                     }   
                 });
             };
         }
+
+        function Module(name, sprite = undefined, amount = 1) {
+            // EXTENDS NODE
+            Node.call(this);
+
+            // FIELDS
+            
+            this.name = name;
+            this.sprite = sprite;
+            this.amount = amount;
+        }
+
 
         function UI() {
             // EXTENDS NODE
@@ -268,6 +289,7 @@
             this.qDown = false;
             this.aDown = false;
             this.sDown = false;
+            this.wDown = false;
             this.k1down = false;
             this.k2down = false;
             this.k3down = false;
@@ -285,8 +307,17 @@
             };
 
             this.draw = () => {
+                if (this.wDown) {
+                    drawShipDialog();
+                } else if (this.eDown) {
+                    drawPilotDialog();
+                } else if (this.dDown) {
+                    drawSettingsDialog();
+                } else if (this.k1down) {
+                    drawWarpDialog();
+                }
                 drawFps();
-                drawMenu();
+                drawButtons();
             }
 
             // PRIVATE METHODS
@@ -357,15 +388,21 @@
                 });
             };
 
-            const drawIcon = (spriteIndex, pos, selected = false) => {
+            const drawIcon = (spriteIndex, pos, selected = false, button = undefined) => {
                 if (!sprites[spriteIndex]) return;
                 if (selected) ctx.globalAlpha = 0.5;
                 ctx.drawImage(sprites[spriteIndex], pos.x, pos.y);
+                if (button) {
+                    ctx.font = '11px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(button, pos.x+2, pos.y+7);
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(button, pos.x, pos.y+5);
+                }
                 ctx.globalAlpha = 1;
             };
 
             const drawFps = () => {
-                // upper left panel
                 drawPanel({ x: 0, y: 0 }, 100, 50);
                 drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
             };
@@ -390,15 +427,12 @@
                 ctx.restore();
             }
 
-            const drawMenu = () => {
+            const drawButtons = () => {
                 // lower middle panel
                 // settings cogwheel sprite - simple settings screen and EXIT NOW button.
                 // pilot sprite - showing who you are and credits. number of times dead. some other stats?
                 // SHIP sprite - meaning simple inventory and fitted ship modules.
                 // FIX FPS!
-
-                // draw thick circles, for shield (blue) and hull (red) - washed out / art deco
-                // in the middle, and spread out the other buttons to either side.
 
                 const spaceship = node.children.find(c => c instanceof Spaceship);
                 const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
@@ -406,31 +440,98 @@
                 drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
                 drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
                 drawTexts(['shield:', shieldPercentage],
-                          { x: canvas.width / 2 - 90, y: canvas.height - 80 }, 15);
+                          { x: canvas.width / 2 - 90, y: canvas.height - 70 }, 15);
                 drawTexts(['hull:', hullPercentage], 
-                          { x: canvas.width / 2 + 60, y: canvas.height - 80 }, 15);
-
-
+                          { x: canvas.width / 2 + 60, y: canvas.height - 70 }, 15);
                 const off = 45;
                 let i = 3;
-                const i2pos = (i) => { return { x: canvas.width / 2 - off*i, y: canvas.height - 40}; };
-                drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown);
-                drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown);
-                drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown);
-                drawIcon(Constants.SPRITE.SHIP, i2pos(i++));
-                drawIcon(Constants.SPRITE.PILOT, i2pos(i++));
-                drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++));
-
+                const i2pos = (i) => { return { x: canvas.width / 2 - off*i, y: canvas.height - 45}; };
+                drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
+                drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
+                drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
+                drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
+                drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
+                drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
                 i = -4;
-                drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down);
-                drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down);
-                drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down);
-
+                drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
+                drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
+                drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
                 // DEBUGGING - draw all the sprites
                 // sprites.forEach((sprite, i) => {
                 //     ctx.drawImage(sprite, 40*i, canvas.height / 2);
                 // });
             };
+
+            function drawShipDialog() {
+                ctx.save();
+                const ship = node.children.find(c => c instanceof Spaceship);
+                const x = canvas.width / 2 - 150;
+                const y = canvas.height / 2 - 200;
+                const width = 300;
+                const height = 400;
+
+                // Draw dialog background
+                ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+                ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+                ctx.lineWidth = 2;
+                roundedRect(x, y, width, height, 10);
+                
+                // Equipped Modules Section
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText('Equipped Modules', x + 20, y + 30);
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+                ctx.moveTo(x + 10, y + 45);
+                ctx.lineTo(x + width - 10, y + 45);
+                ctx.stroke();
+                ctx.font = '14px Arial';
+                let yOffset = y + 90;
+                ship.modules.forEach((module, index) => {
+                    ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+                    ctx.fillText(`${index + 1}. ${module.name}`, x + 30, yOffset);
+                    ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+                    ctx.fillText(`amount: ${module.amount.toFixed(2)}`, x + 150, yOffset);
+                    yOffset += 20;
+                });
+                
+                // Inventory Section
+                yOffset += 20;
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText('Inventory', x + 20, yOffset += 20);
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+                ctx.moveTo(x + 10, yOffset += 20);
+                ctx.lineTo(x + width - 10, yOffset);
+                ctx.stroke();
+                ctx.font = '14px Arial';
+                yOffset += 20;
+                ship.inventory.forEach((item, index) => {
+                    ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+                    ctx.fillText(`${index + 1}. ${item.name}`, x + 30, yOffset);
+                    ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+                    ctx.fillText(`amount: ${item.amount.toFixed(2)}`, x + 150, yOffset);
+                    yOffset += 20;
+                });
+                ctx.restore();
+            }
+
+            function roundedRect(x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
         }
 
 
@@ -533,14 +634,27 @@
                     ui.k2down = false;
                 } else if (event.key === '3') {
                     ui.k3down = false;
+                } else if (event.key === 'w') {
+                    ui.wDown = false;
+                } else if (event.key === 'e') {
+                    ui.eDown = false;
+                } else if (event.key === 'd') {
+                    ui.dDown = false;
                 }
             });
 
             canvas.addEventListener('keydown', (event) => {
                 const selected = asteroidField.asteroids.filter(a => a.selected);
-                if (event.key === 'q') {
+                if (event.key === 'w') {
+                    ui.wDown = true;
+                } else if (event.key === 'e') {
+                    ui.eDown = true;
+                } else if (event.key === 'd') {
+                    ui.dDown = true;
+                } else if (event.key === 'q') {
                     if (ui.qDown) return;
                     ui.qDown = true;
+
                 } else if (event.key === 'a') {
                     ui.aDown = true;
                     if (selected.length > 0) {
@@ -568,16 +682,14 @@
             });
 
             canvas.addEventListener('click', (event) => {
-                console.log('clicked at ' + event.x + ', ' + event.y);
                 let select = undefined;
                 asteroidField.asteroids.forEach((a) => {
                     const clickPos = new Vec(event.x, event.y);
                     const dist = clickPos.sub(a.pos).length();
                     if (dist < a.size) {
-                        console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
+                        // console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
                         select = a;
                     }
-
                     if (ui.qDown) { 
                         spaceship.target = clickPos;
                     }
