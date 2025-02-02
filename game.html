@@ -33,6 +33,7 @@ const Constants = {
         ORBIT: 1
     },
     SPRITE: {
+        // icons
         MINE: 0,
         PILOT: 1,
         SHIP: 2,
@@ -42,9 +43,12 @@ const Constants = {
         APPROACH: 6,
         SETTINGS: 7,
         WARP: 8,
-        ASTEROID: 9
+        // models
+        ASTEROID: 9,
+        SPACESHIP: 10
     }
 };
+
 
 function Node() {
     // FIELDS 
@@ -143,7 +147,7 @@ function Asteroid() {
     this.draw = () => {
         const ui = node.children.find(c => c instanceof UI);
         const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-        const center = { x: this.pos.x - this.size/2, y: this.pos.y - this.size/2 };
+        const center = { x: this.pos.x - this.size, y: this.pos.y - this.size };
         ui.drawIcon(Constants.SPRITE.ASTEROID, center, false, asteroids.indexOf(this), false, 2);
 
 
@@ -208,7 +212,7 @@ function Spaceship() {
     this.maxShield = 80;
     this.hull = 30;
     this.maxHull = 50;
-    this.size = 30;
+    this.size = 15;
     this.acceleration = 0.005;
     this.vel = new Vec(0, 0);
     this.pos = new Vec(canvas.width / 2, canvas.height / 2);
@@ -230,7 +234,8 @@ function Spaceship() {
         ctx.rotate(this.angle + Math.PI/2.0);
         ctx.translate(-this.size*1.5, -this.size*1.5);
         // draw ship
-        ctx.drawImage(img, 0, 0);
+        const ui = node.children.find(c => c instanceof UI);
+        ui.drawIcon(Constants.SPRITE.SPACESHIP, { x: 0, y: 0 }, false, undefined, false, 1);
         // draw vector
         ctx.translate(this.size * 1.5, 0);
         ctx.lineWidth = 3;
@@ -405,7 +410,7 @@ function UI() {
         drawButtons();
     };
 
-    this.drawIcon = (spriteIndex, pos, selected = false, button = undefined, outline = true, scale = 1) => {
+    this.drawIcon = (spriteIndex, pos, selected = false, text = undefined, outline = true, scale = 1) => {
         if (!sprites[spriteIndex]) return;
         if (selected) ctx.globalAlpha = 0.5;
         ctx.drawImage(sprites[spriteIndex], pos.x, pos.y, 40*scale, 40*scale);
@@ -413,13 +418,13 @@ function UI() {
             ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
             ctx.strokeRect(pos.x, pos.y, 40, 40);
         }
-        if (button) {
+        if (text !== undefined) {
             ctx.font = '11px Arial';
             ctx.fillStyle = 'black';
-            ctx.fillText(button, pos.x+1, pos.y+5);
-            ctx.fillText(button, pos.x-1, pos.y+4);
+            ctx.fillText(text, pos.x+1, pos.y+5);
+            ctx.fillText(text, pos.x-1, pos.y+4);
             ctx.fillStyle = 'white';
-            ctx.fillText(button, pos.x, pos.y+4);
+            ctx.fillText(text, pos.x, pos.y+4);
         }
         ctx.globalAlpha = 1;
     };
