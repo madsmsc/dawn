@@ -20,755 +20,851 @@
 </head>
 
 <body>
-    <canvas tabindex="1" id="gameCanvas"></canvas>
-    <script type="module">
+<canvas tabindex="1" id="gameCanvas"></canvas>
+<script type="module">
 
-        /////////////
-        // CLASSES //
-        /////////////
+/////////////
+// CLASSES //
+/////////////
 
-        const Constants = {
-            MOVE: {
-                APPROACH: 0,
-                ORBIT: 1
-            },
-            SPRITE: {
-                MINE: 0,
-                PILOT: 1,
-                SHIP: 2,
-                FIRE: 3,
-                FLY_TO: 4,
-                ORBIT: 5,
-                APPROACH: 6,
-                SETTINGS: 7,
-                WARP: 8
-            }
-        };
+const Constants = {
+    MOVE: {
+        APPROACH: 0,
+        ORBIT: 1
+    },
+    SPRITE: {
+        MINE: 0,
+        PILOT: 1,
+        SHIP: 2,
+        FIRE: 3,
+        FLY_TO: 4,
+        ORBIT: 5,
+        APPROACH: 6,
+        SETTINGS: 7,
+        WARP: 8
+    }
+};
 
 
-        function Node() {
-            // FIELDS 
+function Node() {
+    // FIELDS 
 
-            this.children = [];
+    this.children = [];
 
-            // PUBLIC METHODS
+    // PUBLIC METHODS
 
-            this.update = (delta) => {
-                this.children.forEach(child => child.update(delta));
-            };
+    this.update = (delta) => {
+        this.children.forEach(child => child.update(delta));
+    };
 
-            this.draw = () => {
-                this.children.forEach(child => child.draw());
-            };
+    this.draw = () => {
+        this.children.forEach(child => child.draw());
+    };
+}
+
+function Player() {
+    // EXTENDS NODE
+    Node.call(this);
+
+    // FIELDS 
+
+    this.name = 'Bob';
+    this.credits = 0;
+    this.ore = 0;
+}
+
+function AsteroidField() {
+    // EXTENDS NODE
+    Node.call(this);
+
+    // FIELDS 
+
+    this.maxAsteroids = 5;
+    this.asteroids = [];
+
+    // PUBLIC METHODS
+
+    // TODO: only create asteroids that don't overlap with others
+    // and find some asteroid asset/icon
+    // should I only use icons to keep it simple?
+    // also for the spaceship? probably... at least for now.
+    this.update = (delta) => {
+        if (this.asteroids.length < this.maxAsteroids) {
+            this.asteroids.push(new Asteroid());
         }
+    };
 
-        function Player() {
-            // EXTENDS NODE
-            Node.call(this);
+    this.draw = () => {
+        ctx.save();
+        this.asteroids.forEach(a => a.draw());
+        ctx.restore();
+    };
+}
 
-            // FIELDS 
 
-            this.name = 'Bob';
-            this.credits = 0;
-            this.ore = 0;
+function Asteroid() {
+    // EXTENDS NODE
+    Node.call(this);
+
+    // FIELDS
+
+    this.size = Math.random() * 20 + 30;
+    this.points = [];
+    this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
+                        Math.random() * (canvas.height-40) + 20);
+    this.rotationSpeed = Math.random() * 0.008;
+    this.rotation = 0;
+    this.selected = false;
+
+    // PUBLIC METHODS
+
+    // introduce weights so some are rarer than others
+    const TYPES = [ 'Iron', 'Ice', 'Silicon', 'Gold'];
+
+    this.mine = () => {
+        if (Math.random() < 0.5) { // 1 ore
+            const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+            const amount = this.size * (1 + Math.random() * 0.2);
+            return [{ type, amount }];
+        } // 2 ores
+        const type1 = TYPES[Math.floor(Math.random() * TYPES.length)];
+        const type2 = TYPES[Math.floor(Math.random() * TYPES.length)];
+        const amount = this.size * (1 + Math.random() * 0.2);
+        const distribution = (Math.random()*60+20) / 100; // 20-80%
+        return [{ type: type1, amount: amount * distribution },
+                { type: type2, amount: amount * (1-distribution) }];
+    }
+
+    this.update = () => {
+        this.rotation = (this.rotation + this.rotationSpeed) % (Math.PI * 2);
+    };
+
+
+    this.draw = () => {
+        ctx.save();
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+        ctx.fillStyle = 'rgba(55, 55, 55, 1)';
+        ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // DEBUGGING! draw the index of the asteroid in the asteroid field
+        ctx.save();
+        ctx.fillStyle = 'white';
+        ctx.font = '22px Arial';
+        const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
+        ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
+        ctx.restore();
+
+        if (this.selected) {
+            // draw selection border
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([10]);
+            ctx.strokeStyle = 'green';
+            ctx.lineWidth = 3;
+            const off = this.size + 5;
+            ctx.moveTo(this.pos.x - off, this.pos.y - off);
+            ctx.lineTo(this.pos.x + off, this.pos.y - off);
+            ctx.lineTo(this.pos.x + off, this.pos.y + off);
+            ctx.lineTo(this.pos.x - off, this.pos.y + off);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
+            // Reset canvas state after selection
+            ctx.setLineDash([]);
+            ctx.lineWidth = 1;
+
+            // draw asteroid info
+            ctx.save();
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
+                            this.pos.x - this.size, this.pos.y - this.size - 10);
+            ctx.restore();
         }
+    };
+}
 
-        function AsteroidField() {
-            // EXTENDS NODE
-            Node.call(this);
+function Spaceship() {
+    // EXTENDS NODE
+    Node.call(this);
 
-            // FIELDS 
+    // FIELDS 
 
-            this.maxAsteroids = 5;
-            this.asteroids = [];
+    this.type = 'frigate';
+    this.shield = 50;
+    this.maxShield = 80;
+    this.hull = 30;
+    this.maxHull = 50;
+    this.size = 30;
+    this.acceleration = 0.005;
+    this.vel = new Vec(0, 0);
+    this.pos = new Vec(canvas.width / 2, canvas.height / 2);
+    this.target = this.pos.clone();
+    this.miningRange = 50;
+    this.mode = Constants.MOVE.APPROACH;
+    this.modules = [new Module('laser weapon', Constants.SPRITE.FIRE, 1, 'module'),
+                    new Module('mining laser', Constants.SPRITE.MINE, 1, 'module'),
+                    new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
+    this.inventory = [];
 
-            // PUBLIC METHODS
 
-            // TODO: only create asteroids that don't overlap with others
-            // and find some asteroid asset/icon
-            // should I only use icons to keep it simple?
-            // also for the spaceship? probably... at least for now.
-            this.update = (delta) => {
-                if (this.asteroids.length < this.maxAsteroids) {
-                    this.asteroids.push(new Asteroid());
+    // PUBLIC METHODS
+
+    this.draw = () => {
+        ctx.save();
+        // position correctly
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.rotate(this.angle + Math.PI/2.0);
+        ctx.translate(-this.size*1.5, -this.size*1.5);
+        // draw ship
+        ctx.drawImage(img, 0, 0);
+        // draw vector
+        ctx.translate(this.size * 1.5, 0);
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'lightblue';
+        ctx.moveTo(0, 0);
+        const speed = this.vel.length();
+        ctx.lineTo(0, -speed * 10);
+        ctx.stroke();
+        ctx.restore();
+    };
+
+    this.update = (delta) => {
+        move(delta);
+        const ui = node.children.find(c => c instanceof UI);
+        if (ui.k2down) {
+            mine();
+        }
+    };
+
+    // PRIVATE METHODS
+
+    const img = new Image();
+    img.src = 'SpaceShipSmall.png';
+
+    // TODO: include the delta here...
+    const move = (delta) => {
+        if (this.mode === 'direct') {
+            const dir = this.target.sub(this.pos);
+            if (dir.length() > this.size) {
+                const normalizedDir = dir.normalize();
+                const scaledDir = normalizedDir.scale(this.acceleration * delta);
+                this.vel = this.vel.add(scaledDir);
+                this.pos = this.pos.add(this.vel);
+                this.angle = Math.atan2(this.vel.y, this.vel.x);
+            } else {
+                this.vel.set(0, 0);
+            };
+        } else if (this.mode === 'orbit') {
+            // implment orbit mode here     
+        }
+    };
+
+    const mine = () => {
+        const player = node.children.find(c => c instanceof Player);
+        const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
+        asteroids.forEach((a, i) => {
+            const dist = this.pos.sub(a.pos).length();
+            const range = this.miningRange + a.size;
+            if (dist > range) return;
+            asteroids.splice(i, 1);
+            const ores = a.mine(); // [{ type, amount }, ...]
+            ores.forEach(ore => {
+                const oreModule = this.inventory.find(m => m.name === ore.type);
+                if (oreModule) {
+                    oreModule.amount += ore.amount;
+                } else {
+                    this.inventory.push(new Module(ore.type, Constants.SPRITE.MINE, ore.amount, 'kg'));
                 }
-            };
+            });  
+        });
+    };
+}
 
-            this.draw = () => {
-                ctx.save();
-                this.asteroids.forEach(a => a.draw());
-                ctx.restore();
-            };
+function Module(name, sprite = undefined, amount = 1, unit = 'units') {
+    // EXTENDS NODE
+    Node.call(this);
+
+    // FIELDS
+    
+    this.name = name;
+    this.sprite = sprite;
+    this.amount = amount;
+    this.unit = unit;
+}
+
+function StarField() {
+    // EXTENDS NODE
+    Node.call(this);
+
+    // FIELDS
+
+    this.stars = [];
+
+    // PUBLIC METHODS
+
+    this.update = (delta) => {
+        this.stars.forEach(star => {
+            // Move stars based on their layer speed
+            star.x -= star.speed;
+            star.y -= star.speed;
+            // Wrap stars around the screen
+            if (star.x < 0) star.x = this.width;
+            if (star.x > this.width) star.x = 0;
+            if (star.y < 0) star.y = this.height;
+            if (star.y > this.height) star.y = 0;
+        });
+    };
+    
+    this.draw = () => {
+        ctx.save();
+        this.stars.forEach(star => {
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+            // Draw star as a small circle
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.restore();
+    };
+
+    // PRIVATE METHODS
+
+    const createStarLayer = (count, speed, brightness) => {
+        for (let i = 0; i < count; i++) {
+            this.stars.push({
+                x: Math.random() * this.width,
+                y: Math.random() * this.height,
+                size: Math.random() * 2 + 1,  // Size between 1-3
+                speed,
+                brightness
+            });
         }
+    };
 
+    // Create three layers of stars
+    createStarLayer(100, 0.1, 0.3);  // Far layer (slow, dim)
+    createStarLayer(50, 0.3, 0.6);   // Middle layer
+    createStarLayer(25, 0.5, 1.0);   // Close layer (fast, bright)
+}
 
-        function Asteroid() {
-            // EXTENDS NODE
-            Node.call(this);
+function UI() {
+    // EXTENDS NODE
+    Node.call(this);
 
-            // FIELDS
+    // FIELDS 
 
-            this.size = Math.random() * 20 + 30;
-            this.points = [];
-            this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
-                               Math.random() * (canvas.height-40) + 20);
-            this.rotationSpeed = Math.random() * 0.008;
-            this.rotation = 0;
-            this.selected = false;
+    this.fpsCount = 0;
+    this.fpsTime = 0;
+    this.fpsDisplay = 0;
+    this.qDown = false;
+    this.aDown = false;
+    this.sDown = false;
+    this.wDown = false;
+    this.k1down = false;
+    this.k2down = false;
+    this.k3down = false;
 
-            // PUBLIC METHODS
+    // PUBLIC METHODS
 
-            this.update = () => {
-                this.rotation = (this.rotation + this.rotationSpeed) % (Math.PI * 2);
-            };
-
-            this.draw = () => {
-                ctx.save();
-                ctx.setLineDash([]);
-                ctx.lineWidth = 1;
-                ctx.fillStyle = 'rgba(55, 55, 55, 1)';
-                ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
-                ctx.beginPath();
-                ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-
-                // DEBUGGING! draw the index of the asteroid in the asteroid field
-                ctx.save();
-                ctx.fillStyle = 'white';
-                ctx.font = '22px Arial';
-                const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-                ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
-                ctx.restore();
-
-                if (this.selected) {
-                    // draw selection border
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.setLineDash([10]);
-                    ctx.strokeStyle = 'green';
-                    ctx.lineWidth = 3;
-                    const off = this.size + 5;
-                    ctx.moveTo(this.pos.x - off, this.pos.y - off);
-                    ctx.lineTo(this.pos.x + off, this.pos.y - off);
-                    ctx.lineTo(this.pos.x + off, this.pos.y + off);
-                    ctx.lineTo(this.pos.x - off, this.pos.y + off);
-                    ctx.closePath();
-                    ctx.stroke();
-                    ctx.restore();
-
-                    // Reset canvas state after selection
-                    ctx.setLineDash([]);
-                    ctx.lineWidth = 1;
-
-                    // draw asteroid info
-                    ctx.save();
-                    ctx.fillStyle = 'white';
-                    ctx.font = '12px Arial';
-                    ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
-                                 this.pos.x - this.size, this.pos.y - this.size - 10);
-                    ctx.restore();
-                }
-            };
-        }
-
-        function Spaceship() {
-            // EXTENDS NODE
-            Node.call(this);
-
-            // FIELDS 
-
-            this.type = 'frigate';
-            this.shield = 50;
-            this.maxShield = 80;
-            this.hull = 30;
-            this.maxHull = 50;
-            this.size = 30;
-            this.acceleration = 0.05;
-            this.vel = new Vec(0, 0);
-            this.pos = new Vec(canvas.width / 2, canvas.height / 2);
-            this.target = this.pos.clone();
-            this.miningRange = 50;
-            this.mode = Constants.MOVE.APPROACH;
-            this.modules = [new Module('laser weapon', Constants.SPRITE.FIRE),
-                            new Module('mining laser', Constants.SPRITE.MINE),
-                            new Module('warp drive', Constants.SPRITE.WARP)]
-            this.inventory = [];
-
-            // PUBLIC METHODS
-
-            this.draw = () => {
-                ctx.save();
-                // position correctly
-                ctx.translate(this.pos.x, this.pos.y);
-                ctx.rotate(this.angle + Math.PI/2.0);
-                ctx.translate(-this.size*1.5, -this.size*1.5);
-                // draw ship
-                ctx.drawImage(img, 0, 0);
-                // draw vector
-                ctx.translate(this.size * 1.5, 0);
-                ctx.lineWidth = 3;
-                ctx.setLineDash([]);
-                ctx.strokeStyle = 'lightblue';
-                ctx.moveTo(0, 0);
-                const speed = this.vel.length();
-                ctx.lineTo(0, -speed * 10);
-                ctx.stroke();
-                ctx.restore();
-            };
-
-            this.update = () => {
-                move();
-                const ui = node.children.find(c => c instanceof UI);
-                if (ui.k2down) {
-                    mine();
-                }
-            };
-
-            // PRIVATE METHODS
-
-            const img = new Image();
-            img.src = 'SpaceShipSmall.png';
-
-            // TODO: include the delta here...
-            const move = () => {
-                if (this.mode === 'direct') {
-                    const dir = this.target.sub(this.pos);
-                    if (dir.length() > this.size) {
-                        const normalizedDir = dir.normalize();
-                        const scaledDir = normalizedDir.scale(this.acceleration);
-                        this.vel = this.vel.add(scaledDir);
-                        this.pos = this.pos.add(this.vel);
-                        this.angle = Math.atan2(this.vel.y, this.vel.x);
-                    } else {
-                        this.vel.set(0, 0);
-                    };
-                } else if (this.mode === 'orbit') {
-                    // implment orbit mode here     
-                }
-            };
-
-
-            const mine = () => {
-                const player = node.children.find(c => c instanceof Player);
-                const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-                asteroids.forEach((a, i) => {
-                    const dist = this.pos.sub(a.pos).length();
-                    const range = this.miningRange + a.size;
-                    if (dist < range) {
-                        asteroids.splice(i, 1);
-                        const oreModule = this.inventory.find(m => m.name === 'ore');
-                        const amount = a.size * (1 + Math.random() * 0.2);
-                        if (oreModule) {
-                            oreModule.amount += amount;
-                        } else {
-                            this.inventory.push(new Module('ore', Constants.SPRITE.MINE, amount));
-                        }
-                    }   
-                });
-            };
-        }
-
-        function Module(name, sprite = undefined, amount = 1) {
-            // EXTENDS NODE
-            Node.call(this);
-
-            // FIELDS
-            
-            this.name = name;
-            this.sprite = sprite;
-            this.amount = amount;
-        }
-
-
-        function UI() {
-            // EXTENDS NODE
-            Node.call(this);
-
-            // FIELDS 
-
+    this.update = (delta) => {
+        this.fpsCount++;
+        this.fpsTime += delta;
+        if (this.fpsTime >= 1000) {
+            this.fpsDisplay = this.fpsCount;
             this.fpsCount = 0;
             this.fpsTime = 0;
-            this.fpsDisplay = 0;
-            this.qDown = false;
-            this.aDown = false;
-            this.sDown = false;
-            this.wDown = false;
-            this.k1down = false;
-            this.k2down = false;
-            this.k3down = false;
+        }
+    };
 
-            // PUBLIC METHODS
+    this.draw = () => {
+        if (this.wDown) {
+            drawShipDialog();
+        } else if (this.eDown) {
+            drawPilotDialog();
+        } else if (this.dDown) {
+            drawSettingsDialog();
+        } else if (this.k1down) {
+            drawWarpDialog();
+        }
+        drawFps();
+        drawButtons();
+    }
 
-            this.update = (delta) => {
-                this.fpsCount++;
-                this.fpsTime += delta;
-                if (this.fpsTime >= 1000) {
-                    this.fpsDisplay = this.fpsCount;
-                    this.fpsCount = 0;
-                    this.fpsTime = 0;
-                }
-            };
-
-            this.draw = () => {
-                if (this.wDown) {
-                    drawShipDialog();
-                } else if (this.eDown) {
-                    drawPilotDialog();
-                } else if (this.dDown) {
-                    drawSettingsDialog();
-                } else if (this.k1down) {
-                    drawWarpDialog();
-                }
-                drawFps();
-                drawButtons();
-            }
-
-            // PRIVATE METHODS
-            const sprites = [];
-            // Load the sprite sheet
-            const spriteSheet = new Image();
-            spriteSheet.src = 'icons.png';
-            // Once the image loads, split it into sprites
-            spriteSheet.onload = () => {
-                const spriteWidth = 40;
-                const spriteHeight = 40;
-                const columns = spriteSheet.width / spriteWidth;
-                const rows = spriteSheet.height / spriteHeight;
+    // PRIVATE METHODS
+    const sprites = [];
+    // Load the sprite sheet
+    const spriteSheet = new Image();
+    spriteSheet.src = 'icons.png';
+    // Once the image loads, split it into sprites
+    spriteSheet.onload = () => {
+        const spriteWidth = 40;
+        const spriteHeight = 40;
+        const columns = spriteSheet.width / spriteWidth;
+        const rows = spriteSheet.height / spriteHeight;
+        
+        // Create a temporary canvas to extract sprites
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = spriteWidth;
+        tempCanvas.height = spriteHeight;
+        
+        // Extract each sprite
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < columns; col++) {
+                tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
                 
-                // Create a temporary canvas to extract sprites
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = spriteWidth;
-                tempCanvas.height = spriteHeight;
+                // Draw the portion of the sprite sheet we want
+                tempCtx.drawImage(
+                    spriteSheet,
+                    col * spriteWidth,    // source x
+                    row * spriteHeight,   // source y
+                    spriteWidth,          // source width
+                    spriteHeight,         // source height
+                    0,                    // dest x
+                    0,                    // dest y
+                    spriteWidth,          // dest width
+                    spriteHeight          // dest height
+                );
                 
-                // Extract each sprite
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < columns; col++) {
-                        tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
-                        
-                        // Draw the portion of the sprite sheet we want
-                        tempCtx.drawImage(
-                            spriteSheet,
-                            col * spriteWidth,    // source x
-                            row * spriteHeight,   // source y
-                            spriteWidth,          // source width
-                            spriteHeight,         // source height
-                            0,                    // dest x
-                            0,                    // dest y
-                            spriteWidth,          // dest width
-                            spriteHeight          // dest height
-                        );
-                        
-                        // Convert to an image and store
-                        const sprite = new Image();
-                        sprite.src = tempCanvas.toDataURL();
-                        sprites.push(sprite);
-                    }
-                }
-            };
-
-            const drawPanel = (pos, w, h) => {
-                ctx.setLineDash([]);
-                ctx.strokeStyle = 'black';
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.fillRect(pos.x, pos.y, w, h);
-
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(pos.x, pos.y, w, h);
-            };
-
-            const drawTexts = (texts, pos, off = 30, hor = false, selected = -1, color = 'white') => {
-                let lastLength = 0
-                texts.forEach((text, i) => {
-                    const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
-                    const y = pos.y + (hor ? 0 : off * i);
-                    if (i === selected) ctx.fillStyle = 'blue';
-                    else ctx.fillStyle = color;
-                    ctx.font = '14px Arial';
-                    ctx.fillText(text, x, y);
-                    lastLength += text.length;
-                });
-            };
-
-            const drawIcon = (spriteIndex, pos, selected = false, button = undefined) => {
-                if (!sprites[spriteIndex]) return;
-                if (selected) ctx.globalAlpha = 0.5;
-                ctx.drawImage(sprites[spriteIndex], pos.x, pos.y);
-                ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
-                ctx.strokeRect(pos.x, pos.y, 40, 40);
-                if (button) {
-                    ctx.font = '11px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText(button, pos.x+5, pos.y+4);
-                    ctx.fillStyle = 'white';
-                    ctx.fillText(button, pos.x+2, pos.y+1);
-                }
-                ctx.globalAlpha = 1;
-            };
-
-            // TODO: fix the FPS counter...
-            const drawFps = () => {
-                drawPanel({ x: 0, y: 0 }, 100, 50);
-                drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
-            };
-
-            const drawHealthCircle = (radius, percentage, color) => {
-                const thickness = 8;
-                ctx.save();
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
-                ctx.lineWidth = thickness;
-                ctx.arc(canvas.width / 2, canvas.height - 60, radius, 0, Math.PI * 2);
-                ctx.stroke();
-                if (percentage > 0) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = thickness;
-                    const startAngle = -0.5 * Math.PI;
-                    const endAngle = (-0.5 + 2 * percentage / 100) * Math.PI;
-                    ctx.arc(canvas.width / 2, canvas.height - 60, radius, startAngle, endAngle);
-                    ctx.stroke();
-                }
-                ctx.restore();
-            }
-
-            const drawButtons = () => {
-                // lower middle panel
-                // settings cogwheel sprite - simple settings screen and EXIT NOW button.
-                // pilot sprite - showing who you are and credits. number of times dead. some other stats?
-                // SHIP sprite - meaning simple inventory and fitted ship modules.
-                // FIX FPS!
-
-                const spaceship = node.children.find(c => c instanceof Spaceship);
-                const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
-                const hullPercentage = spaceship.hull / spaceship.maxHull * 100;
-                drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
-                drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
-                drawTexts(['shield', ' '+shieldPercentage],
-                          { x: canvas.width / 2 - 90, y: canvas.height - 70 }, 15);
-                drawTexts(['hull', ' '+hullPercentage], 
-                          { x: canvas.width / 2 + 60, y: canvas.height - 70 }, 15);
-                const off = 45;
-                let i = 3;
-                const i2pos = (i) => { return { x: canvas.width / 2 - off*i, y: canvas.height - 45}; };
-                drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
-                drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
-                drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
-                drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
-                drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
-                drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
-                i = -4;
-                drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
-                drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
-                drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
-                // DEBUGGING - draw all the sprites
-                // sprites.forEach((sprite, i) => {
-                //     ctx.drawImage(sprite, 40*i, canvas.height / 2);
-                // });
-            };
-
-            function drawPilotDialog() {
-                ctx.save();
-                const x = canvas.width / 2 - 150;
-                const y = canvas.height / 2 - 200;
-                const width = 300;
-                const height = 400;
-                
-                ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-                ctx.lineWidth = 2;
-                roundedRect(x, y, width, height, 10);
-                
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('Pilot', x + 20, y + 30);
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-                ctx.moveTo(x + 10, y + 45);
-                ctx.lineTo(x + width - 10, y + 45);
-                ctx.stroke();
-                ctx.font = '14px Arial';
-                let yOffset = y + 90;
-                ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-                ctx.fillText('This pilot is doing well...', x + 30, yOffset);
-                ctx.restore();
-            }
-
-            function drawSettingsDialog() {
-                ctx.save();
-                const x = canvas.width / 2 - 150;
-                const y = canvas.height / 2 - 200;
-                const width = 300;
-                const height = 400;
-                
-                ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-                ctx.lineWidth = 2;
-                roundedRect(x, y, width, height, 10);
-                
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('Settings', x + 20, y + 30);
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-                ctx.moveTo(x + 10, y + 45);
-                ctx.lineTo(x + width - 10, y + 45);
-                ctx.stroke();
-                ctx.font = '14px Arial';
-                let yOffset = y + 90;
-                ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-                ctx.fillText('Exit Now', x + 30, yOffset);
-                ctx.restore();
-            }
-
-            function drawShipDialog() {
-                ctx.save();
-                const ship = node.children.find(c => c instanceof Spaceship);
-                const x = canvas.width / 2 - 150;
-                const y = canvas.height / 2 - 200;
-                const width = 300;
-                const height = 400;
-
-                // Draw dialog background
-                ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-                ctx.lineWidth = 2;
-                roundedRect(x, y, width, height, 10);
-                
-                // Equipped Modules Section
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('Equipped Modules', x + 20, y + 30);
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-                ctx.moveTo(x + 10, y + 45);
-                ctx.lineTo(x + width - 10, y + 45);
-                ctx.stroke();
-                ctx.font = '14px Arial';
-                let yOffset = y + 90;
-                ship.modules.forEach((module, index) => {
-                    ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-                    ctx.fillText(`${index + 1}. ${module.name}`, x + 30, yOffset);
-                    ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-                    ctx.fillText(`amount: ${module.amount.toFixed(2)}`, x + 150, yOffset);
-                    yOffset += 20;
-                });
-                
-                // Inventory Section
-                yOffset += 20;
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('Inventory', x + 20, yOffset += 20);
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-                ctx.moveTo(x + 10, yOffset += 20);
-                ctx.lineTo(x + width - 10, yOffset);
-                ctx.stroke();
-                ctx.font = '14px Arial';
-                yOffset += 20;
-                ship.inventory.forEach((item, index) => {
-                    ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-                    ctx.fillText(`${index + 1}. ${item.name}`, x + 30, yOffset);
-                    ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-                    ctx.fillText(`amount: ${item.amount.toFixed(2)}`, x + 150, yOffset);
-                    yOffset += 20;
-                });
-                ctx.restore();
-            }
-
-            function roundedRect(x, y, width, height, radius) {
-                ctx.beginPath();
-                ctx.moveTo(x + radius, y);
-                ctx.lineTo(x + width - radius, y);
-                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-                ctx.lineTo(x + width, y + height - radius);
-                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-                ctx.lineTo(x + radius, y + height);
-                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-                ctx.lineTo(x, y + radius);
-                ctx.quadraticCurveTo(x, y, x + radius, y);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+                // Convert to an image and store
+                const sprite = new Image();
+                sprite.src = tempCanvas.toDataURL();
+                sprites.push(sprite);
             }
         }
+    };
 
-        function Vec(x = 0, y = 0) {
-            this.x = x;
-            this.y = y;
+    const drawPanel = (pos, w, h) => {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(pos.x, pos.y, w, h);
 
-            this.add = (v) => {
-                return new Vec(
-                    this.x + v.x,
-                    this.y + v.y,
-                );
-            };
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pos.x, pos.y, w, h);
+    };
 
-            this.sub = (v) => {
-                return new Vec(
-                    this.x - v.x,
-                    this.y - v.y,
-                );
-            };
+    const drawTexts = (texts, pos, off = 30, hor = false, selected = -1, color = 'white') => {
+        let lastLength = 0
+        texts.forEach((text, i) => {
+            const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
+            const y = pos.y + (hor ? 0 : off * i);
+            if (i === selected) ctx.fillStyle = 'blue';
+            else ctx.fillStyle = color;
+            ctx.font = '14px Arial';
+            ctx.fillText(text, x, y);
+            lastLength += text.length;
+        });
+    };
 
-            this.scale = (n) => {
-                return new Vec(
-                    this.x * n,
-                    this.y * n,
-                );
-            };
-
-            this.length = () => {
-                return Math.sqrt(
-                    this.x * this.x +
-                    this.y * this.y
-                );
-            };
-
-            this.normalize = () => {
-                const len = this.length();
-                if (len === 0) return new Vec();
-                return this.scale(1 / len);
-            };
-
-            this.dot = (v) => {
-                return this.x * v.x + this.y * v.y;
-            };
-
-            this.cross = (v) => {
-                return this.x * v.y - this.y * v.x;
-            };
-
-            this.toString = () => {
-                return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
-            };
-
-            this.clone = () => {
-                return new Vec(this.x, this.y);
-            };
-
-            this.set = (x, y) => {
-                this.x = x;
-                this.y = y;
-            };
+    const drawIcon = (spriteIndex, pos, selected = false, button = undefined) => {
+        if (!sprites[spriteIndex]) return;
+        if (selected) ctx.globalAlpha = 0.5;
+        ctx.drawImage(sprites[spriteIndex], pos.x, pos.y);
+        ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
+        ctx.strokeRect(pos.x, pos.y, 40, 40);
+        if (button) {
+            ctx.font = '11px Arial';
+            ctx.fillStyle = 'black';
+            ctx.fillText(button, pos.x+5, pos.y+4);
+            ctx.fillStyle = 'white';
+            ctx.fillText(button, pos.x+2, pos.y+1);
         }
+        ctx.globalAlpha = 1;
+    };
 
-        ////////////
-        // FIELDS //
-        ////////////
+    // TODO: fix the FPS counter...
+    const drawFps = () => {
+        drawPanel({ x: 0, y: 0 }, 100, 50);
+        drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
+    };
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const node = new Node();
-
-        ///////////////
-        // FUNCTIONS //
-        ///////////////
-
-        function initialSetup() {
-            const asteroidField = new AsteroidField();
-            const player = new Player();
-            const spaceship = new Spaceship();
-            const ui = new UI();
-            node.children.push(asteroidField);
-            node.children.push(player);
-            node.children.push(spaceship);
-            node.children.push(ui);
-
-            canvas.addEventListener('keyup', (event) => {
-                if (event.key === 'q') {
-                    ui.qDown = false;
-                } else if (event.key === 'a') {
-                    ui.aDown = false;
-                } else if (event.key === 's') {
-                    ui.sDown = false;
-                } else if (event.key === '1') {
-                    ui.k1down = false;
-                } else if (event.key === '2') {
-                    ui.k2down = false;
-                } else if (event.key === '3') {
-                    ui.k3down = false;
-                } else if (event.key === 'w') {
-                    ui.wDown = false;
-                } else if (event.key === 'e') {
-                    ui.eDown = false;
-                } else if (event.key === 'd') {
-                    ui.dDown = false;
-                }
-            });
-
-            canvas.addEventListener('keydown', (event) => {
-                const selected = asteroidField.asteroids.find(a => a.selected);
-                if (event.key === 'w') {
-                    ui.wDown = true;
-                } else if (event.key === 'e') {
-                    ui.eDown = true;
-                } else if (event.key === 'd') {
-                    ui.dDown = true;
-                } else if (event.key === 'q') {
-                    if (ui.qDown) return;
-                    ui.qDown = true;
-                } else if (event.key === 'a') {
-                    ui.aDown = true;
-                    if (selected) {
-                        spaceship.mode = 'direct';
-                        spaceship.target = selected.pos;
-                    } else {
-                        console.log('no asteroid selected');
-                    }
-                } else if (event.key === 's') {
-                    ui.sDown = true;
-                    if (selected) {
-                        spaceship.mode = 'orbit';
-                        spaceship.target = selected.pos;
-                    } else {
-                        console.log('no asteroid selected');
-                    }
-                } else if (event.key === '1') {
-                    ui.k1down = true;
-                } else if (event.key === '2') {
-                    ui.k2down = true;
-                } else if (event.key === '3') {
-                    ui.k3down = true;
-                }
-            });
-
-            canvas.addEventListener('click', (event) => {
-                let select = undefined;
-                asteroidField.asteroids.forEach((a) => {
-                    const clickPos = new Vec(event.x, event.y);
-                    const dist = clickPos.sub(a.pos).length();
-                    if (dist < a.size) {
-                        // console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
-                        select = a;
-                    }
-                    if (ui.qDown) { 
-                        spaceship.target = clickPos;
-                    }
-                });
-                if (select) {
-                    asteroidField.asteroids.forEach((a) => { a.selected = false; });
-                    select.selected = true;
-                }
-            });
+    const drawHealthCircle = (radius, percentage, color) => {
+        const thickness = 8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+        ctx.lineWidth = thickness;
+        ctx.arc(canvas.width / 2, canvas.height - 60, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        if (percentage > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = thickness;
+            const startAngle = -0.5 * Math.PI;
+            const endAngle = (-0.5 + 2 * percentage / 100) * Math.PI;
+            ctx.arc(canvas.width / 2, canvas.height - 60, radius, startAngle, endAngle);
+            ctx.stroke();
         }
+        ctx.restore();
+    }
 
-        function gameLoop(delta) {
-            node.update(delta);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            node.draw();
-            requestAnimationFrame(gameLoop);
+    const drawButtons = () => {
+        // lower middle panel
+        // settings cogwheel sprite - simple settings screen and EXIT NOW button.
+        // pilot sprite - showing who you are and credits. number of times dead. some other stats?
+        // SHIP sprite - meaning simple inventory and fitted ship modules.
+        // FIX FPS!
+
+        const spaceship = node.children.find(c => c instanceof Spaceship);
+        const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
+        const hullPercentage = spaceship.hull / spaceship.maxHull * 100;
+        drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
+        drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
+        drawTexts(['shield', ' '+shieldPercentage],
+                    { x: canvas.width / 2 - 90, y: canvas.height - 70 }, 15);
+        drawTexts(['hull', ' '+hullPercentage], 
+                    { x: canvas.width / 2 + 60, y: canvas.height - 70 }, 15);
+        const off = 45;
+        let i = 3;
+        const i2pos = (i) => { return { x: canvas.width / 2 - off*i, y: canvas.height - 45}; };
+        drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
+        drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
+        drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
+        drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
+        drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
+        drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
+        i = -4;
+        drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
+        drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
+        drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
+        // DEBUGGING - draw all the sprites
+        // sprites.forEach((sprite, i) => {
+        //     ctx.drawImage(sprite, 40*i, canvas.height / 2);
+        // });
+    };
+
+    function drawPilotDialog() {
+        ctx.save();
+        const x = canvas.width / 2 - 150;
+        const y = canvas.height / 2 - 200;
+        const width = 300;
+        const height = 400;
+        
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        ctx.lineWidth = 2;
+        roundedRect(x, y, width, height, 10);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText('Pilot', x + 20, y + 30);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        ctx.moveTo(x + 10, y + 45);
+        ctx.lineTo(x + width - 10, y + 45);
+        ctx.stroke();
+        ctx.font = '14px Arial';
+        let yOffset = y + 90;
+        ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        ctx.fillText('This pilot is doing well...', x + 30, yOffset);
+        ctx.restore();
+    }
+
+    function drawSettingsDialog() {
+        ctx.save();
+        const x = canvas.width / 2 - 150;
+        const y = canvas.height / 2 - 200;
+        const width = 300;
+        const height = 400;
+        
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        ctx.lineWidth = 2;
+        roundedRect(x, y, width, height, 10);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText('Settings', x + 20, y + 30);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        ctx.moveTo(x + 10, y + 45);
+        ctx.lineTo(x + width - 10, y + 45);
+        ctx.stroke();
+        ctx.font = '14px Arial';
+        let yOffset = y + 90;
+        ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        ctx.fillText('Exit Now', x + 30, yOffset);
+        ctx.restore();
+    }
+
+    function drawShipDialog() {
+        ctx.save();
+        const ship = node.children.find(c => c instanceof Spaceship);
+        const x = canvas.width / 2 - 150;
+        const y = canvas.height / 2 - 200;
+        const width = 300;
+        const height = 400;
+
+        // Draw dialog background
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        ctx.lineWidth = 2;
+        roundedRect(x, y, width, height, 10);
+        
+        // Equipped Modules Section
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText('Equipped Modules', x + 20, y + 30);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        ctx.moveTo(x + 10, y + 45);
+        ctx.lineTo(x + width - 10, y + 45);
+        ctx.stroke();
+        ctx.font = '14px Arial';
+        let yOffset = y + 90;
+        ship.modules.forEach((module, index) => {
+            ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+            ctx.fillText(`${module.name}`, x + 30, yOffset);
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+            const amount = module.amount % 1 > 1 ? module.amount.toFixed(2) : module.amount;
+            ctx.fillText(`${amount} ${module.unit}`, x + 150, yOffset);
+            yOffset += 20;
+        });
+        
+        // Inventory Section
+        yOffset += 20;
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText('Inventory', x + 20, yOffset += 20);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        ctx.moveTo(x + 10, yOffset += 20);
+        ctx.lineTo(x + width - 10, yOffset);
+        ctx.stroke();
+        ctx.font = '14px Arial';
+        drawSectionItems(ship.inventory, yOffset+20, x);
+        ctx.restore();
+    }
+
+    function drawSectionHeader(text, yOffset, x) {
+
+    }
+
+    function drawSectionItems(modules, yOffset, x) {
+        console.log('drawSectionItems: ' + modules.length);
+        modules.forEach((module, index) => {
+            ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+            ctx.fillText(`${module.name}`, x + 30, yOffset);
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+            const amount = module.amount > 1 ? module.amount.toFixed(2) : module.amount;
+            ctx.fillText(`${amount} ${module.unit}`, x + 150, yOffset);
+            yOffset += 20;
+        });
+        return yOffset;
+    }
+
+    function roundedRect(x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+}
+
+function GameEventListener() {
+    this.register = () => {
+        canvas.addEventListener('keyup', keyUpListener);
+        canvas.addEventListener('keydown', keyDownListener);
+        canvas.addEventListener('click', clickListener);
+    };
+
+    const keyUpListener = (event) => {
+        const ui = node.children.find(c => c instanceof UI);
+        if (event.key === 'q') {
+            ui.qDown = false;
+        } else if (event.key === 'a') {
+            ui.aDown = false;
+        } else if (event.key === 's') {
+            ui.sDown = false;
+        } else if (event.key === '1') {
+            ui.k1down = false;
+        } else if (event.key === '2') {
+            ui.k2down = false;
+        } else if (event.key === '3') {
+            ui.k3down = false;
+        } else if (event.key === 'w') {
+            ui.wDown = false;
+        } else if (event.key === 'e') {
+            ui.eDown = false;
+        } else if (event.key === 'd') {
+            ui.dDown = false;
         }
+    };
 
-        // Start the game
-        initialSetup();
-        requestAnimationFrame(gameLoop);
-    </script>
+    const keyDownListener = (event) => {
+        const asteroidField = node.children.find(c => c instanceof AsteroidField);
+        const spaceship = node.children.find(c => c instanceof Spaceship);
+        const selected = asteroidField.asteroids.find(a => a.selected);
+        const ui = node.children.find(c => c instanceof UI);
+        if (event.key === 'w') {
+            ui.wDown = true;
+        } else if (event.key === 'e') {
+            ui.eDown = true;
+        } else if (event.key === 'd') {
+            ui.dDown = true;
+        } else if (event.key === 'q') {
+            if (ui.qDown) return;
+            ui.qDown = true;
+        } else if (event.key === 'a') {
+            ui.aDown = true;
+            if (selected) {
+                spaceship.mode = 'direct';
+                spaceship.target = selected.pos;
+            } else {
+                console.log('no asteroid selected');
+            }
+        } else if (event.key === 's') {
+            ui.sDown = true;
+            if (selected) {
+                spaceship.mode = 'orbit';
+                spaceship.target = selected.pos;
+            } else {
+                console.log('no asteroid selected');
+            }
+        } else if (event.key === '1') {
+            ui.k1down = true;
+        } else if (event.key === '2') {
+            ui.k2down = true;
+        } else if (event.key === '3') {
+            ui.k3down = true;
+        }
+    };
+
+    const clickListener = (event) => {
+        const asteroidField = node.children.find(c => c instanceof AsteroidField);
+        const spaceship = node.children.find(c => c instanceof Spaceship);
+        const ui = node.children.find(c => c instanceof UI);
+        let select = undefined;
+        asteroidField.asteroids.forEach((a) => {
+            const clickPos = new Vec(event.x, event.y);
+            const dist = clickPos.sub(a.pos).length();
+            if (dist < a.size) {
+                // console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
+                select = a;
+            }
+            if (ui.qDown) { 
+                spaceship.target = clickPos;
+            }
+        });
+        if (select) {
+            asteroidField.asteroids.forEach((a) => { a.selected = false; });
+            select.selected = true;
+        }
+    };
+}
+
+function Vec(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+
+    this.add = (v) => {
+        return new Vec(
+            this.x + v.x,
+            this.y + v.y,
+        );
+    };
+
+    this.sub = (v) => {
+        return new Vec(
+            this.x - v.x,
+            this.y - v.y,
+        );
+    };
+
+    this.scale = (n) => {
+        return new Vec(
+            this.x * n,
+            this.y * n,
+        );
+    };
+
+    this.length = () => {
+        return Math.sqrt(
+            this.x * this.x +
+            this.y * this.y
+        );
+    };
+
+    this.normalize = () => {
+        const len = this.length();
+        if (len === 0) return new Vec();
+        return this.scale(1 / len);
+    };
+
+    this.dot = (v) => {
+        return this.x * v.x + this.y * v.y;
+    };
+
+    this.cross = (v) => {
+        return this.x * v.y - this.y * v.x;
+    };
+
+    this.toString = () => {
+        return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+    };
+
+    this.clone = () => {
+        return new Vec(this.x, this.y);
+    };
+
+    this.set = (x, y) => {
+        this.x = x;
+        this.y = y;
+    };
+}
+
+////////////
+// FIELDS //
+////////////
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const node = new Node();
+
+////////////////////
+// START THE GAME //
+////////////////////
+
+node.children.push(new StarField());
+node.children.push(new AsteroidField());
+node.children.push(new Player());
+node.children.push(new Spaceship());
+node.children.push(new UI());
+new GameEventListener().register();
+let lastDelta = 0;
+const gameLoop = (delta) => {
+    node.update(delta - lastDelta);
+    lastDelta = delta;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    node.draw();
+    requestAnimationFrame(gameLoop);
+};
+
+requestAnimationFrame(gameLoop);
+
+</script>
 
 </body>
 
