@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +17,6 @@
         }
     </style>
 </head>
-
 <body>
 <canvas tabindex="1" id="gameCanvas"></canvas>
 <script type="module">
@@ -49,39 +47,47 @@ const Constants = {
     }
 };
 
-
-function Node() {
+function Player() {
     // FIELDS 
-
-    this.children = [];
+    this.name = 'Bob';
+    this.credits = 0;
 
     // PUBLIC METHODS
-
     this.update = (delta) => {
-        this.children.forEach(child => child.update(delta));
+        return this;
     };
 
     this.draw = () => {
-        this.children.forEach(child => child.draw());
+
     };
 }
 
-function Player() {
-    // EXTENDS NODE
-    Node.call(this);
-
+function Camera() {
     // FIELDS 
+    this.x = 0;
+    this.y = 0;
 
-    this.name = 'Bob';
-    this.credits = 0;
+    this.update = () => {
+        this.x = canvas.width/2 - spaceship.pos.x;
+        this.y = canvas.height/2 - spaceship.pos.y;
+    };
+
+    this.apply = () => {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+    };
+
+    this.restore = () => {
+        ctx.restore();
+    };
+
+    this.screenToWorld = (screenX, screenY) => {
+        return new Vec(screenX - this.x, screenY - this.y);
+    };
 }
 
 function AsteroidField() {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS 
-
     this.maxAsteroids = 5;
     this.asteroids = [];
 
@@ -95,28 +101,24 @@ function AsteroidField() {
         if (this.asteroids.length < this.maxAsteroids) {
             this.asteroids.push(new Asteroid());
         }
+        this.asteroids.forEach(a => a.update(delta));
+        return this;
     };
 
     this.draw = () => {
-        ctx.save();
         this.asteroids.forEach(a => a.draw());
-        ctx.restore();
     };
 }
 
 
 function Asteroid() {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS
-
     this.size = Math.random() * 20 + 30;
     this.points = [];
     this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
                         Math.random() * (canvas.height-40) + 20);
-    this.rotationSpeed = Math.random() * 0.008;
-    this.rotation = 0;
+    this.rotationSpeed = Math.random() * 0.0008;
+    this.rotation = Math.random() * Math.PI * 2;
     this.selected = false;
 
     // PUBLIC METHODS
@@ -139,74 +141,33 @@ function Asteroid() {
                 { type: type2, amount: amount * (1-distribution) }];
     }
 
-    this.update = () => {
-        this.rotation = (this.rotation + this.rotationSpeed) % (Math.PI * 2);
+    this.update = (delta) => {
+        const rotation = this.rotation + this.rotationSpeed * delta;
+        const clampedRotation = rotation % (Math.PI * 2);
+        this.rotation = clampedRotation;
     };
 
-
     this.draw = () => {
-        const ui = node.children.find(c => c instanceof UI);
-        const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-        const center = { x: this.pos.x - this.size, y: this.pos.y - this.size };
-        ui.drawIcon(Constants.SPRITE.ASTEROID, center, false, asteroids.indexOf(this), false, 2);
-
-
-        // ctx.save();
-        // ctx.setLineDash([]);
-        // ctx.lineWidth = 1;
-        // ctx.fillStyle = 'rgba(55, 55, 55, 1)';
-        // ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
-        // ctx.beginPath();
-        // ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
-        // ctx.fill();
-        // ctx.stroke();
-        // ctx.restore();
-
-        // // DEBUGGING! draw the index of the asteroid in the asteroid field
-        // ctx.save();
-        // ctx.fillStyle = 'white';
-        // ctx.font = '22px Arial';
-        // const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-        // ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
-        // ctx.restore();
-
+        ui.drawIcon(Constants.SPRITE.ASTEROID, this.pos, false,
+            asteroidField.asteroids.indexOf(this), false, 2, this.rotation);
         if (this.selected) {
-            // draw selection border
-            ctx.save();
-            ctx.beginPath();
-            ctx.setLineDash([10]);
+
+            // TODO: wrong line styling...
+            ctx.setLineDash([10, 5]);
+            ctx.fillStyle = 'green';
             ctx.strokeStyle = 'green';
-            ctx.lineWidth = 3;
-            const off = this.size + 5;
-            ctx.moveTo(this.pos.x - off, this.pos.y - off);
-            ctx.lineTo(this.pos.x + off, this.pos.y - off);
-            ctx.lineTo(this.pos.x + off, this.pos.y + off);
-            ctx.lineTo(this.pos.x - off, this.pos.y + off);
-            ctx.closePath();
-            ctx.stroke();
-            ctx.restore();
-
-            // Reset canvas state after selection
-            ctx.setLineDash([]);
             ctx.lineWidth = 1;
-
-            // draw asteroid info
-            ctx.save();
+            ctx.rect(this.pos.x - this.size, this.pos.y - this.size, this.size * 2, this.size * 2);
             ctx.fillStyle = 'white';
             ctx.font = '12px Arial';
             ctx.fillText('Asteroid size ' + this.size.toFixed(1), 
                             this.pos.x - this.size, this.pos.y - this.size - 10);
-            ctx.restore();
         }
     };
 }
 
 function Spaceship() {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS 
-
     this.type = 'frigate';
     this.shield = 50;
     this.maxShield = 80;
@@ -214,7 +175,7 @@ function Spaceship() {
     this.maxHull = 50;
     this.size = 15;
     this.acceleration = 0.005;
-    this.vel = new Vec(0, 0);
+    this.vel = 0; //new Vec(0, 0); // FAKING IT
     this.pos = new Vec(canvas.width / 2, canvas.height / 2);
     this.target = this.pos.clone();
     this.miningRange = 50;
@@ -224,8 +185,12 @@ function Spaceship() {
                     new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
     this.inventory = [];
 
-
     // PUBLIC METHODS
+    this.update = (delta) => {
+        move(delta);
+        if (ui.k2down) mine();
+        return this;
+    };
 
     this.draw = () => {
         ctx.save();
@@ -234,7 +199,6 @@ function Spaceship() {
         ctx.rotate(this.angle + Math.PI/2.0);
         ctx.translate(-this.size*1.5, -this.size*1.5);
         // draw ship
-        const ui = node.children.find(c => c instanceof UI);
         ui.drawIcon(Constants.SPRITE.SPACESHIP, { x: 0, y: 0 }, false, undefined, false, 1);
         // draw vector
         ctx.translate(this.size * 1.5, 0);
@@ -242,53 +206,48 @@ function Spaceship() {
         ctx.setLineDash([]);
         ctx.strokeStyle = 'lightblue';
         ctx.moveTo(0, 0);
-        const speed = this.vel.length();
+        const speed = this.vel; //.length();
         ctx.lineTo(0, -speed * 10);
         ctx.stroke();
         ctx.restore();
-    };
-
-    this.update = (delta) => {
-        move(delta);
-        const ui = node.children.find(c => c instanceof UI);
-        if (ui.k2down) {
-            mine();
-        }
+        ctx.lineWidth = 1;
     };
 
     // PRIVATE METHODS
-
-    const img = new Image();
-    img.src = 'SpaceShipSmall.png';
-
-    // TODO: include the delta here...
     const move = (delta) => {
-        if (this.mode === 'direct') {
+        if (this.mode === Constants.MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
             if (dir.length() > this.size) {
                 const normalizedDir = dir.normalize();
-                const scaledDir = normalizedDir.scale(this.acceleration * delta);
-                this.vel = this.vel.add(scaledDir);
-                this.pos = this.pos.add(this.vel);
-                this.angle = Math.atan2(this.vel.y, this.vel.x);
+                // REAL PHYSICS
+                // const scaledDir = normalizedDir.scale(this.acceleration * delta);
+                // const slow = scaledDir.clone().scale(-0.5);
+                // this.vel = this.vel.add(scaledDir);
+                // this.pos = this.pos.add(slow).add(this.vel);
+                // this.angle = Math.atan2(this.vel.y, this.vel.x);
+
+                // FAKE PHYSICS
+                this.vel += this.acceleration * delta;
+                this.pos = this.pos.add(normalizedDir.scale(this.vel));
+                this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
             } else {
-                this.vel.set(0, 0);
+                this.vel = 0; //.set(0, 0);
             };
-        } else if (this.mode === 'orbit') {
+
+        } else if (this.mode === Constants.MOVE.ORBIT) {
             // implment orbit mode here     
         }
     };
 
     const mine = () => {
-        const player = node.children.find(c => c instanceof Player);
-        const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-        asteroids.forEach((a, i) => {
+        asteroidField.asteroids.forEach((a, i) => {
             const dist = this.pos.sub(a.pos).length();
             const range = this.miningRange + a.size;
             if (dist > range) return;
-            asteroids.splice(i, 1);
+            asteroidField.asteroids.splice(i, 1);
             const ores = a.mine(); // [{ type, amount }, ...]
             ores.forEach(ore => {
+
                 const oreModule = this.inventory.find(m => m.name === ore.type);
                 if (oreModule) {
                     oreModule.amount += ore.amount;
@@ -301,11 +260,7 @@ function Spaceship() {
 }
 
 function Module(name, sprite = undefined, amount = 1, unit = 'units') {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS
-    
     this.name = name;
     this.sprite = sprite;
     this.amount = amount;
@@ -313,66 +268,55 @@ function Module(name, sprite = undefined, amount = 1, unit = 'units') {
 }
 
 function StarField() {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS
-
     this.stars = [];
 
     // PUBLIC METHODS
-
     this.update = (delta) => {
         this.stars.forEach(star => {
             // Move stars based on their layer speed
             star.x -= star.speed;
             star.y -= star.speed;
             // Wrap stars around the screen
-            if (star.x < 0) star.x = this.width;
-            if (star.x > this.width) star.x = 0;
-            if (star.y < 0) star.y = this.height;
-            if (star.y > this.height) star.y = 0;
+            if (star.x < 0) star.x = canvas.width;
+            if (star.x > canvas.width) star.x = 0;
+            if (star.y < 0) star.y = canvas.height;
+            if (star.y > canvas.height) star.y = 0;
         });
+        return this;
     };
     
     this.draw = () => {
-        ctx.save();
         this.stars.forEach(star => {
             ctx.beginPath();
             ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
-            // Draw star as a small circle
             ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             ctx.fill();
         });
-        ctx.restore();
     };
 
     // PRIVATE METHODS
-
     const createStarLayer = (count, speed, brightness) => {
         for (let i = 0; i < count; i++) {
             this.stars.push({
-                x: Math.random() * this.width,
-                y: Math.random() * this.height,
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
                 size: Math.random() * 2 + 1,  // Size between 1-3
                 speed,
                 brightness
             });
+
         }
     };
 
     // Create three layers of stars
-    createStarLayer(100, 0.1, 0.3);  // Far layer (slow, dim)
-    createStarLayer(50, 0.3, 0.6);   // Middle layer
-    createStarLayer(25, 0.5, 1.0);   // Close layer (fast, bright)
+    createStarLayer(100, 0.1, 0.2);  // Far layer (slow, dim)
+    createStarLayer(50, 0.15, 0.4);   // Middle layer
+    createStarLayer(25, 0.2, 0.6);   // Close layer (fast, bright)
 }
 
 function UI() {
-    // EXTENDS NODE
-    Node.call(this);
-
     // FIELDS 
-
     this.fpsCount = 0;
     this.fpsTime = 0;
     this.fpsDisplay = 0;
@@ -385,7 +329,6 @@ function UI() {
     this.k3down = false;
 
     // PUBLIC METHODS
-
     this.update = (delta) => {
         this.fpsCount++;
         this.fpsTime += delta;
@@ -394,6 +337,7 @@ function UI() {
             this.fpsCount = 0;
             this.fpsTime = 0;
         }
+        return this;
     };
 
     this.draw = () => {
@@ -410,10 +354,20 @@ function UI() {
         drawButtons();
     };
 
-    this.drawIcon = (spriteIndex, pos, selected = false, text = undefined, outline = true, scale = 1) => {
+    this.drawIcon = (spriteIndex, pos, selected = false, text = undefined, 
+                     outline = true, scale = 1, rotation = 0) => {
+        const size = 40*scale;
         if (!sprites[spriteIndex]) return;
         if (selected) ctx.globalAlpha = 0.5;
-        ctx.drawImage(sprites[spriteIndex], pos.x, pos.y, 40*scale, 40*scale);
+        if (rotation !== 0) {
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+            ctx.rotate(rotation);
+            ctx.drawImage(sprites[spriteIndex], -size/2, -size/2, size, size);
+            ctx.restore();
+        } else {
+            ctx.drawImage(sprites[spriteIndex], pos.x, pos.y, size, size);
+        }
         if (outline) {
             ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
             ctx.strokeRect(pos.x, pos.y, 40, 40);
@@ -476,6 +430,10 @@ function UI() {
         }
     };
 
+    const drawWarpDialog = () => {
+        console.log('drawWarpDialog');
+    };
+
     const drawPanel = (pos, w, h) => {
         ctx.setLineDash([]);
         ctx.strokeStyle = 'black';
@@ -507,7 +465,6 @@ function UI() {
 
     const drawHealthCircle = (radius, percentage, color) => {
         const thickness = 8;
-        ctx.save();
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
         ctx.lineWidth = thickness;
@@ -522,11 +479,10 @@ function UI() {
             ctx.arc(canvas.width / 2, canvas.height - 60, radius, startAngle, endAngle);
             ctx.stroke();
         }
-        ctx.restore();
-    }
+        ctx.lineWidth = 1;
+    };
 
     const drawButtons = () => {
-        const spaceship = node.children.find(c => c instanceof Spaceship);
         const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
         const hullPercentage = spaceship.hull / spaceship.maxHull * 100;
         drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
@@ -548,10 +504,6 @@ function UI() {
         this.drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
         this.drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
         this.drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
-        // DEBUGGING - draw all the sprites
-        // sprites.forEach((sprite, i) => {
-        //     ctx.drawImage(sprite, 40*i, canvas.height / 2);
-        // });
     };
 
     const dialogWidth = 300;
@@ -560,39 +512,32 @@ function UI() {
     const dialogY = canvas.height / 2 - dialogHeight / 2;
 
     function drawPilotDialog() {
-        const pilot = node.children.find(c => c instanceof Player);
-        ctx.save();
         roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
         let yOffset = dialogY;
         yOffset = drawSectionHeader('Pilot', dialogWidth, yOffset, dialogX);
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        ctx.fillText(`name: ${pilot.name}`, dialogX + 30, yOffset += 20);
-        ctx.fillText(`credits: ${pilot.credits}`, dialogX + 30, yOffset += 20);
-        ctx.restore();
-    }
+        ctx.fillText(`name: ${player.name}`, dialogX + 30, yOffset += 20);
+        ctx.fillText(`credits: ${player.credits}`, dialogX + 30, yOffset += 20);
+    };
 
     function drawSettingsDialog() {
-        ctx.save();
         roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
         let yOffset = dialogY;
         yOffset = drawSectionHeader('Settings', dialogWidth, yOffset, dialogX);
         yOffset += 20;
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
         ctx.fillText('Exit Now', dialogX + 30, yOffset);
-        ctx.restore();
-    }
+    };
 
     function drawShipDialog() {
-        ctx.save();
-        const ship = node.children.find(c => c instanceof Spaceship);
         roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
         let yOffset = dialogY;
         yOffset = drawSectionHeader('Equipped Modules', dialogWidth, yOffset, dialogX);
-        yOffset = drawSectionItems(ship.modules, yOffset, dialogX);
+        yOffset = drawSectionItems(spaceship.modules, yOffset, dialogX);
         yOffset = drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
-        drawSectionItems(ship.inventory, yOffset, dialogX);
-        ctx.restore();
-    }
+        drawSectionItems(spaceship.inventory, yOffset, dialogX);
+    };
+
 
     function drawSectionHeader(text, width, yOffset, x) {
         yOffset += 20;
@@ -606,7 +551,7 @@ function UI() {
         ctx.stroke();
         ctx.font = '14px Arial';
         return yOffset + 20;
-    }
+    };
 
     function drawSectionItems(modules, yOffset, x) {
         modules.forEach((module, index) => {
@@ -618,7 +563,7 @@ function UI() {
             yOffset += 20;
         });
         return yOffset;
-    }
+    };
 
     function roundedRect(x, y, width, height, radius) {
         ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
@@ -637,18 +582,20 @@ function UI() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-    }
+    };
 }
 
 function GameEventListener() {
+    // PUBLIC METHODS
     this.register = () => {
         canvas.addEventListener('keyup', keyUpListener);
         canvas.addEventListener('keydown', keyDownListener);
         canvas.addEventListener('click', clickListener);
+
     };
 
+    // PRIVATE METHODS
     const keyUpListener = (event) => {
-        const ui = node.children.find(c => c instanceof UI);
         if (event.key === 'q') {
             ui.qDown = false;
         } else if (event.key === 'a') {
@@ -671,10 +618,7 @@ function GameEventListener() {
     };
 
     const keyDownListener = (event) => {
-        const asteroidField = node.children.find(c => c instanceof AsteroidField);
-        const spaceship = node.children.find(c => c instanceof Spaceship);
         const selected = asteroidField.asteroids.find(a => a.selected);
-        const ui = node.children.find(c => c instanceof UI);
         if (event.key === 'w') {
             ui.wDown = true;
         } else if (event.key === 'e') {
@@ -687,7 +631,7 @@ function GameEventListener() {
         } else if (event.key === 'a') {
             ui.aDown = true;
             if (selected) {
-                spaceship.mode = 'direct';
+                spaceship.mode = Constants.MOVE.APPROACH;
                 spaceship.target = selected.pos;
             } else {
                 console.log('no asteroid selected');
@@ -695,7 +639,7 @@ function GameEventListener() {
         } else if (event.key === 's') {
             ui.sDown = true;
             if (selected) {
-                spaceship.mode = 'orbit';
+                spaceship.mode = Constants.MOVE.ORBIT;
                 spaceship.target = selected.pos;
             } else {
                 console.log('no asteroid selected');
@@ -710,21 +654,21 @@ function GameEventListener() {
     };
 
     const clickListener = (event) => {
-        const asteroidField = node.children.find(c => c instanceof AsteroidField);
-        const spaceship = node.children.find(c => c instanceof Spaceship);
-        const ui = node.children.find(c => c instanceof UI);
         let select = undefined;
+        const clickPos = camera.screenToWorld(event.x, event.y);
+        // fly-to
+        if (ui.qDown) { 
+            spaceship.target = clickPos;
+            return;
+        }
+        // select asteroid
         asteroidField.asteroids.forEach((a) => {
-            const clickPos = new Vec(event.x, event.y);
             const dist = clickPos.sub(a.pos).length();
             if (dist < a.size) {
-                // console.log('selected asteroid at ' + a.pos.x + ', ' + a.pos.y);
                 select = a;
             }
-            if (ui.qDown) { 
-                spaceship.target = clickPos;
-            }
         });
+        // de-select asteroids
         if (select) {
             asteroidField.asteroids.forEach((a) => { a.selected = false; });
             select.selected = true;
@@ -733,9 +677,11 @@ function GameEventListener() {
 }
 
 function Vec(x = 0, y = 0) {
+    // FIELDS
     this.x = x;
     this.y = y;
 
+    // PUBLIC METHODS
     this.add = (v) => {
         return new Vec(
             this.x + v.x,
@@ -792,41 +738,49 @@ function Vec(x = 0, y = 0) {
     };
 }
 
-////////////
-// FIELDS //
-////////////
+////////////////
+// GAME LOGIC //
+////////////////
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-const node = new Node();
 
-////////////////////
-// START THE GAME //
-////////////////////
-
-node.children.push(new StarField());
-node.children.push(new AsteroidField());
-node.children.push(new Player());
-node.children.push(new Spaceship());
-node.children.push(new UI());
+const starField = new StarField();
+const asteroidField = new AsteroidField();
+const player = new Player();
+const spaceship = new Spaceship();
+const ui = new UI();
+const camera = new Camera();
 new GameEventListener().register();
 let lastDelta = 0;
+
 const gameLoop = (delta) => {
-    node.update(delta - lastDelta);
-    lastDelta = delta;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    node.draw();
+    const newDelta = delta - lastDelta;
+    lastDelta = delta;
+    // BEFORE camera transformation
+    starField.update(newDelta).draw();
+
+    camera.update();
+    camera.apply();
+    // camera transformation
+    asteroidField.update(newDelta).draw();
+    spaceship.update(newDelta).draw();
+    camera.restore();
+
+    // AFTER camera transformation
+    player.update(newDelta).draw();
+    ui.update(newDelta).draw();
     requestAnimationFrame(gameLoop);
+
 };
 
 requestAnimationFrame(gameLoop);
 
 </script>
-
 </body>
-
 </html>
 
 <!-- notes
