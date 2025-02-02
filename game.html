@@ -41,10 +41,10 @@ const Constants = {
         ORBIT: 5,
         APPROACH: 6,
         SETTINGS: 7,
-        WARP: 8
+        WARP: 8,
+        ASTEROID: 9
     }
 };
-
 
 function Node() {
     // FIELDS 
@@ -70,7 +70,6 @@ function Player() {
 
     this.name = 'Bob';
     this.credits = 0;
-    this.ore = 0;
 }
 
 function AsteroidField() {
@@ -119,7 +118,8 @@ function Asteroid() {
     // PUBLIC METHODS
 
     // introduce weights so some are rarer than others
-    const TYPES = [ 'Iron', 'Ice', 'Silicon', 'Gold'];
+    const TYPES = [ 'Iron', 'Ice', 'Silicon', 'Gold', 'Platinum', 'Titanium', 
+                    'Uranium', 'Cobalt', 'Mithril', 'Adamantium'];
 
     this.mine = () => {
         if (Math.random() < 0.5) { // 1 ore
@@ -141,24 +141,30 @@ function Asteroid() {
 
 
     this.draw = () => {
-        ctx.save();
-        ctx.setLineDash([]);
-        ctx.lineWidth = 1;
-        ctx.fillStyle = 'rgba(55, 55, 55, 1)';
-        ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
-        ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-
-        // DEBUGGING! draw the index of the asteroid in the asteroid field
-        ctx.save();
-        ctx.fillStyle = 'white';
-        ctx.font = '22px Arial';
+        const ui = node.children.find(c => c instanceof UI);
         const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
-        ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
-        ctx.restore();
+        const center = { x: this.pos.x - this.size/2, y: this.pos.y - this.size/2 };
+        ui.drawIcon(Constants.SPRITE.ASTEROID, center, false, asteroids.indexOf(this), false, 2);
+
+
+        // ctx.save();
+        // ctx.setLineDash([]);
+        // ctx.lineWidth = 1;
+        // ctx.fillStyle = 'rgba(55, 55, 55, 1)';
+        // ctx.strokeStyle = 'rgba(85, 85, 85, 1)';
+        // ctx.beginPath();
+        // ctx.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
+        // ctx.fill();
+        // ctx.stroke();
+        // ctx.restore();
+
+        // // DEBUGGING! draw the index of the asteroid in the asteroid field
+        // ctx.save();
+        // ctx.fillStyle = 'white';
+        // ctx.font = '22px Arial';
+        // const asteroids = node.children.find(c => c instanceof AsteroidField).asteroids;
+        // ctx.fillText(asteroids.indexOf(this), this.pos.x, this.pos.y);
+        // ctx.restore();
 
         if (this.selected) {
             // draw selection border
@@ -397,14 +403,36 @@ function UI() {
         }
         drawFps();
         drawButtons();
-    }
+    };
+
+    this.drawIcon = (spriteIndex, pos, selected = false, button = undefined, outline = true, scale = 1) => {
+        if (!sprites[spriteIndex]) return;
+        if (selected) ctx.globalAlpha = 0.5;
+        ctx.drawImage(sprites[spriteIndex], pos.x, pos.y, 40*scale, 40*scale);
+        if (outline) {
+            ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
+            ctx.strokeRect(pos.x, pos.y, 40, 40);
+        }
+        if (button) {
+            ctx.font = '11px Arial';
+            ctx.fillStyle = 'black';
+            ctx.fillText(button, pos.x+1, pos.y+5);
+            ctx.fillText(button, pos.x-1, pos.y+4);
+            ctx.fillStyle = 'white';
+            ctx.fillText(button, pos.x, pos.y+4);
+        }
+        ctx.globalAlpha = 1;
+    };
 
     // PRIVATE METHODS
     const sprites = [];
-    // Load the sprite sheet
+
     const spriteSheet = new Image();
+    // icons from:
+    // https://game-icons.net/
+    // https://icons8.com
     spriteSheet.src = 'icons.png';
-    // Once the image loads, split it into sprites
+
     spriteSheet.onload = () => {
         const spriteWidth = 40;
         const spriteHeight = 40;
@@ -416,12 +444,12 @@ function UI() {
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = spriteWidth;
         tempCanvas.height = spriteHeight;
-        
+
         // Extract each sprite
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < columns; col++) {
                 tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
-                
+
                 // Draw the portion of the sprite sheet we want
                 tempCtx.drawImage(
                     spriteSheet,
@@ -467,23 +495,6 @@ function UI() {
         });
     };
 
-    const drawIcon = (spriteIndex, pos, selected = false, button = undefined) => {
-        if (!sprites[spriteIndex]) return;
-        if (selected) ctx.globalAlpha = 0.5;
-        ctx.drawImage(sprites[spriteIndex], pos.x, pos.y);
-        ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
-        ctx.strokeRect(pos.x, pos.y, 40, 40);
-        if (button) {
-            ctx.font = '11px Arial';
-            ctx.fillStyle = 'black';
-            ctx.fillText(button, pos.x+5, pos.y+4);
-            ctx.fillStyle = 'white';
-            ctx.fillText(button, pos.x+2, pos.y+1);
-        }
-        ctx.globalAlpha = 1;
-    };
-
-    // TODO: fix the FPS counter...
     const drawFps = () => {
         drawPanel({ x: 0, y: 0 }, 100, 50);
         drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
@@ -510,149 +521,89 @@ function UI() {
     }
 
     const drawButtons = () => {
-        // lower middle panel
-        // settings cogwheel sprite - simple settings screen and EXIT NOW button.
-        // pilot sprite - showing who you are and credits. number of times dead. some other stats?
-        // SHIP sprite - meaning simple inventory and fitted ship modules.
-        // FIX FPS!
-
         const spaceship = node.children.find(c => c instanceof Spaceship);
         const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
         const hullPercentage = spaceship.hull / spaceship.maxHull * 100;
         drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
         drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
-        drawTexts(['shield', ' '+shieldPercentage],
-                    { x: canvas.width / 2 - 90, y: canvas.height - 70 }, 15);
-        drawTexts(['hull', ' '+hullPercentage], 
-                    { x: canvas.width / 2 + 60, y: canvas.height - 70 }, 15);
+        drawTexts(['shield', `${shieldPercentage}%`],
+                    { x: canvas.width / 2 - 90, y: canvas.height - 80 }, 15);
+        drawTexts(['hull', `${hullPercentage}%`], 
+                    { x: canvas.width / 2 + 60, y: canvas.height - 80 }, 15);
         const off = 45;
         let i = 3;
         const i2pos = (i) => { return { x: canvas.width / 2 - off*i, y: canvas.height - 45}; };
-        drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
-        drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
-        drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
-        drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
-        drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
-        drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
+        this.drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
+        this.drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
+        this.drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
+        this.drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
+        this.drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
+        this.drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
         i = -4;
-        drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
-        drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
-        drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
+        this.drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
+        this.drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
+        this.drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
         // DEBUGGING - draw all the sprites
         // sprites.forEach((sprite, i) => {
         //     ctx.drawImage(sprite, 40*i, canvas.height / 2);
         // });
     };
 
+    const dialogWidth = 300;
+    const dialogHeight = 400;
+    const dialogX = canvas.width / 2 - dialogWidth / 2;
+    const dialogY = canvas.height / 2 - dialogHeight / 2;
+
     function drawPilotDialog() {
+        const pilot = node.children.find(c => c instanceof Player);
         ctx.save();
-        const x = canvas.width / 2 - 150;
-        const y = canvas.height / 2 - 200;
-        const width = 300;
-        const height = 400;
-        
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        ctx.lineWidth = 2;
-        roundedRect(x, y, width, height, 10);
-        
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 20px Arial';
-        ctx.fillText('Pilot', x + 20, y + 30);
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-        ctx.moveTo(x + 10, y + 45);
-        ctx.lineTo(x + width - 10, y + 45);
-        ctx.stroke();
-        ctx.font = '14px Arial';
-        let yOffset = y + 90;
+        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
+        let yOffset = dialogY;
+        yOffset = drawSectionHeader('Pilot', dialogWidth, yOffset, dialogX);
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        ctx.fillText('This pilot is doing well...', x + 30, yOffset);
+        ctx.fillText(`name: ${pilot.name}`, dialogX + 30, yOffset += 20);
+        ctx.fillText(`credits: ${pilot.credits}`, dialogX + 30, yOffset += 20);
         ctx.restore();
     }
 
     function drawSettingsDialog() {
         ctx.save();
-        const x = canvas.width / 2 - 150;
-        const y = canvas.height / 2 - 200;
-        const width = 300;
-        const height = 400;
-        
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        ctx.lineWidth = 2;
-        roundedRect(x, y, width, height, 10);
-        
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 20px Arial';
-        ctx.fillText('Settings', x + 20, y + 30);
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-        ctx.moveTo(x + 10, y + 45);
-        ctx.lineTo(x + width - 10, y + 45);
-        ctx.stroke();
-        ctx.font = '14px Arial';
-        let yOffset = y + 90;
+        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
+        let yOffset = dialogY;
+        yOffset = drawSectionHeader('Settings', dialogWidth, yOffset, dialogX);
+        yOffset += 20;
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        ctx.fillText('Exit Now', x + 30, yOffset);
+        ctx.fillText('Exit Now', dialogX + 30, yOffset);
         ctx.restore();
     }
 
     function drawShipDialog() {
         ctx.save();
         const ship = node.children.find(c => c instanceof Spaceship);
-        const x = canvas.width / 2 - 150;
-        const y = canvas.height / 2 - 200;
-        const width = 300;
-        const height = 400;
+        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
+        let yOffset = dialogY;
+        yOffset = drawSectionHeader('Equipped Modules', dialogWidth, yOffset, dialogX);
+        yOffset = drawSectionItems(ship.modules, yOffset, dialogX);
+        yOffset = drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
+        drawSectionItems(ship.inventory, yOffset, dialogX);
+        ctx.restore();
+    }
 
-        // Draw dialog background
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        ctx.lineWidth = 2;
-        roundedRect(x, y, width, height, 10);
-        
-        // Equipped Modules Section
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 20px Arial';
-        ctx.fillText('Equipped Modules', x + 20, y + 30);
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
-        ctx.moveTo(x + 10, y + 45);
-        ctx.lineTo(x + width - 10, y + 45);
-        ctx.stroke();
-        ctx.font = '14px Arial';
-        let yOffset = y + 90;
-        ship.modules.forEach((module, index) => {
-            ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-            ctx.fillText(`${module.name}`, x + 30, yOffset);
-            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-            const amount = module.amount % 1 > 1 ? module.amount.toFixed(2) : module.amount;
-            ctx.fillText(`${amount} ${module.unit}`, x + 150, yOffset);
-            yOffset += 20;
-        });
-        
-        // Inventory Section
+    function drawSectionHeader(text, width, yOffset, x) {
         yOffset += 20;
         ctx.fillStyle = 'white';
         ctx.font = 'bold 20px Arial';
-        ctx.fillText('Inventory', x + 20, yOffset += 20);
+        ctx.fillText(text, x + 20, yOffset += 20);
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
         ctx.moveTo(x + 10, yOffset += 20);
         ctx.lineTo(x + width - 10, yOffset);
         ctx.stroke();
         ctx.font = '14px Arial';
-        drawSectionItems(ship.inventory, yOffset+20, x);
-        ctx.restore();
-    }
-
-    function drawSectionHeader(text, yOffset, x) {
-
+        return yOffset + 20;
     }
 
     function drawSectionItems(modules, yOffset, x) {
-        console.log('drawSectionItems: ' + modules.length);
         modules.forEach((module, index) => {
             ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
             ctx.fillText(`${module.name}`, x + 30, yOffset);
@@ -665,6 +616,9 @@ function UI() {
     }
 
     function roundedRect(x, y, width, height, radius) {
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
         ctx.lineTo(x + width - radius, y);
