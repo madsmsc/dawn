@@ -57,7 +57,6 @@ const Constants = {
 class Server {
     constructor() { 
         const ws = new WebSocket('ws://localhost:8080');
-
         ws.onopen = () => {
             console.log('Connected to server');
         ws.send('Hello, Server!');
@@ -162,10 +161,15 @@ class Station {
         }
     };
 
+    // PUBLIC METHODS
     draw = () => {
-        if(player.docked) {
+        // TODO: move this to Game class and remove all the early returns
+        // from the draw methods. the individual draw methods should not
+        // worry about whether to render. That is the jobs of the Game class.
+        if (player.docked) {
             ctx.fillStyle = 'white';
             ctx.font = '14px Arial';
+
             ctx.textAlign = 'center';
             ctx.fillText('YOU ARE DOCKED~! this is the statino UI!', this.pos.x, this.pos.y - 45);
             return;
@@ -1208,6 +1212,16 @@ new Game().start();
 
 <!-- notes
 
+check TODOs!
+
+make small indicators for where stations and asteroids are in your current instance.
+make some way of handling instances.
+fix UI for warping
+no gates. space is small instances that you can warp between.
+usually at planets, moons, or structures in space.
+move menu buttons to the left side. and make all buttons clickable.
+
+first MISSIONS...
 first mission. given a frigate.
 we're under attack. please help.
 take out this frigate by locking them up, flying to them, and firing your guns.
@@ -1232,20 +1246,4 @@ as you kill and loot and sell, you get xp and credits.
 xp has some inherent bonuses to the skills you level
 and credits can be used to buy ships and components.
 credits carry over between deaths.
-
-keep ship in the middle and move the screen instead.
-
-move all the node.children logic into class initializer.
-
-controls:
-D = warp
-some UI for warping?
-no gates. space is small instances that you can warp between.
-usually at planets, moons, or structures in space.
-display these buttons as squares in UI.
-
-ressing the button should show the button being pressed
-by slowly highliting it.
-make the UI nicer. see through layer
-
 -->
