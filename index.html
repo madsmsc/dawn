@@ -1,6 +1,3 @@
-
-<!-- Can I put all this html into the DOM from HTML? -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,45 +54,96 @@ const Constants = {
     }
 };
 
-function Player() {
-    // FIELDS 
-    this.name = 'Bob';
-    this.credits = 0;
-    this.docked = false;
+class Server {
+    constructor() { 
+        const ws = new WebSocket('ws://localhost:8080');
 
-    // PUBLIC METHODS
-    this.update = (delta) => {
-        return this;
-    };
+        ws.onopen = () => {
+            console.log('Connected to server');
+        ws.send('Hello, Server!');
+        };
 
-    this.draw = () => {
+        ws.onmessage = (event) => {
+            console.log(`Message from server: ${event.data}`);
+        };
 
-    };
-}
-
-function Enemy() {
-    // FIELDS
-    this.pos = new Vec(Math.random() * canvas.width, Math.random() * canvas.height);
-    this.vel = new Vec(Math.random() * 0.01 - 0.005, Math.random() * 0.01 - 0.005);
+        ws.onclose = () => {
+            console.log('Connection closed');
+        };
+     }
     
-    // PUBLIC METHODS
-    this.update = (delta) => {
-        return this;
+    loadPlayer = () => {
+        const dto = new PlayerDTO();
+        dto.name = 'Bob';
+        dto.credits = 0;
+        dto.docked = false;
+        return new Player(dto);
     };
 
-    this.draw = () => {
-
+    loadSpaceship = () => {
+        const dto = new SpaceshipDTO();
+        dto.type = 'frigate';
+        dto.shield = 50;
+        dto.maxShield = 80;
+        dto.hull = 30;
+        dto.maxHull = 50;
+        dto.size = 15;
+        dto.acceleration = 0.005;
+        dto.vel = 0; //new Vec(0, 0); // FAKING IT
+        dto.pos = new Vec(canvas.width / 2, canvas.height / 2);
+        dto.target = dto.pos.clone();
+        dto.miningRange = 50;
+        dto.mode = Constants.MOVE.APPROACH;
+        dto.modules = [new Module('laser weapon', Constants.SPRITE.FIRE, 1, 'module'),
+                        new Module('mining laser', Constants.SPRITE.MINE, 1, 'module'),
+                        new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
+        dto.inventory = [];
+        return new Spaceship(dto);
     };
 }
 
-function Station(name, pos, type = 'trading') {
-    // FIELDS
-    this.name = name;
-    this.pos = pos;
-    this.type = type;
-    this.dockingRadius = 100;
-    this.inventory = [];
-    this.prices = {
+class PlayerDTO {
+    constructor() {}
+    name = undefined; // string
+    credits = undefined; // number
+    docked = undefined; // boolean
+}
+
+class Player extends PlayerDTO {
+    constructor(dto) {
+        super();
+        Object.assign(this, dto);
+    }
+
+    update = (delta) => {
+        return this;
+    };
+
+    draw = () => { };
+}
+
+class Enemy {
+    constructor() { }
+
+    pos = new Vec(Math.random() * canvas.width, Math.random() * canvas.height);
+    vel = new Vec(Math.random() * 0.01 - 0.005, Math.random() * 0.01 - 0.005);
+    
+    update = (delta) => {
+        return this;
+    };
+
+    draw = () => { };
+}
+
+class Station {
+    constructor (name, pos, type = 'trading') {
+        this.name = name;
+        this.pos = pos;
+        this.type = type;
+    }
+    dockingRadius = 100;
+    inventory = [];
+    prices = {
         // TODO: use the actual ore types instead from Constants
         buy: {
             [Constants.ORES.Iron]: 50,
@@ -114,8 +162,7 @@ function Station(name, pos, type = 'trading') {
         }
     };
 
-    // PUBLIC METHODS
-    this.draw = () => {
+    draw = () => {
         if(player.docked) {
             ctx.fillStyle = 'white';
             ctx.font = '14px Arial';
@@ -146,9 +193,9 @@ function Station(name, pos, type = 'trading') {
         ctx.restore();
     };
 
-    this.canDock = () => this.pos.sub(spaceship.pos).length() < this.dockingRadius;
+    canDock = () => this.pos.sub(spaceship.pos).length() < this.dockingRadius;
 
-    this.buyFromShip = (itemName, quantity, ship) => {
+    buyFromShip = (itemName, quantity, ship) => {
         const price = this.prices.buy[itemName];
         if (!price) return false;
         const item = ship.inventory.find(i => i.name === itemName);
@@ -169,7 +216,7 @@ function Station(name, pos, type = 'trading') {
         return true;
     };
 
-    this.sellToShip = (itemName, quantity, ship) => {
+    sellToShip = (itemName, quantity, ship) => {
         const price = this.prices.sell[itemName];
         if (!price) return false;
 
@@ -184,18 +231,18 @@ function Station(name, pos, type = 'trading') {
     };
 }
 
-function StationManager() {
-    // FIELDS
-    this.stations = [];
-    this.stations.push(
-        new Station('Alpha Station', new Vec(500, 500), 'trading'),
-        new Station('Beta Mining', new Vec(-500, -500), 'mining'),
-        new Station('Gamma Port', new Vec(-500, 500), 'trading'),
-        new Station('Delta Hub', new Vec(500, -500), 'trading')
-    );
+class StationManager {
+    constructor() {
+        this.stations = [];
+        this.stations.push(
+            new Station('Alpha Station', new Vec(500, 500), 'trading'),
+            new Station('Beta Mining', new Vec(-500, -500), 'mining'),
+            new Station('Gamma Port', new Vec(-500, 500), 'trading'),
+            new Station('Delta Hub', new Vec(500, -500), 'trading')
+        );
+    }
 
-    // PUBLIC METHODS
-    this.update = () => {
+    update = () => {
         // TODO: filter instead of if
         this.stations.forEach(station => {
             if (station.canDock()) {
@@ -206,16 +253,15 @@ function StationManager() {
         return this;
     };
 
-    this.draw = (ctx) => {
+    draw = (ctx) => {
         this.stations.forEach(station => station.draw(ctx));
     };
 
     // Draw docking prompt when ship is in range
-    this.showDockingPrompt = (station) => {   
+    showDockingPrompt = (station) => {   
         ctx.save();
         ctx.fillStyle = 'grey';
         ctx.font = '12px Arial';
-
         ctx.textAlign = 'center';
         ctx.fillText(`Press F to ${player.docked ? 'UN-' : ''}dock`, 
                     station.pos.x, 
@@ -223,7 +269,7 @@ function StationManager() {
         ctx.restore();
     };
 
-    this.handleDocking = () => {
+    handleDocking = () => {
         if (player.docked) {
             player.docked = false;
             return;
@@ -234,43 +280,42 @@ function StationManager() {
     };
 }
 
-function Mission(title, description, reward) {
-    // FIELDS
-    this.title = title;
-    this.description = description;
-    this.reward = reward;
-    this.completed = false;
-    this.active = false;
+class Mission {
+    constructor(title, description, reward) {
+        this.title = title;
+        this.description = description;
+        this.reward = reward;
+        this.completed = false;
+        this.active = false;
+    }
 
-    // PUBLIC METHODS
-    this.start = () => {
+    start = () => {
         this.active = true;
     };
 
-    this.complete = () => {
+    complete = () => {
         this.completed = true;
         this.active = false;
+        player.credits += this.reward;
     };
-    player.credits += this.reward;
 
-    this.update = (delta) => {
+    update = (delta) => {
         // Override in subclasses
     };
 }
 
-function DeliveryMission(station, requiredOre, amount, reward) {
-    // FIELDS
-    const title = `Deliver ${amount} ${requiredOre}`;
-    const description = `Deliver ${amount} units of ${requiredOre} to ${station.name}`;
-    Mission.call(this, title, description, reward);
+class DeliveryMission extends Mission {
+    constructor(station, requiredOre, amount, reward) {
+        const title = `Deliver ${amount} ${requiredOre}`;
+        const description = `Deliver ${amount} units of ${requiredOre} to ${station.name}`;
+        super(title, description, reward);
+        this.station = station;
+        this.requiredOre = requiredOre;
+        this.requiredAmount = amount;
+        this.deliveredAmount = 0;
+    }
     
-    this.station = station;
-    this.requiredOre = requiredOre;
-    this.requiredAmount = amount;
-    this.deliveredAmount = 0;
-
-    // PUBLIC METHODS
-    this.update = () => {
+    update = () => {
         if (!this.active || this.completed) return;
         // Check if ship is close enough to station
         const distance = spaceship.pos.sub(this.station.pos).length();
@@ -300,24 +345,22 @@ function DeliveryMission(station, requiredOre, amount, reward) {
     };
 }
 
-function MissionManager() {
-    // FIELDS
-    this.availableMissions = [];
-    this.activeMissions = [];
-    this.completedMissions = [];
+class MissionManager {
+    constructor() {
 
-    // PUBLIC METHODS
-    this.generateNewMissions = () => {
+        this.availableMissions = [];
+        this.activeMissions = [];
+        this.completedMissions = [];
+    }
+
+    generateNewMissions = () => {
         // Generate some random delivery missions
         stationManager.stations.forEach(station => {
             if (Math.random() < 0.3) {  // 30% chance per station
-                // TODO: same here - use the actual ore types instead from Constants
-                const ores = ['Iron', 'Copper', 'Gold'];
+                const ores = Object.keys(Constants.ORES);
                 const ore = ores[Math.floor(Math.random() * ores.length)];
                 const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
-                const reward = amount * (ore === 'Gold' ? 100 : 
-                                      ore === 'Copper' ? 50 : 25);
-                
+                const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
                 const mission = new DeliveryMission(station, ore, amount, reward);
                 this.availableMissions.push(mission);
             }
@@ -325,7 +368,7 @@ function MissionManager() {
     };
 
     // TODO: any missions can be accepted at any stations for now...
-    this.acceptMission = () => {
+    acceptMission = () => {
         if (this.availableMissions.length === 0) return;
         const mission = this.availableMissions[0];
         this.activeMissions.push(mission);
@@ -333,8 +376,7 @@ function MissionManager() {
         mission.start();
     };
 
-
-    this.update = (delta) => {
+    update = (delta) => {
         this.activeMissions.forEach(mission => {
             mission.update(delta);
             if (mission.completed) {
@@ -346,7 +388,7 @@ function MissionManager() {
         return this;
     };
 
-    this.draw = (x = 10, y = 110, width = 300) => {
+    draw = (x = 10, y = 110, width = 300) => {
         // Draw mission UI
         // TODO: should probably be conditional
         ctx.save();
@@ -386,83 +428,91 @@ function MissionManager() {
     };
 }
 
-function Camera() {
-    // FIELDS 
-    this.x = 0;
-    this.y = 0;
+class Camera {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+    }
 
-    this.update = () => {
+    update = () => {
         this.x = canvas.width/2 - spaceship.pos.x;
         this.y = canvas.height/2 - spaceship.pos.y;
     };
 
-    this.apply = () => {
+    apply = () => {
         ctx.save();
         ctx.translate(this.x, this.y);
     };
 
-    this.restore = () => {
+    restore = () => {
         ctx.restore();
     };
 
-    this.screenToWorld = (screenX, screenY) => {
+    screenToWorld = (screenX, screenY) => {
         return new Vec(screenX - this.x, screenY - this.y);
     };
 }
 
-function AsteroidField() {
-    // FIELDS 
-    this.maxAsteroids = 5;
-    this.asteroids = [];
+class AsteroidField {
+    constructor() {
+        this.maxAsteroids = 5;
+        this.asteroids = [];
+    }
 
-    // PUBLIC METHODS
-
-    // TODO: only create asteroids that don't overlap with others
-    // and find some asteroid asset/icon
-    // should I only use icons to keep it simple?
-    // also for the spaceship? probably... at least for now.
-    this.update = (delta) => {
+    update = (delta) => {
         if (this.asteroids.length < this.maxAsteroids) {
-            this.asteroids.push(new Asteroid());
+            this.asteroids.push(new Asteroid().moveAway());
         }
         this.asteroids.forEach(a => a.update(delta));
         return this;
     };
 
-    this.draw = () => {
+    draw = () => {
         if(player.docked) return;
         this.asteroids.forEach(a => a.draw());
     };
 }
 
-function Asteroid() {
-    // FIELDS
-    this.size = Math.random() * 20 + 30;
-    this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
-                        Math.random() * (canvas.height-40) + 20);
-    this.rotationSpeed = Math.random() * 0.0008;
-    this.rotation = Math.random() * Math.PI * 2;
-    this.selected = false;
+class Asteroid {
+    constructor() {
+        this.size = Math.random() * 20 + 30;
+        this.pos = new Vec(Math.random() * (canvas.width-40) + 20, 
+                           Math.random() * (canvas.height-40) + 20);
+        this.rotationSpeed = Math.random() * 0.0008;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.selected = false;
+    }
 
-    // PUBLIC METHODS
-    this.mine = () => {
+    moveAway = () => {
+        // TODO: check if the asteroid is too close to another asteroid
+        // if so, move it away
+        // also, check if the asteroid is too close to the player
+        // if so, move it away
+        // also, check if the asteroid is too close to the spaceship
+        // if so, move it away
+        // also, check if the asteroid is too close to the station
+        // if so, move it away
+        return this;
+    };
+
+    mine = () => {
         if (Math.random() < 0.5) { // 1 ore
             const amount = this.size * (1 + Math.random() * 0.2);
-            return [{ type: randomOre(), amount }];
+            return [{ type: this.randomOre(), amount }];
         } // 2 ores
         const amount = this.size * (1 + Math.random() * 0.2);
         const distribution = (Math.random()*60+20) / 100; // 20-80%
-        return [{ type: randomOre(), amount: amount * distribution },
-                { type: randomOre(), amount: amount * (1-distribution) }];
+        return [{ type: this.randomOre(), amount: amount * distribution },
+                { type: this.randomOre(), amount: amount * (1-distribution) }];
     }
 
-    this.update = (delta) => {
+    update = (delta) => {
         const rotation = this.rotation + this.rotationSpeed * delta;
         const clampedRotation = rotation % (Math.PI * 2);
         this.rotation = clampedRotation;
     };
 
-    this.draw = () => {
+    draw = () => {
         ui.drawIcon(Constants.SPRITE.ASTEROID, this.pos, false,
             asteroidField.asteroids.indexOf(this), false, 2, this.rotation);
         if (this.selected) {
@@ -479,41 +529,45 @@ function Asteroid() {
         }
     };
 
-    // PRIVATE METHODS
-    const randomOre = () => {
-        const randomIndex = Math.floor(Math.random() * Object.keys(Constants.ORES).length);
+    randomOre = () => {
+        const oreTypes = Object.keys(Constants.ORES).length;
+        const randomIndex = Math.floor(Math.random() * oreTypes);
         return Object.keys(Constants.ORES)[randomIndex];
     }
 }
 
-function Spaceship() {
-    // FIELDS 
+class SpaceshipDTO {
+    constructor() {
+        this.type = undefined; // string
+        this.shield = undefined; // number
+        this.maxShield = undefined; // number
+        this.hull = undefined; // number
+        this.maxHull = undefined; // number
+        this.size = undefined; // number
+        this.acceleration = undefined; // number
+        this.vel = undefined; // Vec
+        this.pos = undefined; // Vec
+        this.target = undefined; // Vec
+        this.miningRange = undefined; // number
+        this.mode = undefined; // Constants.MOVE
+        this.modules = undefined; // Module[]
+        this.inventory = undefined; // Module[]
+    }
+}
 
-    this.type = 'frigate';
-    this.shield = 50;
-    this.maxShield = 80;
-    this.hull = 30;
-    this.maxHull = 50;
-    this.size = 15;
-    this.acceleration = 0.005;
-    this.vel = 0; //new Vec(0, 0); // FAKING IT
-    this.pos = new Vec(canvas.width / 2, canvas.height / 2);
-    this.target = this.pos.clone();
-    this.miningRange = 50;
-    this.mode = Constants.MOVE.APPROACH;
-    this.modules = [new Module('laser weapon', Constants.SPRITE.FIRE, 1, 'module'),
-                    new Module('mining laser', Constants.SPRITE.MINE, 1, 'module'),
-                    new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
-    this.inventory = [];
+class Spaceship extends SpaceshipDTO {
+    constructor(dto) {
+        super();
+        Object.assign(this, dto);
+    }
 
-    // PUBLIC METHODS
-    this.update = (delta) => {
-        move(delta);
-        if (ui.k2down) mine();
+    update = (delta) => {
+        this.move(delta);
+        if (ui.k2down) this.mine();
         return this;
     };
 
-    this.draw = () => {
+    draw = () => {
         if(player.docked) return;
         ctx.save();
         // position correctly
@@ -535,8 +589,7 @@ function Spaceship() {
         ctx.lineWidth = 1;
     };
 
-    // PRIVATE METHODS
-    const move = (delta) => {
+    move = (delta) => {
         if (this.mode === Constants.MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
             if (dir.length() > this.size) {
@@ -561,7 +614,10 @@ function Spaceship() {
         }
     };
 
-    const mine = () => {
+    mine = () => {
+        // TODO: find() instead of forEach()
+        // so ores.forEach is not nested
+        // and so that you only mine one asteroid at a time
         asteroidField.asteroids.forEach((a, i) => {
             const dist = this.pos.sub(a.pos).length();
             const range = this.miningRange + a.size;
@@ -580,20 +636,36 @@ function Spaceship() {
     };
 }
 
-function Module(name, sprite = undefined, amount = 1, unit = 'units') {
-    // FIELDS
-    this.name = name;
-    this.sprite = sprite;
-    this.amount = amount;
-    this.unit = unit;
+class Module {
+    constructor(name, sprite = undefined, amount = 1, unit = 'units') {
+        this.name = name;
+        this.sprite = sprite;
+        this.amount = amount;
+        this.unit = unit;
+    }
 }
 
-function StarField() {
-    // FIELDS
-    this.stars = [];
+class StarField {
+    constructor() {
+        this.stars = [];
+        const createStarLayer = (count, speed, brightness) => {
+            for (let i = 0; i < count; i++) {
+                this.stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 1,  // Size between 1-3
+                    speed,
+                    brightness
+                });
 
-    // PUBLIC METHODS
-    this.update = (delta) => {
+            }
+        };
+        createStarLayer(100, 0.1, 0.2),  // Far layer (slow, dim)
+        createStarLayer(50, 0.15, 0.4),   // Middle layer
+        createStarLayer(25, 0.2, 0.6)   // Close layer (fast, bright)
+    }
+
+    update = (delta) => {
         this.stars.forEach(star => {
             // Move stars based on their layer speed
             star.x -= star.speed;
@@ -607,7 +679,7 @@ function StarField() {
         return this;
     };
     
-    this.draw = () => {
+    draw = () => {
         if(player.docked) return;
         this.stars.forEach(star => {
             ctx.beginPath();
@@ -617,45 +689,37 @@ function StarField() {
 
         });
     };
-
-    // PRIVATE METHODS
-    const createStarLayer = (count, speed, brightness) => {
-        for (let i = 0; i < count; i++) {
-            this.stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 2 + 1,  // Size between 1-3
-                speed,
-                brightness
-            });
-
-        }
-    };
-
-    // Create three layers of stars
-    createStarLayer(100, 0.1, 0.2);  // Far layer (slow, dim)
-    createStarLayer(50, 0.15, 0.4);   // Middle layer
-    createStarLayer(25, 0.2, 0.6);   // Close layer (fast, bright)
 }
 
-function UI() {
-    // FIELDS 
-    this.fpsCount = 0;
-    this.fpsTime = 0;
-    this.fpsDisplay = 0;
-    this.qDown = false;
-    this.aDown = false;
-    this.sDown = false;
-    this.wDown = false;
-    this.k1down = false;
-    this.k2down = false;
-    this.k3down = false;
+class UI {
+    constructor() {
+        this.fpsCount = 0;
+        this.fpsTime = 0;
+        this.fpsDisplay = 0;
+        this.qDown = false;
+        this.aDown = false;
+        this.sDown = false;
+        this.wDown = false;
+        this.k1down = false;
+        this.k2down = false;
+        this.k3down = false;
 
-    // PUBLIC METHODS
-    this.update = (delta) => {
+        // TODO: why can I declare fields with and without this?
+        // does that mean one is public and the other private?
+        this.dialogWidth = 300;
+        this.dialogHeight = 400;
+        this.dialogX = canvas.width / 2 - this.dialogWidth / 2;
+        this.dialogY = canvas.height / 2 - this.dialogHeight / 2;
+
+        this.sprites = [];
+        this.loadSprites();
+    }
+
+    update = (delta) => {
         this.fpsCount++;
         this.fpsTime += delta;
         if (this.fpsTime >= 1000) {
+
             this.fpsDisplay = this.fpsCount;
             this.fpsCount = 0;
             this.fpsTime = 0;
@@ -663,33 +727,34 @@ function UI() {
         return this;
     };
 
-    this.draw = () => {
+    draw = () => {
         if (this.wDown) {
-            drawShipDialog();
+            this.drawShipDialog();
         } else if (this.eDown) {
-            drawPilotDialog();
+            this.drawPilotDialog();
         } else if (this.dDown) {
-            drawSettingsDialog();
+            this.drawSettingsDialog();
         } else if (this.k1down) {
-            drawWarpDialog();
+            this.drawWarpDialog();
         }
-        drawFps();
-        drawButtons();
+        this.drawFps();
+        this.drawButtons();
     };
 
-    this.drawIcon = (spriteIndex, pos, selected = false, text = undefined, 
+    drawIcon = (spriteIndex, pos, selected = false, text = undefined, 
                      outline = true, scale = 1, rotation = 0) => {
         const size = 40*scale;
-        if (!sprites[spriteIndex]) return;
+        if (!this.sprites[spriteIndex]) return;
         if (selected) ctx.globalAlpha = 0.5;
         if (rotation !== 0) {
             ctx.save();
             ctx.translate(pos.x, pos.y);
             ctx.rotate(rotation);
-            ctx.drawImage(sprites[spriteIndex], -size/2, -size/2, size, size);
+            ctx.drawImage(this.sprites[spriteIndex], -size/2, -size/2, size, size);
             ctx.restore();
+
         } else {
-            ctx.drawImage(sprites[spriteIndex], pos.x, pos.y, size, size);
+            ctx.drawImage(this.sprites[spriteIndex], pos.x, pos.y, size, size);
         }
         if (outline) {
             ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
@@ -706,11 +771,11 @@ function UI() {
         ctx.globalAlpha = 1;
     };
 
-    this.roundedRectExt = (x, y, width, height, radius) => {
-        roundedRect(x, y, width, height, radius);
+    roundedRectExt = (x, y, width, height, radius) => {
+        this.roundedRect(x, y, width, height, radius);
     }
 
-    const roundedRect = (x, y, width, height, radius) => {
+    roundedRect = (x, y, width, height, radius) => {
         ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
         ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
         ctx.lineWidth = 2;
@@ -729,58 +794,56 @@ function UI() {
         ctx.stroke();
     };
 
-    // PRIVATE METHODS
-    const sprites = [];
+    loadSprites = () => {
+        const spriteSheet = new Image();
+        // icons from:
+        // https://game-icons.net/
+        // https://icons8.com
+        spriteSheet.src = 'icons.png';
+        spriteSheet.onload = () => {
+            const spriteWidth = 40;
+            const spriteHeight = 40;
+            const columns = spriteSheet.width / spriteWidth;
+            const rows = spriteSheet.height / spriteHeight;
+            
+            // Create a temporary canvas to extract sprites
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = spriteWidth;
+            tempCanvas.height = spriteHeight;
 
-    const spriteSheet = new Image();
-    // icons from:
-    // https://game-icons.net/
-    // https://icons8.com
-    spriteSheet.src = 'icons.png';
+            // Extract each sprite
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < columns; col++) {
+                    tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
 
-    spriteSheet.onload = () => {
-        const spriteWidth = 40;
-        const spriteHeight = 40;
-        const columns = spriteSheet.width / spriteWidth;
-        const rows = spriteSheet.height / spriteHeight;
-        
-        // Create a temporary canvas to extract sprites
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = spriteWidth;
-        tempCanvas.height = spriteHeight;
-
-        // Extract each sprite
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < columns; col++) {
-                tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
-
-                // Draw the portion of the sprite sheet we want
-                tempCtx.drawImage(
-                    spriteSheet,
-                    col * spriteWidth,    // source x
-                    row * spriteHeight,   // source y
-                    spriteWidth,          // source width
-                    spriteHeight,         // source height
-                    0,                    // dest x
-                    0,                    // dest y
-                    spriteWidth,          // dest width
-                    spriteHeight          // dest height
-                );
-                
-                // Convert to an image and store
-                const sprite = new Image();
-                sprite.src = tempCanvas.toDataURL();
-                sprites.push(sprite);
+                    // Draw the portion of the sprite sheet we want
+                    tempCtx.drawImage(
+                        spriteSheet,
+                        col * spriteWidth,    // source x
+                        row * spriteHeight,   // source y
+                        spriteWidth,          // source width
+                        spriteHeight,         // source height
+                        0,                    // dest x
+                        0,                    // dest y
+                        spriteWidth,          // dest width
+                        spriteHeight          // dest height
+                    );
+                    
+                    // Convert to an image and store
+                    const sprite = new Image();
+                    sprite.src = tempCanvas.toDataURL();
+                    this.sprites.push(sprite);
+                }
             }
-        }
-    };
+        };
+    }
 
-    const drawWarpDialog = () => {
+    drawWarpDialog = () => {
         console.log('drawWarpDialog');
     };
 
-    const drawPanel = (pos, w, h) => {
+    drawPanel = (pos, w, h) => {
         ctx.setLineDash([]);
         ctx.strokeStyle = 'black';
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -791,7 +854,8 @@ function UI() {
         ctx.strokeRect(pos.x, pos.y, w, h);
     };
 
-    const drawTexts = (texts, pos, off = 30, hor = false, selected = -1, color = 'white') => {
+    drawTexts = (texts, pos, off = 30, hor = false, 
+                 selected = -1, color = 'white') => {
         let lastLength = 0
         texts.forEach((text, i) => {
             const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
@@ -804,12 +868,12 @@ function UI() {
         });
     };
 
-    const drawFps = () => {
-        drawPanel({ x: 0, y: 0 }, 100, 50);
-        drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
+    drawFps = () => {
+        this.drawPanel({ x: 0, y: 0 }, 100, 50);
+        this.drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
     };
 
-    const drawHealthCircle = (radius, percentage, color) => {
+    drawHealthCircle = (radius, percentage, color) => {
         const thickness = 8;
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
@@ -828,14 +892,16 @@ function UI() {
         ctx.lineWidth = 1;
     };
 
-    const drawButtons = () => {
+    // TODO: simplify and re-use code for the UI - there's too much
+    // and it's too complicated
+    drawButtons = () => {
         const shieldPercentage = spaceship.shield / spaceship.maxShield * 100;
         const hullPercentage = spaceship.hull / spaceship.maxHull * 100;
-        drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
-        drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
-        drawTexts(['shield', `${shieldPercentage}%`],
+        this.drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
+        this.drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
+        this.drawTexts(['shield', `${shieldPercentage}%`],
                     { x: canvas.width / 2 - 90, y: canvas.height - 80 }, 15);
-        drawTexts(['hull', `${hullPercentage}%`], 
+        this.drawTexts(['hull', `${hullPercentage}%`], 
                     { x: canvas.width / 2 + 60, y: canvas.height - 80 }, 15);
         const off = 45;
         let i = 3;
@@ -852,45 +918,41 @@ function UI() {
         this.drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
     };
 
-    const dialogWidth = 300;
-    const dialogHeight = 400;
-    const dialogX = canvas.width / 2 - dialogWidth / 2;
-    const dialogY = canvas.height / 2 - dialogHeight / 2;
-
-    function drawPilotDialog() {
-        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
-        let yOffset = dialogY;
-        yOffset = drawSectionHeader('Pilot', dialogWidth, yOffset, dialogX);
+    drawPilotDialog = () => {
+        this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        let yOffset = this.dialogY;
+        yOffset = this.drawSectionHeader('Pilot', this.dialogWidth, yOffset, this.dialogX);
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        ctx.fillText(`name: ${player.name}`, dialogX + 30, yOffset += 20);
-        ctx.fillText(`credits: ${player.credits}`, dialogX + 30, yOffset += 20);
+        ctx.fillText(`name: ${player.name}`, this.dialogX + 30, yOffset += 20);
+        ctx.fillText(`name: ${player.name}`, this.dialogX + 30, yOffset += 20);
+        ctx.fillText(`credits: ${player.credits}`, this.dialogX + 30, yOffset += 20);
     };
 
-    function drawSettingsDialog() {
-        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
-        let yOffset = dialogY;
-        yOffset = drawSectionHeader('Settings', dialogWidth, yOffset, dialogX);
+    drawSettingsDialog = () => {
+        this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        let yOffset = this.dialogY;
+        yOffset = this.drawSectionHeader('Settings', this.dialogWidth, yOffset, this.dialogX);
         yOffset += 20;
         ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        ctx.fillText('Exit Now', dialogX + 30, yOffset);
+        ctx.fillText('Exit Now', this.dialogX + 30, yOffset);
     };
 
-    function drawShipDialog() {
-        roundedRect(dialogX, dialogY, dialogWidth, dialogHeight, 10);
-        let yOffset = dialogY;
-        yOffset = drawSectionHeader('Equipped Modules', dialogWidth, yOffset, dialogX);
-        yOffset = drawSectionItems(spaceship.modules, yOffset, dialogX);
-        yOffset = drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
-        drawSectionItems(spaceship.inventory, yOffset, dialogX);
+    drawShipDialog = () => {
+        this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        let yOffset = this.dialogY;
+        yOffset = this.drawSectionHeader('Equipped Modules', this.dialogWidth, yOffset, this.dialogX);
+        yOffset = this.drawSectionItems(spaceship.modules, yOffset, this.dialogX);
+        yOffset = this.drawSectionHeader('Inventory', this.dialogWidth, yOffset, this.dialogX);
+        this.drawSectionItems(spaceship.inventory, yOffset, this.dialogX);
     };
 
-
-    function drawSectionHeader(text, width, yOffset, x) {
+    drawSectionHeader = (text, width, yOffset, x) => {
         yOffset += 20;
         ctx.fillStyle = 'white';
         ctx.font = 'bold 20px Arial';
         ctx.fillText(text, x + 20, yOffset += 20);
         ctx.beginPath();
+
         ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
         ctx.moveTo(x + 10, yOffset += 20);
         ctx.lineTo(x + width - 10, yOffset);
@@ -899,8 +961,9 @@ function UI() {
         return yOffset + 20;
     };
 
-    function drawSectionItems(modules, yOffset, x) {
-        modules.forEach((module, index) => {
+    drawSectionItems = (modules, yOffset, x) => {
+        modules.forEach((module) => {
+            const m = module;
             ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
             ctx.fillText(`${module.name}`, x + 30, yOffset);
             ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
@@ -912,17 +975,14 @@ function UI() {
     };
 }
 
-function GameEventListener() {
-    // PUBLIC METHODS
-    this.register = () => {
-        canvas.addEventListener('keyup', keyUpListener);
-        canvas.addEventListener('keydown', keyDownListener);
-        canvas.addEventListener('click', clickListener);
-
+class GameEventListener {
+    register = () => {
+        canvas.addEventListener('keyup', this.keyUpListener);
+        canvas.addEventListener('keydown', this.keyDownListener);
+        canvas.addEventListener('click', this.clickListener);
     };
 
-    // PRIVATE METHODS
-    const keyUpListener = (event) => {
+    keyUpListener = (event) => {
         if (event.key === 'q') {
             ui.qDown = false;
         } else if (event.key === 'a') {
@@ -944,7 +1004,10 @@ function GameEventListener() {
         }
     };
 
-    const keyDownListener = (event) => {
+    keyDownListener = (event) => {
+        // TODO: allow selection stations as well - but only one at a time
+        // do this in a super? Selectable class?
+        // maybe get cursor to suggest something.
         const selected = asteroidField.asteroids.find(a => a.selected);
         // MENUS
         if (event.key === 'w') {
@@ -993,7 +1056,7 @@ function GameEventListener() {
         }
     };
 
-    const clickListener = (event) => {
+    clickListener = (event) => {
         let select = undefined;
         const clickPos = camera.screenToWorld(event.x, event.y);
         // fly-to
@@ -1016,116 +1079,128 @@ function GameEventListener() {
     };
 }
 
-function Vec(x = 0, y = 0) {
-    // FIELDS
-    this.x = x;
-    this.y = y;
+class Vec {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
 
-    // PUBLIC METHODS
-    this.add = (v) => {
+    add = (v) => {
         return new Vec(
             this.x + v.x,
             this.y + v.y,
         );
     };
 
-    this.sub = (v) => {
+    sub = (v) => {
         return new Vec(
             this.x - v.x,
             this.y - v.y,
         );
     };
 
-    this.scale = (n) => {
+    scale = (n) => {
         return new Vec(
             this.x * n,
             this.y * n,
         );
     };
 
-    this.length = () => {
+    length = () => {
         return Math.sqrt(
             this.x * this.x +
             this.y * this.y
         );
     };
 
-    this.normalize = () => {
+    normalize = () => {
         const len = this.length();
         if (len === 0) return new Vec();
         return this.scale(1 / len);
     };
 
-    this.dot = (v) => {
+    dot = (v) => {
         return this.x * v.x + this.y * v.y;
     };
 
-    this.cross = (v) => {
+    cross = (v) => {
         return this.x * v.y - this.y * v.x;
     };
 
-    this.toString = () => {
+    toString = () => {
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     };
 
-    this.clone = () => {
+    clone = () => {
         return new Vec(this.x, this.y);
     };
 
-    this.set = (x, y) => {
+    set = (x, y) => {
         this.x = x;
         this.y = y;
     };
 }
 
-////////////////
-// GAME LOGIC //
-////////////////
+class Game {
+    constructor() {
+        this.lastDelta = 0;
+    }
+
+    gameLoop = (delta) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const newDelta = delta - this.lastDelta;
+        this.lastDelta = delta;
+        starField.update(newDelta).draw();
+
+        // start camera transformation
+        camera.update();
+        camera.apply();
+        stationManager.update(newDelta).draw();
+        asteroidField.update(newDelta).draw();
+        spaceship.update(newDelta).draw();
+        // stop transformation
+        camera.restore();
+
+        missionManager.update(newDelta).draw();
+        player.update(newDelta).draw();
+        ui.update(newDelta).draw();
+
+        requestAnimationFrame(this.gameLoop);
+    };
+
+    start = () => {
+        // register event listeners
+        new GameEventListener().register();
+
+        // generate missions
+        setInterval(() => {
+            if (player.docked) return;
+            missionManager.generateNewMissions();
+        }, 3000);
+
+        // start game loop
+        requestAnimationFrame(this.gameLoop);
+    };
+}
+
+////////////
+// FIELDS //
+////////////
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
+const server = new Server();
 const starField = new StarField();
 const asteroidField = new AsteroidField();
-const player = new Player();
-const spaceship = new Spaceship();
+const player = server.loadPlayer();
+const spaceship = server.loadSpaceship();
 const ui = new UI();
 const camera = new Camera();
 const missionManager = new MissionManager();
 const stationManager = new StationManager();
-new GameEventListener().register();
-let lastDelta = 0;
-
-setInterval(() => {
-    if (player.docked) return;
-    missionManager.generateNewMissions();
-}, 3000);
-
-const gameLoop = (delta) => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const newDelta = delta - lastDelta;
-    lastDelta = delta;
-    starField.update(newDelta).draw();
-
-    // start camera transformation
-    camera.update();
-    camera.apply();
-    stationManager.update(newDelta).draw();
-    asteroidField.update(newDelta).draw();
-    spaceship.update(newDelta).draw();
-    // stop transformation
-    camera.restore();
-
-    missionManager.update(newDelta).draw();
-    player.update(newDelta).draw();
-    ui.update(newDelta).draw();
-
-    requestAnimationFrame(gameLoop);
-};
-
-requestAnimationFrame(gameLoop);
+new Game().start();
 
 </script>
 </body>
