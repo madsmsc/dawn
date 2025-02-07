@@ -51,6 +51,11 @@ const Constants = {
         // models
         ASTEROID: 9,
         SPACESHIP: 10
+    },
+    COLOR: {
+        RED: '255, 50, 50',
+        GREEN: '50, 255, 50',
+        BLUE: '50, 50, 255'
     }
 };
 
@@ -98,6 +103,59 @@ class Server {
                         new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
         dto.inventory = [];
         return new Spaceship(dto);
+    };
+
+    loadSystem = () => {
+        // TODO: move logic to server
+        const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 
+                     'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho', 
+                     'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];
+        const stationSuffix = ['Station', 'Hub', 'Port', 'Mining', 'Factory', 'Research', 'Academy']; 
+
+        const randomNamePrefix = () => {
+            return namePrefix[Math.floor(Math.random() * namePrefix.length)];
+        };
+
+        const randomStationSuffix = () => {
+            return stationSuffix[Math.floor(Math.random() * stationSuffix.length)];
+        };
+
+        const usedSystemNames = [];
+        const randomSystemName = () => {  
+            let name = `${randomNamePrefix()}-${Math.floor(Math.random() * 9)}`;
+            while (usedSystemNames.includes(name)) {
+                name = `${randomNamePrefix()}-${Math.floor(Math.random() * 9)}`;
+            }
+            usedSystemNames.push(name);
+            return name;
+        };
+
+        const usedStationNames = [];
+        const randomStation = () => {
+            const pos = new Vec(Math.random() * 600 + 100, Math.random() * 600 + 100);
+            let name = `${randomNamePrefix()} ${randomStationSuffix()}`;
+            while (usedStationNames.includes(name)) {
+                name = `${randomNamePrefix()} ${randomStationSuffix()}`;
+            }
+            usedStationNames.push(name);
+            return new Station(name, pos);
+        };
+
+        // create systems
+        const A = new System(randomSystemName(), Constants.COLOR.RED, [randomStation()]);    
+        const B = new System(randomSystemName(), Constants.COLOR.GREEN, [randomStation()]);
+        const C = new System(randomSystemName(), Constants.COLOR.BLUE, [randomStation()]);
+
+        // create connections
+        const A_B = {system: B, distance: 100};
+        const A_C = {system: C, distance: 200};
+        const B_A = {system: A, distance: A_B.distance};
+        const C_A = {system: A, distance: A_C.distance};
+        A.connections = [A_B, A_C];
+        B.connections = [B_A];
+        C.connections = [C_A];
+        
+        return A;
     };
 }
 
@@ -151,11 +209,10 @@ class Player extends PlayerDTO {
 }
 
 class Station extends Selectable {
-    constructor (name, pos, type = 'trading') {
+    constructor (name, pos) {
         super();
         this.name = name;
         this.pos = pos;
-        this.type = type;
         this.dockingRadius = 100;
         this.inventory = [];
         this.prices = {
@@ -250,30 +307,37 @@ class Station extends Selectable {
     };
 }
 
-class StationManager {
-    constructor() {
-        this.stations = [];
-        this.stations.push(
-            new Station('Alpha Station', new Vec(500, 500), 'trading'),
-            new Station('Beta Mining', new Vec(-500, -500), 'mining'),
-            new Station('Gamma Port', new Vec(-500, 500), 'trading'),
-            new Station('Delta Hub', new Vec(500, -500), 'trading')
-        );
+// TODO: currently warping between systems
+// instead, warp between warpables in system
+// and use gates to connect systems
+class System {
+    constructor(name, color, stations) {
+        this.name = name;
+        this.color = color;
+        this.maxAsteroids = 5;
+        this.asteroids = [];
+        this.stations = stations;
+        this.connections = [];
     }
 
-    update = () => {
-        // TODO: filter instead of if
-        this.stations.forEach(station => {
-            if (station.canDock()) {
-                // Show docking indicator or enable docking menu
-                this.showDockingPrompt(station);
-            }
+    update = (delta) => {
+        this.stations
+            .filter(station => station.canDock())
+            .forEach(station => {
+            // Show docking indicator or enable docking menu
+            this.showDockingPrompt(station);
         });
+        if (this.asteroids.length < this.maxAsteroids) {
+            this.asteroids.push(new Asteroid().moveAway());
+        }
+        this.asteroids.forEach(a => a.update(delta));
         return this;
     };
 
     draw = (ctx) => {
         this.stations.forEach(station => station.draw(ctx));
+        if(player.docked) return;
+        this.asteroids.forEach(a => a.draw());
     };
 
     // Draw docking prompt when ship is in range
@@ -323,7 +387,8 @@ class Mission {
     };
 }
 
-class DeliveryMission extends Mission {
+// TODO: rename to minig mission
+class MiningMission extends Mission {
     constructor(station, requiredOre, amount, reward) {
         const title = `Deliver ${amount} ${requiredOre}`;
         const description = `Deliver ${amount} units of ${requiredOre} to ${station.name}`;
@@ -377,13 +442,13 @@ class MissionManager {
 
     generateNewMissions = () => {
         // Generate some random delivery missions
-        stationManager.stations.forEach(station => {
+        system.stations.forEach(station => {
             if (Math.random() < 0.3) {  // 30% chance per station
                 const ores = Object.keys(Constants.ORES);
                 const ore = ores[Math.floor(Math.random() * ores.length)];
                 const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
                 const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
-                const mission = new DeliveryMission(station, ore, amount, reward);
+                const mission = new MiningMission(station, ore, amount, reward);
                 this.availableMissions.push(mission);
             }
         });
@@ -416,25 +481,24 @@ class MissionManager {
         ctx.save();
         
         // Draw panel background
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        ui.roundedRectExt(ctx, x, y, width, 400, 10);
+        // ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        // ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        // ui.roundedRectExt(ctx, x, y, width, 400, 10);
         
         // Draw title
         ctx.fillStyle = 'white';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText('Missions', x + 20, y + 30);
+        let yOffset = y + 110;
+        ctx.fillText('Missions', x + 20, yOffset);
 
         if (player.docked) {
-            ctx.fillText('(M to accept missions)', x + 110, y + 30);
+            ctx.fillText('(M to accept missions)', x + 110, yOffset);
         }
-            
+
         // Draw active missions
-        let yOffset = y + 60;
         ctx.font = '12px Arial';
-        
         if (this.activeMissions.length === 0) {
-            ctx.fillText('No active missions', x + 20, yOffset);
+            ctx.fillText('No active missions', x + 20, yOffset += 30);
         } else {
             this.activeMissions.forEach(mission => {
                 ctx.fillStyle = 'rgba(100, 255, 100, 0.8)';
@@ -472,26 +536,6 @@ class Camera {
 
     screenToWorld = (screenX, screenY) => {
         return new Vec(screenX - this.x, screenY - this.y);
-    };
-}
-
-class AsteroidField {
-    constructor() {
-        this.maxAsteroids = 5;
-        this.asteroids = [];
-    }
-
-    update = (delta) => {
-        if (this.asteroids.length < this.maxAsteroids) {
-            this.asteroids.push(new Asteroid().moveAway());
-        }
-        this.asteroids.forEach(a => a.update(delta));
-        return this;
-    };
-
-    draw = () => {
-        if(player.docked) return;
-        this.asteroids.forEach(a => a.draw());
     };
 }
 
@@ -549,7 +593,7 @@ class Asteroid extends Selectable {
     draw = () => {
         this.drawSelection();
         ui.drawIcon(Constants.SPRITE.ASTEROID, this.pos, false,
-            asteroidField.asteroids.indexOf(this), false, 2, this.rotation);
+            system.asteroids.indexOf(this), false, 2, this.rotation);
     };
 
     randomOre = () => {
@@ -665,11 +709,11 @@ class Spaceship extends SpaceshipDTO {
         // TODO: find() instead of forEach()
         // so ores.forEach is not nested
         // and so that you only mine one asteroid at a time
-        asteroidField.asteroids.forEach((a, i) => {
+        system.asteroids.forEach((a, i) => {
             const dist = this.pos.sub(a.pos).length();
             const range = this.miningRange + a.size;
             if (dist > range) return;
-            asteroidField.asteroids.splice(i, 1);
+            system.asteroids.splice(i, 1);
             const ores = a.mine(); // [{ type, amount }, ...]
             ores.forEach(ore => {
                 const oreModule = this.inventory.find(m => m.name === ore.type);
@@ -730,7 +774,7 @@ class StarField {
         if(player.docked) return;
         this.stars.forEach(star => {
             ctx.beginPath();
-            ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+            ctx.fillStyle = `rgba(${system.color}, ${star.brightness})`;
             ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             ctx.fill();
         });
@@ -786,6 +830,9 @@ class UI {
         }
         this.drawFps();
         this.drawButtons();
+        // draw system info
+        // ui.drawPanel({ x: 0, y: 100 }, 100, 200);
+        this.drawTexts([`system: ${system.name}`, `station: ${system.stations[0].name}`], { x: 10, y: 120 });
     };
 
     drawIcon = (spriteIndex, pos, selected = false, text = undefined, 
@@ -887,7 +934,20 @@ class UI {
     }
 
     drawWarpDialog = () => {
-        console.log('drawWarpDialog');
+        this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        let yOffset = this.dialogY;
+        yOffset = this.drawSectionHeader('Warp to:', this.dialogWidth, yOffset, this.dialogX);
+        ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        const keys = ['R', 'T'];
+        for (let i = 0; i < system.connections.length; i++) {
+            const c = system.connections[i];
+            // TODO: use the draw text function instead.
+            // and read up on what a method is vs. a function - what is a "member" in JS?
+            ctx.fillText(`name: ${c.system.name}`, this.dialogX + 30, yOffset += 20);
+            ctx.fillText(`dist: ${c.distance}`, this.dialogX + 30, yOffset += 20);
+            ctx.fillText(`press ${keys[i]} to warp`, this.dialogX + 30, yOffset += 20);
+            yOffset += 30
+        }
     };
 
     drawPanel = (pos, w, h) => {
@@ -1060,10 +1120,17 @@ class GameEventListener {
         } else if (event.key === 'd') {
             ui.dDown = true;
         } else if (event.key === 'f') {
-            stationManager.handleDocking();
+            system.handleDocking();
         } else if (event.key === 'm' && player.docked) {
             missionManager.acceptMission();
-        } 
+        } else if (event.key === 'r' && ui.k1down) {
+            // TODO move this logic somewhere else and add loading bar
+            system = system.connections[0].system;
+            new Vec(canvas.width / 2, canvas.height / 2);
+        } else if (event.key === 't' && ui.k1down && system.connections.length > 1) {
+            system = system.connections[1].system;
+            new Vec(canvas.width / 2, canvas.height / 2);
+        }
 
         if (player.docked) return
         
@@ -1200,8 +1267,7 @@ class Game {
         // start camera transformation
         camera.update();
         camera.apply();
-        stationManager.update(newDelta).draw();
-        asteroidField.update(newDelta).draw();
+        system.update(newDelta).draw();
         spaceship.update(newDelta).draw();
         // stop transformation
         camera.restore();
@@ -1236,15 +1302,14 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+const ui = new UI();
 const server = new Server();
 const player = server.loadPlayer();
 const spaceship = server.loadSpaceship();
-const ui = new UI();
+let system = server.loadSystem();
 const starField = new StarField();
-const asteroidField = new AsteroidField();
 const camera = new Camera();
 const missionManager = new MissionManager();
-const stationManager = new StationManager();
 new Game().start();
 
 </script>
