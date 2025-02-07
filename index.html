@@ -598,9 +598,10 @@ class Spaceship {
     move = (delta) => {
         if (this.mode === Constants.MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
+            this.vel += this.acceleration * delta;
             if (dir.length() > this.size) {
                 const normalizedDir = dir.normalize();
-                // REAL PHYSICS
+                // "REAL" PHYSICS
                 // const scaledDir = normalizedDir.scale(this.acceleration * delta);
                 // const slow = scaledDir.clone().scale(-0.5);
                 // this.vel = this.vel.add(scaledDir);
@@ -608,7 +609,6 @@ class Spaceship {
                 // this.angle = Math.atan2(this.vel.y, this.vel.x);
 
                 // FAKE PHYSICS
-                this.vel += this.acceleration * delta;
                 this.pos = this.pos.add(normalizedDir.scale(this.vel));
                 this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
             } else {
@@ -616,32 +616,9 @@ class Spaceship {
             };
 
         } else if (this.mode === Constants.MOVE.ORBIT) {
-            const ORBIT_RADIUS = 120;
-            // if close: start orbiting - but how?
-
-            // if not close: move to orbit
-            const orthogonal = new Vec(-this.target.y, this.target.x);
-            const unit = orthogonal.normalize();
-            const orbitTarget = this.target.add(unit.scale(ORBIT_RADIUS));
-            const dir = orbitTarget.sub(this.pos);
-            const normalizedDir = dir.normalize();
-
-            ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.setLineDash([]);
-            ctx.strokeStyle = 'lightblue';
-            const camPos = camera.screenToWorld(this.pos.x, this.pos.y);
-            ctx.moveTo(camPos.x, camPos.y);
-            const orbitPos = camera.screenToWorld(orbitTarget.x, orbitTarget.y);
-            ctx.lineTo(orbitPos.x, orbitPos.y);
-            ctx.stroke();
-
-            this.vel += this.acceleration * delta;
-            this.pos = this.pos.add(normalizedDir.scale(this.vel));
-            this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
+            
         }
     };
-
 
     mine = () => {
         // TODO: find() instead of forEach()
@@ -658,7 +635,8 @@ class Spaceship {
                 if (oreModule) {
                     oreModule.amount += ore.amount;
                 } else {
-                    this.inventory.push(new Module(ore.type, Constants.SPRITE.MINE, ore.amount, 'kg'));
+                    const m = new Module(ore.type, Constants.SPRITE.MINE, ore.amount, 'kg');
+                    this.inventory.push(m);
                 }
             });  
         });
@@ -686,11 +664,10 @@ class StarField {
                     speed,
                     brightness
                 });
-
             }
         };
         createStarLayer(100, 0.1, 0.2),  // Far layer (slow, dim)
-        createStarLayer(50, 0.15, 0.4),   // Middle layer
+        createStarLayer(50, 0.15, 0.4),  // Middle layer
         createStarLayer(25, 0.2, 0.6)   // Close layer (fast, bright)
     }
 
