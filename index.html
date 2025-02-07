@@ -616,9 +616,10 @@ class Spaceship extends SpaceshipDTO {
     move = (delta) => {
         if (this.mode === Constants.MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
+            this.vel += this.acceleration * delta;
             if (dir.length() > this.size) {
                 const normalizedDir = dir.normalize();
-                // REAL PHYSICS
+                // "REAL" PHYSICS
                 // const scaledDir = normalizedDir.scale(this.acceleration * delta);
                 // const slow = scaledDir.clone().scale(-0.5);
                 // this.vel = this.vel.add(scaledDir);
@@ -626,7 +627,6 @@ class Spaceship extends SpaceshipDTO {
                 // this.angle = Math.atan2(this.vel.y, this.vel.x);
 
                 // FAKE PHYSICS
-                this.vel += this.acceleration * delta;
                 this.pos = this.pos.add(normalizedDir.scale(this.vel));
                 this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
             } else {
@@ -635,31 +635,48 @@ class Spaceship extends SpaceshipDTO {
 
         } else if (this.mode === Constants.MOVE.ORBIT) {
             const ORBIT_RADIUS = 120;
-            // if close: start orbiting - but how?
+            const dist = this.pos.sub(this.target).length();
+            // if close: start orbiting
+            if (dist < ORBIT_RADIUS * 1.1) {
+                const angular_velocity = this.speed / ORBIT_RADIUS;
+                this.orbit_angle += angular_velocity * delta;
+                const newPos = new Vec(
+                    this.orbit_center.x + ORBIT_RADIUS * Math.cos(this.orbit_angle),
+                    this.orbit_center.y + ORBIT_RADIUS * Math.sin(this.orbit_angle));
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'lightblue';
 
-            // if not close: move to orbit
-            const orthogonal = new Vec(-this.target.y, this.target.x);
-            const unit = orthogonal.normalize();
-            const orbitTarget = this.target.add(unit.scale(ORBIT_RADIUS));
-            const dir = orbitTarget.sub(this.pos);
-            const normalizedDir = dir.normalize();
+                const camPos = camera.screenToWorld(this.pos.x, this.pos.y);
+                ctx.moveTo(camPos.x, camPos.y);
+                const orbitPos = camera.screenToWorld(newPos.x, newPos.y).scale(20);
+                ctx.lineTo(orbitPos.x, orbitPos.y);
+                ctx.stroke();
 
-            ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.setLineDash([]);
-            ctx.strokeStyle = 'lightblue';
-            const camPos = camera.screenToWorld(this.pos.x, this.pos.y);
-            ctx.moveTo(camPos.x, camPos.y);
-            const orbitPos = camera.screenToWorld(orbitTarget.x, orbitTarget.y);
-            ctx.lineTo(orbitPos.x, orbitPos.y);
-            ctx.stroke();
+                this.pos = newPos;
+            } else {
+                // if not close: move to orbit
+                const orthogonal = new Vec(-this.target.y, this.target.x);
+                const unit = orthogonal.normalize();
+                const orbitTarget = this.target.add(unit.scale(ORBIT_RADIUS));
+                const dir = orbitTarget.sub(this.pos);
+                const normalizedDir = dir.normalize();
+                this.pos = this.pos.add(normalizedDir.scale(this.vel));
+                this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
 
-            this.vel += this.acceleration * delta;
-            this.pos = this.pos.add(normalizedDir.scale(this.vel));
-            this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'lightblue';
+                const camPos = camera.screenToWorld(this.pos.x, this.pos.y);
+                ctx.moveTo(camPos.x, camPos.y);
+                const orbitPos = camera.screenToWorld(orbitTarget.x, orbitTarget.y);
+                ctx.lineTo(orbitPos.x, orbitPos.y);
+                ctx.stroke();
+            }
         }
     };
-
 
     mine = () => {
         // TODO: find() instead of forEach()
@@ -676,7 +693,8 @@ class Spaceship extends SpaceshipDTO {
                 if (oreModule) {
                     oreModule.amount += ore.amount;
                 } else {
-                    this.inventory.push(new Module(ore.type, Constants.SPRITE.MINE, ore.amount, 'kg'));
+                    const m = new Module(ore.type, Constants.SPRITE.MINE, ore.amount, 'kg');
+                    this.inventory.push(m);
                 }
             });  
         });
