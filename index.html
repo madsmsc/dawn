@@ -340,6 +340,9 @@ class DeliveryMission extends Mission {
         const distance = spaceship.pos.sub(this.station.pos).length();
         if (distance < this.station.dockingRadius) {
             // Check ship's cargo for required ore
+            // TODO: don't do this automatically,
+            // when docked, show the missions that can be completed
+            // and press N to complete the mission.
             const cargo = spaceship.inventory.find(item => item.type === 'ore' && 
                                                     item.name === this.requiredOre);
             if (cargo) {
@@ -631,9 +634,32 @@ class Spaceship extends SpaceshipDTO {
             };
 
         } else if (this.mode === Constants.MOVE.ORBIT) {
-            // implment orbit mode here     
+            const ORBIT_RADIUS = 120;
+            // if close: start orbiting - but how?
+
+            // if not close: move to orbit
+            const orthogonal = new Vec(-this.target.y, this.target.x);
+            const unit = orthogonal.normalize();
+            const orbitTarget = this.target.add(unit.scale(ORBIT_RADIUS));
+            const dir = orbitTarget.sub(this.pos);
+            const normalizedDir = dir.normalize();
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.strokeStyle = 'lightblue';
+            const camPos = camera.screenToWorld(this.pos.x, this.pos.y);
+            ctx.moveTo(camPos.x, camPos.y);
+            const orbitPos = camera.screenToWorld(orbitTarget.x, orbitTarget.y);
+            ctx.lineTo(orbitPos.x, orbitPos.y);
+            ctx.stroke();
+
+            this.vel += this.acceleration * delta;
+            this.pos = this.pos.add(normalizedDir.scale(this.vel));
+            this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
         }
     };
+
 
     mine = () => {
         // TODO: find() instead of forEach()
@@ -707,7 +733,6 @@ class StarField {
             ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
             ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             ctx.fill();
-
         });
     };
 }
