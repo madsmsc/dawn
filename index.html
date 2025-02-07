@@ -75,7 +75,7 @@ class Server {
         const dto = new PlayerDTO();
         dto.name = 'Bob';
         dto.credits = 0;
-        dto.docked = false;
+        dto.docked = undefined;
         return new Player(dto);
     };
 
@@ -134,7 +134,7 @@ class PlayerDTO {
     constructor() {}
     name = undefined; // string
     credits = undefined; // number
-    docked = undefined; // boolean
+    docked = undefined; // Station
 }
 
 class Player extends PlayerDTO {
@@ -183,10 +183,19 @@ class Station extends Selectable {
         // from the draw methods. the individual draw methods should not
         // worry about whether to render. That is the jobs of the Game class.
         if (player.docked) {
-            ctx.fillStyle = 'white';
-            ctx.font = '14px Arial';
+            // draw the mission UI
+            const mission = player.docked.missionToAccept();
+            ctx.fillStyle = 'green';
+            ctx.font = '18px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('YOU ARE DOCKED~! this is the statino UI!', this.pos.x, this.pos.y - 45);
+            const yOffset = 100;
+            const text = (s) => {ctx.fillText(s, canvas.width / 2, yOffset += 30)};
+            text('YOU ARE DOCKED!');
+            text('this is the station UI!');
+            text('this is the next mission to accept:');
+            text(mission.title);
+            text(mission.description);
+            text(`Reward: ${mission.reward} credits`);
             return;
         }
         ctx.save();
@@ -290,11 +299,11 @@ class StationManager {
 
     handleDocking = () => {
         if (player.docked) {
-            player.docked = false;
+            player.docked = undefined;
             return;
         }
         if (this.stations.find(s => s.canDock())) {
-            player.docked = true;
+            player.docked = s;
         }
     };
 }
@@ -369,7 +378,6 @@ class DeliveryMission extends Mission {
 
 class MissionManager {
     constructor() {
-
         this.availableMissions = [];
         this.activeMissions = [];
         this.completedMissions = [];
@@ -389,10 +397,17 @@ class MissionManager {
         });
     };
 
-    // TODO: any missions can be accepted at any stations for now...
+    missionToAccept = () => {
+        if (!player.docked) return;
+        const missionsAtStation = this.availableMissions
+            .filter(m => m.station === player.docked);
+        return missionsAtStation[0];
+    };
+
     acceptMission = () => {
-        if (this.availableMissions.length === 0) return;
-        const mission = this.availableMissions[0];
+        if (!player.docked) return;
+        const mission = this.missionToAccept();
+        if (!mission) return;
         this.activeMissions.push(mission);
         this.availableMissions.splice(0, 1);
         mission.start();
@@ -1061,7 +1076,7 @@ class GameEventListener {
             ui.dDown = true;
         } else if (event.key === 'f') {
             stationManager.handleDocking();
-        } else if (event.key === 'm' && player.docked) {
+        } else if (event.key === 'm') {
             missionManager.acceptMission();
         } 
 
