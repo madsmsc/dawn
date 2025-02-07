@@ -251,6 +251,14 @@ class Station extends Selectable {
 }
 
 class StationManager {
+    // TODO: make stations into "instances", spawning asteroids and enemies around them.
+    // the warp drive can warp to structures and celestial bodies (both warpables).
+    // structures can be stations and system bridges
+    // celestial bodies can be planets and stars
+    // put those into a warpables array, maybe in a system manager or something like that.
+    // the warp time (shown as a loading bar in the middle of the screen)
+    // depends on the distance and the warp drive speed.
+    // maybe remove some managers?
     constructor() {
         this.stations = [];
         this.stations.push(
@@ -323,6 +331,7 @@ class Mission {
     };
 }
 
+// TODO: rename to minig mission
 class DeliveryMission extends Mission {
     constructor(station, requiredOre, amount, reward) {
         const title = `Deliver ${amount} ${requiredOre}`;
