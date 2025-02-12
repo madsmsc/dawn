@@ -37,6 +37,14 @@ const Constants = {
         Gold: 3,
         Titanium:4
     },
+    COMPONENT: {
+        A: 0, // transmute: common to magic (1-2 modifiers)
+        B: 1, // augment: add modifier to magic (max 2 modifiers)
+        C: 2, // alteration: reroll magic (1-2 modifiers)
+        D: 3, // alchemy: magic to rare (2-6 modifiers)
+        E: 4, // chaos: reroll rare (2-6 modifiers)
+        F: 5 // scour: magic/rare to common (0 modifiers)
+    },
     SPRITE: {
         // icons
         MINE: 0,
@@ -1286,6 +1294,20 @@ new Game().start();
 
 check TODOs!
 
+complete all 4 branches and then split up the front-end 
+  into index.html, main.js, and class files.
+  and move this todo to the readme file.
+
+3 ways to play/progress: kill stuff, missions, and mining.
+killing stuff drops modules and components.
+missions grant components. and often has you killing stuff.
+mining grants ore.
+ore can be built into components at station vendors.
+modules can be destructed into components at station vendors.
+components can be used on modules like PoE currency orbs.
+remove the concept of credits.
+all stations share "folding vault" containing all your items.
+
 make small indicators for where stations and asteroids are in your current instance.
 make some way of handling instances.
 fix UI for warping
@@ -1318,4 +1340,57 @@ as you kill and loot and sell, you get xp and credits.
 xp has some inherent bonuses to the skills you level
 and credits can be used to buy ships and components.
 credits carry over between deaths.
+
+-- come up with module names
+-- and modifier names - or are these the module names? - maybe modifiers should have simpler names?
+COMPONENT_NAMES = {
+    'HULL': [
+        'Nano-Weave Reinforcer',
+        'Molecular Binder',
+        'Structural Harmonizer',
+        'Lattice Stabilizer',
+        'Shell Fortifier',
+        'Frame Integrator'
+    ],
+    'SHIELD': [
+        'Field Resonator',
+        'Barrier Amplifier',
+        'Shield Modulator',
+        'Defense Matrix Core',
+        'Aegis Synchronizer',
+        'Deflector Enhancer'
+    ],
+    'WEAPON': [
+        'Targeting Matrix',
+        'Damage Accelerator',
+        'Impact Calibrator',
+        'Strike Optimizer',
+        'Combat Synchronizer',
+        'Attack Amplifier'
+    ],
+    'CARGO': [
+        'Space Expander',
+        'Cargo Optimizer',
+        'Storage Densifier',
+        'Hold Maximizer',
+        'Volume Enhancer',
+        'Capacity Amplifier'
+    ],
+    'ENGINE': [
+        'Thrust Amplifier',
+        'Velocity Modulator',
+        'Drive Optimizer',
+        'Speed Harmonizer',
+        'Propulsion Enhancer',
+        'Momentum Accelerator'
+    ],
+    'SCANNER': [
+        'Range Extender',
+        'Signal Booster',
+        'Detection Matrix',
+        'Sensor Amplifier',
+        'Scan Optimizer',
+        'Radar Enhancer'
+    ]
+}
 -->
