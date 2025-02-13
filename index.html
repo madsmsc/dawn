@@ -61,28 +61,27 @@ const Constants = {
 
 class Server {
     constructor() { 
-        const ws = new WebSocket('ws://localhost:8080');
-        ws.onopen = () => {
+        this.ws = new WebSocket('ws://localhost:8080');
+        this.ws.onopen = () => {
             console.log('Connected to server');
-        ws.send('Hello, Server!');
+            this.isConnected = true;
         };
 
-        ws.onmessage = (event) => {
-            console.log(`Message from server: ${event.data}`);
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log(`Message from server: ${data}`);
+            if (data.action === 'login') {
+                // TODO: make sure these are both good.
+                // not just the DTOs but also the children.
+                player = new Player(data.player);
+                spaceship = new Spaceship(data.spaceship);
+            }
         };
 
-        ws.onclose = () => {
+        this.ws.onclose = () => {
             console.log('Connection closed');
         };
-     }
-    
-    loadPlayer = () => {
-        const dto = new PlayerDTO();
-        dto.name = 'Bob';
-        dto.credits = 0;
-        dto.docked = false;
-        return new Player(dto);
-    };
+    }
 
     loadSpaceship = () => {
         const dto = new SpaceshipDTO();
@@ -157,6 +156,19 @@ class Server {
         
         return A;
     };
+    login = (user, pass) => {
+        if (this.ws.readyState !== WebSocket.OPEN) {
+            console.log('not connected');
+            return;
+        }
+        this.loggingIn = true;
+        const message = {
+            action: 'login',
+            user,
+            pass
+        };
+        this.ws.send(JSON.stringify(message));
+    }
 }
 
 class Selectable {
@@ -188,17 +200,12 @@ class Selectable {
     }
 }
 
-class PlayerDTO {
-    constructor() {}
-    name = undefined; // string
-    credits = undefined; // number
-    docked = undefined; // boolean
-}
-
-class Player extends PlayerDTO {
-    constructor(dto) {
-        super();
-        Object.assign(this, dto);
+class Player {
+    constructor(obj) {
+        this.name = undefined; // string
+        this.credits = undefined; // number
+        this.docked = undefined; // boolean
+        Object.assign(this, obj);
     }
 
     update = (delta) => {
@@ -603,8 +610,8 @@ class Asteroid extends Selectable {
     }
 }
 
-class SpaceshipDTO {
-    constructor() {
+class Spaceship {
+    constructor(obj) {
         this.type = undefined; // string
         this.shield = undefined; // number
         this.maxShield = undefined; // number
@@ -619,13 +626,12 @@ class SpaceshipDTO {
         this.mode = undefined; // Constants.MOVE
         this.modules = undefined; // Module[]
         this.inventory = undefined; // Module[]
-    }
-}
 
-class Spaceship extends SpaceshipDTO {
-    constructor(dto) {
-        super();
-        Object.assign(this, dto);
+        Object.assign(this, obj);
+        this.pos = new Vec(obj.pos.x, obj.pos.y);
+        this.target = new Vec(obj.target.x, obj.target.y);
+        this.vel = new Vec(obj.vel.x, obj.vel.y);
+        // TODO: fix modules
     }
 
     update = (delta) => {
@@ -783,6 +789,10 @@ class StarField {
 
 class UI {
     constructor() {
+        // TODO: make buttons register themselves with callbacks
+        // and implement it i the GameEventListener
+        // { name (string), upper left (Vec), lower right (Vec), callback (()=>{}) } 
+        this.buttons = [];
         this.selectables = [];
         this.fpsCount = 0;
         this.fpsTime = 0;
@@ -1089,6 +1099,7 @@ class GameEventListener {
     };
 
     keyUpListener = (event) => {
+        if (!player || !spaceship) return;
         if (event.key === 'q') {
             ui.qDown = false;
         } else if (event.key === 'a') {
@@ -1111,6 +1122,7 @@ class GameEventListener {
     };
 
     keyDownListener = (event) => {
+        if (!player || !spaceship) return;
         const selected = ui.selectables.find(s => s.selected);
         // MENUS
         if (event.key === 'w') {
@@ -1167,6 +1179,7 @@ class GameEventListener {
     };
 
     clickListener = (event) => {
+        if (!player || !spaceship) return;
         const clickPos = camera.screenToWorld(event.x, event.y);
 
         // fly-to
@@ -1260,6 +1273,23 @@ class Game {
 
     gameLoop = (delta) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!player || !spaceship){
+            
+            ui.roundedRect(ui.dialogX, ui.dialogY, ui.dialogWidth, ui.dialogHeight, 10);
+            let yOffset = 100;
+            yOffset = ui.drawSectionHeader('Logging in...', ui.dialogWidth, yOffset, ui.dialogX);
+            ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+            ctx.fillText(`user: ${'bob'}`, this.dialogX + 30, yOffset += 20);
+            ctx.fillText(`pass: ${'1234'}`, this.dialogX + 30, yOffset += 20);
+
+            if (!server.loggingIn) {
+                console.log('logging in');
+                server.login('bob', '1234');
+            }
+            requestAnimationFrame(this.gameLoop);
+            return;
+        }
+
         const newDelta = delta - this.lastDelta;
         this.lastDelta = delta;
         starField.update(newDelta).draw();
@@ -1285,7 +1315,7 @@ class Game {
 
         // generate missions
         setInterval(() => {
-            if (player.docked) return;
+            if (!player ||player.docked) return;
             missionManager.generateNewMissions();
         }, 3000);
 
@@ -1304,9 +1334,9 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 const ui = new UI();
 const server = new Server();
-const player = server.loadPlayer();
-const spaceship = server.loadSpaceship();
 let system = server.loadSystem();
+let player;
+let spaceship;
 const starField = new StarField();
 const camera = new Camera();
 const missionManager = new MissionManager();
