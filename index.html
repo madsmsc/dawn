@@ -61,6 +61,7 @@ const Constants = {
 
 class Server {
     constructor() { 
+        this.loggingIn = false;
         this.ws = new WebSocket('ws://localhost:8080');
         this.ws.onopen = () => {
             console.log('Connected to server');
@@ -71,8 +72,6 @@ class Server {
             const data = JSON.parse(event.data);
             console.log(`Message from server: ${data}`);
             if (data.action === 'login') {
-                // TODO: make sure these are both good.
-                // not just the DTOs but also the children.
                 player = new Player(data.player);
                 spaceship = new Spaceship(data.spaceship);
             }
@@ -82,27 +81,6 @@ class Server {
             console.log('Connection closed');
         };
     }
-
-    loadSpaceship = () => {
-        const dto = new SpaceshipDTO();
-        dto.type = 'frigate';
-        dto.shield = 50;
-        dto.maxShield = 80;
-        dto.hull = 30;
-        dto.maxHull = 50;
-        dto.size = 15;
-        dto.acceleration = 0.005;
-        dto.vel = 0; //new Vec(0, 0); // FAKING IT
-        dto.pos = new Vec(canvas.width / 2, canvas.height / 2);
-        dto.target = dto.pos.clone();
-        dto.miningRange = 50;
-        dto.mode = Constants.MOVE.APPROACH;
-        dto.modules = [new Module('laser weapon', Constants.SPRITE.FIRE, 1, 'module'),
-                        new Module('mining laser', Constants.SPRITE.MINE, 1, 'module'),
-                        new Module('warp drive', Constants.SPRITE.WARP, 1, 'module')]
-        dto.inventory = [];
-        return new Spaceship(dto);
-    };
 
     loadSystem = () => {
         // TODO: move logic to server
@@ -156,6 +134,7 @@ class Server {
         
         return A;
     };
+
     login = (user, pass) => {
         if (this.ws.readyState !== WebSocket.OPEN) {
             console.log('not connected');
@@ -204,7 +183,7 @@ class Player {
     constructor(obj) {
         this.name = undefined; // string
         this.credits = undefined; // number
-        this.docked = undefined; // boolean
+        this.docked = undefined; // Station
         Object.assign(this, obj);
     }
 
@@ -242,17 +221,8 @@ class Station extends Selectable {
     }
 
     draw = () => {
+        if (player.docked) return;
         this.drawSelection();
-        // TODO: move this to Game class and remove all the early returns
-        // from the draw methods. the individual draw methods should not
-        // worry about whether to render. That is the jobs of the Game class.
-        if (player.docked) {
-            ctx.fillStyle = 'white';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU ARE DOCKED~! this is the statino UI!', this.pos.x, this.pos.y - 45);
-            return;
-        }
         ctx.save();
         // Draw station
         ctx.fillStyle = 'rgba(150, 150, 200, 1)';
@@ -276,42 +246,26 @@ class Station extends Selectable {
         ctx.restore();
     };
 
+    missionsAtStation = () => {
+        return missionManager.availableMissions.filter(m => m.station === this);
+    };
+
+    missionToAccept = () => {
+        if (!player.docked) return undefined;
+        const missions = this.missionsAtStation();
+        if (!missions.length) return undefined;
+        return missions[0];
+    };
+
+    acceptMission = () => {
+        const mission = this.missionToAccept();
+        if (!mission) return;
+        missionManager.activeMissions.push(mission);
+        missionManager.availableMissions.splice(0, 1);
+        mission.start();
+    };
+
     canDock = () => this.pos.sub(spaceship.pos).length() < this.dockingRadius;
-
-    buyFromShip = (itemName, quantity, ship) => {
-        const price = this.prices.buy[itemName];
-        if (!price) return false;
-        const item = ship.inventory.find(i => i.name === itemName);
-        if (!item || item.quantity < quantity) return false;
-
-        const totalPrice = price * quantity;
-        
-        // Transfer items and credits
-        item.quantity -= quantity;
-        ship.credits += totalPrice;
-        
-        // Remove item if quantity is 0
-        if (item.quantity <= 0) {
-            const index = ship.inventory.indexOf(item);
-            ship.inventory.splice(index, 1);
-        }
-        
-        return true;
-    };
-
-    sellToShip = (itemName, quantity, ship) => {
-        const price = this.prices.sell[itemName];
-        if (!price) return false;
-
-        const totalPrice = price * quantity;
-        if (ship.credits < totalPrice) return false;
-
-        // Transfer items and credits
-        ship.addToInventory(itemName, quantity);
-        ship.credits -= totalPrice;
-        
-        return true;
-    };
 }
 
 // TODO: currently warping between systems
@@ -328,12 +282,6 @@ class System {
     }
 
     update = (delta) => {
-        this.stations
-            .filter(station => station.canDock())
-            .forEach(station => {
-            // Show docking indicator or enable docking menu
-            this.showDockingPrompt(station);
-        });
         if (this.asteroids.length < this.maxAsteroids) {
             this.asteroids.push(new Asteroid().moveAway());
         }
@@ -342,6 +290,12 @@ class System {
     };
 
     draw = (ctx) => {
+        this.stations
+            .filter(station => station.canDock())
+            .forEach(station => {
+            // Show docking indicator or enable docking menu
+            this.showDockingPrompt(station);
+        });
         this.stations.forEach(station => station.draw(ctx));
         if(player.docked) return;
         this.asteroids.forEach(a => a.draw());
@@ -353,7 +307,7 @@ class System {
         ctx.fillStyle = 'grey';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Press F to ${player.docked ? 'UN-' : ''}dock`, 
+        ctx.fillText(`Press F to dock`, 
                     station.pos.x, 
                     station.pos.y - 60);
         ctx.restore();
@@ -361,19 +315,20 @@ class System {
 
     handleDocking = () => {
         if (player.docked) {
-            player.docked = false;
+            player.docked = undefined;
             return;
         }
-        if (this.stations.find(s => s.canDock())) {
-            player.docked = true;
+        const stationToDock = this.stations.find(s => s.canDock());
+        if (stationToDock) {
+            player.docked = stationToDock;
         }
     };
 }
 
 class Mission {
-    constructor(title, description, reward) {
-        this.title = title;
+    constructor(description, station, reward) {
         this.description = description;
+        this.station = station;
         this.reward = reward;
         this.completed = false;
         this.active = false;
@@ -383,91 +338,67 @@ class Mission {
         this.active = true;
     };
 
-    complete = () => {
+    completeSuper = () => {
         this.completed = true;
         this.active = false;
         player.credits += this.reward;
     };
 
     update = (delta) => {
-        // Override in subclasses
+
     };
 }
 
 // TODO: rename to minig mission
 class MiningMission extends Mission {
     constructor(station, requiredOre, amount, reward) {
-        const title = `Deliver ${amount} ${requiredOre}`;
         const description = `Deliver ${amount} units of ${requiredOre} to ${station.name}`;
-        super(title, description, reward);
-        this.station = station;
+        super(description, station, reward);
         this.requiredOre = requiredOre;
-        this.requiredAmount = amount;
-        this.deliveredAmount = 0;
+        this.amount = amount;
+    }
+
+    canComplete = () => {
+        return spaceship.inventory
+            .find(item => item.name === this.requiredOre && item.amount >= this.amount);
+    }
+
+    complete = () => {
+        this.completeSuper();
+        const cargo = this.canComplete();
+        // Transfer ore from ship to station
+        cargo.amount -= this.amount;
+        // Remove cargo item if empty
+        if (cargo.amount <= 0) {
+            const index = spaceship.inventory.indexOf(cargo);
+            spaceship.inventory.splice(index, 1);
+        }
     }
     
-    update = () => {
-        if (!this.active || this.completed) return;
-        // Check if ship is close enough to station
-        const distance = spaceship.pos.sub(this.station.pos).length();
-        if (distance < this.station.dockingRadius) {
-            // Check ship's cargo for required ore
-            // TODO: don't do this automatically,
-            // when docked, show the missions that can be completed
-            // and press N to complete the mission.
-            const cargo = spaceship.inventory.find(item => item.type === 'ore' && 
-                                                    item.name === this.requiredOre);
-            if (cargo) {
-                const amountToTransfer = Math.min(
-                    cargo.quantity, 
-                    this.requiredAmount - this.deliveredAmount
-                );
-                // Transfer ore from ship to station
-                cargo.quantity -= amountToTransfer;
-                this.deliveredAmount += amountToTransfer;
-                // Remove cargo item if empty
-                if (cargo.quantity <= 0) {
-                    const index = spaceship.inventory.indexOf(cargo);
-                    spaceship.inventory.splice(index, 1);
-                }
-                // Check if mission is complete
-                if (this.deliveredAmount >= this.requiredAmount) {
-                    this.complete();
-                }
-            }
-        }
+    update = (delta) => {
+
     };
 }
 
 class MissionManager {
     constructor() {
-
         this.availableMissions = [];
         this.activeMissions = [];
         this.completedMissions = [];
     }
 
     generateNewMissions = () => {
-        // Generate some random delivery missions
-        system.stations.forEach(station => {
-            if (Math.random() < 0.3) {  // 30% chance per station
-                const ores = Object.keys(Constants.ORES);
-                const ore = ores[Math.floor(Math.random() * ores.length)];
-                const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
-                const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
-                const mission = new MiningMission(station, ore, amount, reward);
-                this.availableMissions.push(mission);
-            }
+        system.stations
+            .filter(station => station.missionsAtStation().length < 3) // max 3 missions per station
+            .filter(station => Math.random() < 0.3) // 30% chance per station
+            .forEach(station => {
+            const ores = Object.keys(Constants.ORES);
+            const ore = ores[Math.floor(Math.random() * ores.length)];
+            const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
+            const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
+            const mission = new MiningMission(station, ore, amount, reward);
+            this.availableMissions.push(mission);
         });
-    };
-
-    // TODO: any missions can be accepted at any stations for now...
-    acceptMission = () => {
-        if (this.availableMissions.length === 0) return;
-        const mission = this.availableMissions[0];
-        this.activeMissions.push(mission);
-        this.availableMissions.splice(0, 1);
-        mission.start();
     };
 
     update = (delta) => {
@@ -495,12 +426,8 @@ class MissionManager {
         // Draw title
         ctx.fillStyle = 'white';
         ctx.font = 'bold 16px Arial';
-        let yOffset = y + 110;
+        let yOffset = y + 90;
         ctx.fillText('Missions', x + 20, yOffset);
-
-        if (player.docked) {
-            ctx.fillText('(M to accept missions)', x + 110, yOffset);
-        }
 
         // Draw active missions
         ctx.font = '12px Arial';
@@ -508,13 +435,18 @@ class MissionManager {
             ctx.fillText('No active missions', x + 20, yOffset += 30);
         } else {
             this.activeMissions.forEach(mission => {
-                ctx.fillStyle = 'rgba(100, 255, 100, 0.8)';
-                ctx.fillText(mission.title, x + 20, yOffset);
                 ctx.fillStyle = 'white';
                 ctx.font = '14px Arial';
-                ctx.fillText(mission.description, x + 20, yOffset + 20);
-                ctx.fillText(`Reward: ${mission.reward} credits`, x + 20, yOffset + 40);
-                yOffset += 70;
+                ctx.fillText(mission.description, x + 20, yOffset += 40);
+                if (mission instanceof MiningMission && mission.canComplete()) {
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillText(`can be completed`, x + 20, yOffset += 20);
+                    if (player.docked) {
+                        // TODO: only show this for the first/top mission
+                        ctx.fillText(`(N to complete)`, x + 150, yOffset);
+                    }
+                }
+                ctx.fillText(`Reward: ${mission.reward} credits`, x + 20, yOffset += 20);
             });
         }
         ctx.restore();
@@ -1134,7 +1066,9 @@ class GameEventListener {
         } else if (event.key === 'f') {
             system.handleDocking();
         } else if (event.key === 'm' && player.docked) {
-            missionManager.acceptMission();
+            player.docked.acceptMission();
+        } else if (event.key === 'n') {
+            missionManager.activeMissions.find(m => m.canComplete())?.complete();
         } else if (event.key === 'r' && ui.k1down) {
             // TODO move this logic somewhere else and add loading bar
             system = system.connections[0].system;
@@ -1273,8 +1207,9 @@ class Game {
 
     gameLoop = (delta) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // TODO: login UI - move...
         if (!player || !spaceship){
-            
             ui.roundedRect(ui.dialogX, ui.dialogY, ui.dialogWidth, ui.dialogHeight, 10);
             let yOffset = 100;
             yOffset = ui.drawSectionHeader('Logging in...', ui.dialogWidth, yOffset, ui.dialogX);
@@ -1286,8 +1221,32 @@ class Game {
                 console.log('logging in');
                 server.login('bob', '1234');
             }
-            requestAnimationFrame(this.gameLoop);
-            return;
+            return requestAnimationFrame(this.gameLoop);
+        }
+
+        // TODO: move... draw the station UI
+        // TODO: remove all the early returns from the draw methods. 
+        // the individual draw methods should not
+        // worry about whether to render. That is the jobs of the Game class.
+        if (player.docked) {
+            ctx.fillStyle = 'white';
+            ctx.font = '22px Arial';
+            let yOffset = 100;
+            const text = (s) => {ctx.fillText(s, canvas.width / 2, yOffset += 30)};
+            text('YOU ARE DOCKED! - (F to undock)');
+            text('this is the station UI!');
+            text('---')
+            const mission = player.docked.missionToAccept();
+            if (mission) {
+                text('this is the next mission to accept: (M to accept)');
+                text('---')
+                text(mission.title);
+                text(mission.description);
+                text(`Reward: ${mission.reward} credits`);
+                text('---')
+            }
+            missionManager.update().draw();
+            return requestAnimationFrame(this.gameLoop);
         }
 
         const newDelta = delta - this.lastDelta;
@@ -1317,7 +1276,7 @@ class Game {
         setInterval(() => {
             if (!player ||player.docked) return;
             missionManager.generateNewMissions();
-        }, 3000);
+        }, 30); // TODO: make greater - low for testing...
 
         // start game loop
         requestAnimationFrame(this.gameLoop);
