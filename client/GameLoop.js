@@ -1,13 +1,20 @@
 import { game } from './game.js';
 import { GameEventListener } from './GameEventListener.js';
+import { UI } from './UI.js';
+import { Server } from './Server.js';
+import { StarField } from './StarField.js';
+import { Camera } from './Camera.js';
+import { MissionManager } from './MissionManager.js';
 
 export class GameLoop {
     constructor() {
         this.lastDelta = 0;
     }
 
-    gameLoop = (delta) => {
+    gameLoop (delta) {
         game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+        const newDelta = delta - this.lastDelta;
+        this.lastDelta = delta;
 
         // TODO: login UI - move...
         if (!game.player || !game.spaceship){
@@ -41,17 +48,15 @@ export class GameLoop {
             if (mission) {
                 text('this is the next mission to accept: (M to accept)');
                 text('---')
-                text(mission.title);
                 text(mission.description);
                 text(`Reward: ${mission.reward} credits`);
                 text('---')
             }
             game.missionManager.update().draw();
+            game.ui.update(newDelta).draw();
             return requestAnimationFrame(this.gameLoop);
         }
 
-        const newDelta = delta - this.lastDelta;
-        this.lastDelta = delta;
         game.starField.update(newDelta).draw();
 
         // start camera transformation
@@ -67,9 +72,22 @@ export class GameLoop {
         game.ui.update(newDelta).draw();
 
         requestAnimationFrame(this.gameLoop);
-    };
+    }
 
-    start = () => {
+    start () {
+        // init game variables
+        game.canvas = document.getElementById('gameCanvas');
+        game.canvas.width = window.innerWidth;
+        game.canvas.height = window.innerHeight;
+        game.ctx = game.canvas.getContext('2d');
+        game.gameLoop = this;
+        game.ui = new UI();
+        game.server = new Server();
+        game.starField = new StarField();
+        game.camera = new Camera();
+        game.missionManager = new MissionManager();
+        game.system = game.server.loadSystem();
+
         // register event listeners
         new GameEventListener().register();
 
@@ -80,6 +98,7 @@ export class GameLoop {
         }, 30); // TODO: make greater - low for testing...
 
         // start game loop
+        this.gameLoop = this.gameLoop.bind(this); // dunno wtf this is...
         requestAnimationFrame(this.gameLoop);
-    };
+    }
 }

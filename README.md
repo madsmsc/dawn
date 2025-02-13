@@ -3,6 +3,8 @@
 root contains icons.png and index.html which comprise the front-end.
 
 the server folder contains the node.js back-end.
+install node.js (https://nodejs.org/en/download).
+run 'npm install' to install the dependency.
 run 'npm start' to start the server.
 
 the front-end and back-end communicate via websockets.
@@ -10,14 +12,25 @@ the front-end and back-end communicate via websockets.
 
 # TODOs
 
+ambience: music, lasers, particle trails, background planets with rings, etc.
+
+shoot mercenaries to increase fighter reputation
+mine asteroids to increase miner reputation
+run missions to increase specific reputations
+increase reputation to earn better ship licenses, allowing you to fly bigger and better ships.
+most activities reward your with credits and/or reputation
+and credits rule the galaxy.
+trade credits for new modules, ships, and even reputation by bribing the right people.
+
+evt. introducer et crafting system som PoE, men igennem research facilities paa stations.
+trans=100 credits, aug=150 credits, alt=300 credits, regal, alc, ex, scour...
+
+"simple" items (white) 0 prefix/suffix.
+"modified" items (blue) max 1 prefix, 1 suffix
+"complex" items (yellow) max 2 prefix, 2 suffix
+
 3 ways to play/progress: kill stuff, missions, and mining.
-killing stuff drops modules and components.
-missions grant components. and often has you killing stuff.
-mining grants ore.
-ore can be built into components at station vendors.
-modules can be destructed into components at station vendors.
-components can be used on modules like PoE currency orbs.
-remove the concept of credits.
+
 all stations share "folding vault" containing all your items.
 make small indicators for where stations and asteroids are in your current instance.
 make some way of handling instances.
@@ -50,56 +63,3 @@ as you kill and loot and sell, you get xp and credits.
 xp has some inherent bonuses to the skills you level
 and credits can be used to buy ships and components.
 credits carry over between deaths.
-
--- come up with module names
--- and modifier names - or are these the module names? - maybe modifiers should have simpler names?
-COMPONENT_NAMES = {
-    'HULL': [
-        'Nano-Weave Reinforcer',
-        'Molecular Binder',
-        'Structural Harmonizer',
-        'Lattice Stabilizer',
-        'Shell Fortifier',
-        'Frame Integrator'
-    ],
-    'SHIELD': [
-        'Field Resonator',
-        'Barrier Amplifier',
-        'Shield Modulator',
-        'Defense Matrix Core',
-        'Aegis Synchronizer',
-        'Deflector Enhancer'
-    ],
-    'WEAPON': [
-        'Targeting Matrix',
-        'Damage Accelerator',
-        'Impact Calibrator',
-        'Strike Optimizer',
-        'Combat Synchronizer',
-        'Attack Amplifier'
-    ],
-    'CARGO': [
-        'Space Expander',
-        'Cargo Optimizer',
-        'Storage Densifier',
-        'Hold Maximizer',
-        'Volume Enhancer',
-        'Capacity Amplifier'
-    ],
-    'ENGINE': [
-        'Thrust Amplifier',
-        'Velocity Modulator',
-        'Drive Optimizer',
-        'Speed Harmonizer',
-        'Propulsion Enhancer',
-        'Momentum Accelerator'
-    ],
-    'SCANNER': [
-        'Range Extender',
-        'Signal Booster',
-        'Detection Matrix',
-        'Sensor Amplifier',
-        'Scan Optimizer',
-        'Radar Enhancer'
-    ]
-}

@@ -1,8 +1,10 @@
 import { game } from './game.js';
-import { Constants } from '../shared/Constants.js';
+import { SPRITE } from '../shared/Constants.js';
 
 export class UI {
     constructor() {
+        // TODO: ask Cursor to refactor UI.js to maximize code re-use.
+
         // TODO: make buttons register themselves with callbacks
         // and implement it i the GameEventListener
         // { name (string), upper left (Vec), lower right (Vec), callback (()=>{}) } 
@@ -15,12 +17,11 @@ export class UI {
         this.aDown = false;
         this.sDown = false;
         this.wDown = false;
+        this.eDown = false;
+        this.dDown = false;
         this.k1down = false;
         this.k2down = false;
         this.k3down = false;
-
-        // TODO: why can I declare fields with and without this?
-        // does that mean one is public and the other private?
         this.dialogWidth = 300;
         this.dialogHeight = 400;
         this.dialogX = game.canvas.width / 2 - this.dialogWidth / 2;
@@ -30,7 +31,7 @@ export class UI {
         this.loadSprites();
     }
 
-    update = (delta) => {
+    update (delta) {
         this.fpsCount++;
         this.fpsTime += delta;
         if (this.fpsTime >= 1000) {
@@ -40,16 +41,16 @@ export class UI {
             this.fpsTime = 0;
         }
         return this;
-    };
+    }
 
-    draw = () => {
+    draw () {
         if (this.wDown) {
             this.drawShipDialog();
         } else if (this.eDown) {
             this.drawPilotDialog();
         } else if (this.dDown) {
             this.drawSettingsDialog();
-        } else if (this.k1down) {
+        } else if (this.k1down && !game.player.docked) {
             this.drawWarpDialog();
         }
         this.drawFps();
@@ -58,10 +59,10 @@ export class UI {
         // ui.drawPanel({ x: 0, y: 100 }, 100, 200);
         const texts = [`system: ${game.system.name}`, `station: ${game.system.stations[0].name}`];
         this.drawTexts(texts, { x: 10, y: 120 });
-    };
+    }
 
-    drawIcon = (spriteIndex, pos, selected = false, text = undefined, 
-                     outline = true, scale = 1, rotation = 0) => {
+    drawIcon (spriteIndex, pos, selected = false, text = undefined, 
+              outline = true, scale = 1, rotation = 0) {
         const size = 40*scale;
         if (!this.sprites[spriteIndex]) return;
         if (selected) game.ctx.globalAlpha = 0.5;
@@ -88,13 +89,13 @@ export class UI {
             game.ctx.fillText(text, pos.x, pos.y+4);
         }
         game.ctx.globalAlpha = 1;
-    };
+    }
 
-    roundedRectExt = (x, y, width, height, radius) => {
+    roundedRectExt (x, y, width, height, radius) {
         this.roundedRect(x, y, width, height, radius);
     }
 
-    roundedRect = (x, y, width, height, radius) => {
+    roundedRect (x, y, width, height, radius) {
         game.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
         game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
         game.ctx.lineWidth = 2;
@@ -111,13 +112,14 @@ export class UI {
         game.ctx.closePath();
         game.ctx.fill();
         game.ctx.stroke();
-    };
+    }
 
-    loadSprites = () => {
+    loadSprites () {
         const spriteSheet = new Image();
         // icons from:
         // https://game-icons.net/
-        // https://icons8.com
+        // https://icons8.com/
+        // https://www.flaticon.com/
         spriteSheet.src = 'client/icons.png';
         spriteSheet.onload = () => {
             const spriteWidth = 40;
@@ -158,7 +160,7 @@ export class UI {
         };
     }
 
-    drawWarpDialog = () => {
+    drawWarpDialog () {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Warp to:', this.dialogWidth, yOffset, this.dialogX);
@@ -173,9 +175,9 @@ export class UI {
             game.ctx.fillText(`press ${keys[i]} to warp`, this.dialogX + 30, yOffset += 20);
             yOffset += 30
         }
-    };
+    }
 
-    drawPanel = (pos, w, h) => {
+    drawPanel (pos, w, h) {
         game.ctx.setLineDash([]);
         game.ctx.strokeStyle = 'black';
         game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -184,10 +186,10 @@ export class UI {
         game.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(pos.x, pos.y, w, h);
-    };
+    }
 
-    drawTexts = (texts, pos, off = 30, hor = false, 
-                 selected = -1, color = 'white') => {
+    drawTexts (texts, pos, off = 30, hor = false, 
+               selected = -1, color = 'white') {
         let lastLength = 0
         texts.forEach((text, i) => {
             const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
@@ -198,14 +200,14 @@ export class UI {
             game.ctx.fillText(text, x, y);
             lastLength += text.length;
         });
-    };
+    }
 
-    drawFps = () => {
+    drawFps () {
         this.drawPanel({ x: 0, y: 0 }, 100, 50);
         this.drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
-    };
+    }
 
-    drawHealthCircle = (radius, percentage, color) => {
+    drawHealthCircle (radius, percentage, color) {
         const thickness = 8;
         game.ctx.beginPath();
         game.ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
@@ -222,62 +224,66 @@ export class UI {
             game.ctx.stroke();
         }
         game.ctx.lineWidth = 1;
-    };
+    }
 
     // TODO: simplify and re-use code for the UI - there's too much
     // and it's too complicated
-    drawButtons = () => {
+    drawButtons () {
+        const border = 15;
+        const off = 40;
+        let i = 1;
+        let i2pos = (i) => { return { x: border, y: game.canvas.height - i * off - border}; };
+        this.drawIcon(SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
+        this.drawIcon(SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
+        this.drawIcon(SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
+        if (game.player.docked) return;
         const shieldPercentage = game.spaceship.shield / game.spaceship.maxShield * 100;
         const hullPercentage = game.spaceship.hull / game.spaceship.maxHull * 100;
         this.drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
         this.drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
-        this.drawTexts(['shield', `${shieldPercentage}%`],
+        this.drawTexts(['shield', `${shieldPercentage.toFixed(1)}%`],
                     { x: game.canvas.width / 2 - 90, y: game.canvas.height - 80 }, 15);
-        this.drawTexts(['hull', `${hullPercentage}%`], 
+        this.drawTexts(['hull', `${hullPercentage.toFixed(1)}%`], 
                     { x: game.canvas.width / 2 + 60, y: game.canvas.height - 80 }, 15);
-        const off = 45;
-        let i = 3;
-        const i2pos = (i) => { return { x: game.canvas.width / 2 - off*i, y: game.canvas.height - 45}; };
-        this.drawIcon(Constants.SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
-        this.drawIcon(Constants.SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
-        this.drawIcon(Constants.SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
-        this.drawIcon(Constants.SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
-        this.drawIcon(Constants.SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
-        this.drawIcon(Constants.SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
+        i = 3;
+        i2pos = (i) => { return { x: game.canvas.width / 2 - off * i, y: game.canvas.height - off - border}; };
+        this.drawIcon(SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
+        this.drawIcon(SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
+        this.drawIcon(SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
         i = -4;
-        this.drawIcon(Constants.SPRITE.FIRE, i2pos(i++), this.k3down, '3');
-        this.drawIcon(Constants.SPRITE.MINE, i2pos(i++), this.k2down, '2');
-        this.drawIcon(Constants.SPRITE.WARP, i2pos(i++), this.k1down, '1');
-    };
+        this.drawIcon(SPRITE.FIRE, i2pos(i++), this.k3down, '3');
+        this.drawIcon(SPRITE.MINE, i2pos(i++), this.k2down, '2');
+        this.drawIcon(SPRITE.WARP, i2pos(i++), this.k1down, '1');
+    }
 
-    drawPilotDialog = () => {
+    drawPilotDialog () {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Pilot', this.dialogWidth, yOffset, this.dialogX);
         game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
         game.ctx.fillText(`name: ${game.player.name}`, this.dialogX + 30, yOffset += 20);
         game.ctx.fillText(`credits: ${game.player.credits}`, this.dialogX + 30, yOffset += 20);
-    };
+    }
 
-    drawSettingsDialog = () => {
+    drawSettingsDialog () {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Settings', this.dialogWidth, yOffset, this.dialogX);
         yOffset += 20;
         game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
         game.ctx.fillText('Exit Now', this.dialogX + 30, yOffset);
-    };
+    }
 
-    drawShipDialog = () => {
+    drawShipDialog () {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Equipped Modules', this.dialogWidth, yOffset, this.dialogX);
         yOffset = this.drawSectionItems(game.spaceship.modules, yOffset, this.dialogX);
         yOffset = this.drawSectionHeader('Inventory', this.dialogWidth, yOffset, this.dialogX);
         this.drawSectionItems(game.spaceship.inventory, yOffset, this.dialogX);
-    };
+    }
 
-    drawSectionHeader = (text, width, yOffset, x) => {
+    drawSectionHeader (text, width, yOffset, x) {
         yOffset += 20;
         game.ctx.fillStyle = 'white';
         game.ctx.font = 'bold 20px Arial';
@@ -289,9 +295,9 @@ export class UI {
         game.ctx.stroke();
         game.ctx.font = '14px Arial';
         return yOffset + 20;
-    };
+    }
 
-    drawSectionItems = (modules, yOffset, x) => {
+    drawSectionItems (modules, yOffset, x) {
         modules.forEach((module) => {
             const m = module;
             game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
@@ -302,5 +308,5 @@ export class UI {
             yOffset += 20;
         });
         return yOffset;
-    };
+    }
 }

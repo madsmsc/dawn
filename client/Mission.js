@@ -9,17 +9,17 @@ export class Mission {
         this.active = false;
     }
 
-    start = () => {
+    start () {
         this.active = true;
-    };
+    }
 
-    completeSuper = () => {
+    completeSuper () {
         this.completed = true;
         this.active = false;
         game.player.credits += this.reward;
-    };
+    }
 
-    update = (delta) => {
+    update (delta) {
 
-    };
+    }
 }

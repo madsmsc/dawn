@@ -1,5 +1,5 @@
 import { game } from './game.js';
-import { Constants } from '../shared/Constants.js';
+import { ORE } from '../shared/Constants.js';
 import { MiningMission } from './MiningMission.js';
 
 export class MissionManager {
@@ -9,21 +9,21 @@ export class MissionManager {
         this.completedMissions = [];
     }
 
-    generateNewMissions = () => {
+    generateNewMissions () {
         game.system.stations
             .filter(station => station.missionsAtStation().length < 3) // max 3 missions per station
             .filter(station => Math.random() < 0.3) // 30% chance per station
             .forEach(station => {
-            const ores = Object.keys(Constants.ORES);
+            const ores = Object.keys(ORE);
             const ore = ores[Math.floor(Math.random() * ores.length)];
             const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
             const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
             const mission = new MiningMission(station, ore, amount, reward);
             this.availableMissions.push(mission);
         });
-    };
+    }
 
-    update = (delta) => {
+    update (delta) {
         this.activeMissions.forEach(mission => {
             mission.update(delta);
             if (mission.completed) {
@@ -33,9 +33,9 @@ export class MissionManager {
             }
         });
         return this;
-    };
+    }
 
-    draw = (x = 10, y = 110, width = 300) => {
+    draw (x = 10, y = 110, width = 300) {
         // Draw mission UI
         // TODO: should probably be conditional
         game.ctx.save();
@@ -72,5 +72,5 @@ export class MissionManager {
             });
         }
         game.ctx.restore();
-    };
+    }
 }

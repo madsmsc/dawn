@@ -1,5 +1,5 @@
 export const game = {
-    canvas: document.getElementById('gameCanvas'),
+    canvas: undefined,
     ctx: undefined,
     gameLoop: undefined,
     ui: undefined,
@@ -10,4 +10,5 @@ export const game = {
     starField: undefined,
     camera: undefined,
     missionManager: undefined,
+    enemies: undefined
 };

@@ -21,7 +21,10 @@
 
 <body>
     <canvas tabindex="1" id="gameCanvas"></canvas>
-    <script type="module" src="client/main.js"></script>
+    <script type="module">
+        import { GameLoop } from './client/GameLoop.js';
+        new GameLoop().start();
+    </script>
 </body>
 
 </html>

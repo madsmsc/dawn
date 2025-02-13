@@ -9,12 +9,12 @@ export class MiningMission extends Mission {
         this.amount = amount;
     }
 
-    canComplete = () => {
+    canComplete () {
         return game.spaceship.inventory
             .find(item => item.name === this.requiredOre && item.amount >= this.amount);
     }
 
-    complete = () => {
+    complete () {
         this.completeSuper();
         const cargo = this.canComplete();
         // Transfer ore from ship to station
@@ -26,7 +26,7 @@ export class MiningMission extends Mission {
         }
     }
     
-    update = (delta) => {
-
-    };
+    update (delta) {
+        super.update(delta);
+    }
 }

@@ -1,4 +1,4 @@
-import { Constants } from '../shared/Constants.js';
+import { COLOR } from '../shared/Constants.js';
 import { Player } from './Player.js';
 import { Spaceship } from './Spaceship.js';
 import { System } from './System.js';
@@ -29,7 +29,7 @@ export class Server {
         };
     }
 
-    loadSystem = () => {
+    loadSystem () {
         // TODO: move logic to server
         const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 
                      'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho', 
@@ -66,9 +66,9 @@ export class Server {
         };
 
         // create systems
-        const A = new System(randomSystemName(), Constants.COLOR.RED, [randomStation()]);
-        const B = new System(randomSystemName(), Constants.COLOR.GREEN, [randomStation()]);
-        const C = new System(randomSystemName(), Constants.COLOR.BLUE, [randomStation()]);
+        const A = new System(randomSystemName(), COLOR.RED, [randomStation()]);
+        const B = new System(randomSystemName(), COLOR.GREEN, [randomStation()]);
+        const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()]);
 
         // create connections
         const A_B = {system: B, distance: 100};
@@ -80,9 +80,9 @@ export class Server {
         C.connections = [C_A];
         
         return A;
-    };
+    }
 
-    login = (user, pass) => {
+    login (user, pass) {
         if (this.ws.readyState !== WebSocket.OPEN) {
             console.log('not connected');
             return;

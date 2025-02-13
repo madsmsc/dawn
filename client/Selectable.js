@@ -10,7 +10,11 @@ export class Selectable {
                            Math.random() * (game.canvas.height-40) + 20);
     }
 
-    drawSelection = () => {
+    draw () {
+        this.drawSelection();
+    }
+
+    drawSelection () {
         if (this.selected) {
             game.ctx.strokeStyle = 'rgba(80, 255, 80, 0.5)';
             game.ctx.setLineDash([10, 5]);

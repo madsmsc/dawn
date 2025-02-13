@@ -1,18 +1,18 @@
 import { game } from './game.js';
-import { Constants } from '../shared/Constants.js';
+import { MOVE } from '../shared/Constants.js';
 import { Vec } from './Vec.js';
 
 export class GameEventListener {
     constructor() {
     }
 
-    register = () => {
+    register () {
         game.canvas.addEventListener('keyup', this.keyUpListener);
         game.canvas.addEventListener('keydown', this.keyDownListener);
         game.canvas.addEventListener('click', this.clickListener);
-    };
+    }
 
-    keyUpListener = (event) => {
+    keyUpListener (event) {
         if (!game.player || !game.spaceship) return;
         if (event.key === 'q') {
             game.ui.qDown = false;
@@ -33,9 +33,11 @@ export class GameEventListener {
         } else if (event.key === 'd') {
             game.ui.dDown = false;
         }
-    };
+    }
 
-    keyDownListener = (event) => {
+    // TODO: don't have to hold down keys
+    // set "showMenu" state instead of keyDown state.
+    keyDownListener (event) {
         if (!game.player || !game.spaceship) return;
         const selected = game.ui.selectables.find(s => s.selected);
         // MENUS
@@ -49,7 +51,7 @@ export class GameEventListener {
             game.system.handleDocking();
         } else if (event.key === 'm' && game.player.docked) {
             game.player.docked.acceptMission();
-        } else if (event.key === 'n') {
+        } else if (event.key === 'n' && game.player.docked) {
             game.missionManager.activeMissions.find(m => m.canComplete())?.complete();
         } else if (event.key === 'r' && game.ui.k1down) {
             // TODO move this logic somewhere else and add loading bar
@@ -69,16 +71,14 @@ export class GameEventListener {
         } else if (event.key === 'a') {
             game.ui.aDown = true;
             if (selected) {
-                game.spaceship.mode = Constants.MOVE.APPROACH;
-                game.spaceship.target = selected.pos;
+                game.spaceship.approach(selected.pos);
             } else {
                 // console.log('no asteroid selected');
             }
         } else if (event.key === 's') {
             game.ui.sDown = true;
             if (selected) {
-                game.spaceship.mode = Constants.MOVE.ORBIT;
-                game.spaceship.target = selected.pos;
+                game.spaceship.orbit(selected.pos);
             } else {
                 // console.log('no asteroid selected');
             }
@@ -92,9 +92,9 @@ export class GameEventListener {
         } else if (event.key === '3') {
             game.ui.k3down = true;
         }
-    };
+    }
 
-    clickListener = (event) => {
+    clickListener (event) {
         if (!game.player || !game.spaceship) return;
         const clickPos = game.camera.screenToWorld(event.x, event.y);
 
@@ -117,5 +117,5 @@ export class GameEventListener {
             select.selected = true;
         }
 
-    };
+    }
 }

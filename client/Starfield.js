@@ -33,7 +33,7 @@ export class StarField {
         return this;
     };
     
-    draw = () => {
+    draw () {
         if(game.player.docked) return;
         this.stars.forEach(star => {
             game.ctx.beginPath();
@@ -41,5 +41,5 @@ export class StarField {
             game.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             game.ctx.fill();
         });
-    };
+    }
 }
