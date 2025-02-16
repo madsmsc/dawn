@@ -18,7 +18,7 @@ export class Spaceship extends Destructable {
         this.dam = 8; // override dam, 4x the enemy
         // TODO: for testing
         this.maxVel = 2;
-        this.acceleration = 0.2;
+        this.acceleration = 0.05;
     }
 
     update (delta) {
@@ -35,34 +35,8 @@ export class Spaceship extends Destructable {
 
     draw () {
         if(game.player.docked) return;
-        super.draw();
-        game.ctx.save();
-        // position correctly
-        game.ctx.translate(this.pos.x, this.pos.y);
-        game.ctx.rotate(this.angle + Math.PI/2.0);
-        game.ctx.translate(-this.size*1.5, -this.size*1.5);
-        // draw ship
-        game.ui.drawIcon(SPRITE.SPACESHIP, { x: 0, y: 0 }, false, undefined, false, 1);
-        
-        if (this.debug) { // draw vector
-            game.ctx.translate(this.size * 1.5, 0);
-            game.ctx.beginPath();
-            game.ctx.lineWidth = 3;
-            game.ctx.setLineDash([]);
-            game.ctx.strokeStyle = 'lightblue';
-            game.ctx.moveTo(0, 0);
-            game.ctx.lineTo(0, -this.vel * 100);
-            game.ctx.stroke();
-        }
-        if (this.debug && this.points) { // draw path taken
-            game.ctx.strokeStyle = 'red';
-            game.ctx.beginPath();
-            game.ctx.moveTo(this.points[0].x, this.points[0].y);
-            this.points.forEach(p => {
-                game.ctx.lineTo(p.x, p.y);
-            });
-            game.ctx.stroke();
-        }
+        super.draw(SPRITE.SPACESHIP);
+
         if (this.debug && this.targetCircle) { // draw target orbit circle
             game.ctx.strokeStyle = 'blue';
             game.ctx.beginPath();
@@ -72,8 +46,6 @@ export class Spaceship extends Destructable {
             });
             game.ctx.stroke();
         }
-        game.ctx.restore();
-        // game.ctx.lineWidth = 1;
     }
 
     mine () {

@@ -4,7 +4,7 @@ import { game } from './game.js';
 export class Selectable {
     constructor() {
         game.ui.selectables.push(this);
-        this.size = Math.random() * 20 + 30;
+        this.size = 25;
         this.selected = false;
         this.pos = new Vec(Math.random() * (game.canvas.width-40) + 20, 
                            Math.random() * (game.canvas.height-40) + 20);
@@ -21,13 +21,8 @@ export class Selectable {
             game.ctx.fillStyle = 'green';
             game.ctx.strokeStyle = 'green';
             game.ctx.lineWidth = 2;
-            const off = 5;
             game.ctx.beginPath();
-            game.ctx.moveTo(this.pos.x - this.size - off, this.pos.y - this.size - off);
-            game.ctx.lineTo(this.pos.x + this.size + off, this.pos.y - this.size - off);
-            game.ctx.lineTo(this.pos.x + this.size + off, this.pos.y + this.size + off);
-            game.ctx.lineTo(this.pos.x - this.size - off, this.pos.y + this.size + off);
-            game.ctx.lineTo(this.pos.x - this.size - off, this.pos.y - this.size - off);
+            game.ctx.rect(this.pos.x - this.size*2, this.pos.y - this.size*2, this.size*4, this.size*4)
             game.ctx.stroke();
             game.ctx.setLineDash([]);
         }

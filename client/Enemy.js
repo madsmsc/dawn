@@ -6,8 +6,12 @@ import { Module } from './Module.js';
 export class Enemy extends Destructable {
     constructor() {
         super();
+
+        this.bounty = 25;
+        this.rep = 5;
     }
 
+    // TODO: enemy orbiting doesn't work.
     static orbiting () {
         const e = new Enemy();
         e.hull = 10;
@@ -18,8 +22,6 @@ export class Enemy extends Destructable {
         e.target = e.pos;
         e.moveMode = MOVE.ORBIT;
         e.scanRange = 0;
-        e.maxVel = 0.5;
-        e.acceleration = 0.1;
         return e;
     }
 
@@ -29,9 +31,6 @@ export class Enemy extends Destructable {
         e.maxHull = 10;
         e.shield = 10;
         e.maxShield = 10;
-        
-        e.maxVel = 2;
-        e.acceleration = 0.1;
         return e;
     }
 
@@ -47,17 +46,14 @@ export class Enemy extends Destructable {
     }
 
     draw () {
-        super.draw();
-        game.ctx.save();
-        const p = {x: this.pos.x-20, y: this.pos.y-20};
-        game.ui.drawIcon(SPRITE.SHIP, p, false, undefined, false, 1);
-        // Station name
+        super.draw(SPRITE.SHIP);
+
+        // HUD text
         game.ctx.fillStyle = 'white';
         game.ctx.font = '14px Arial';
         game.ctx.textAlign = 'center';
         const str = `${this.type} [${this.shield}] [${this.hull}]`;
         game.ctx.fillText(str, this.pos.x, this.pos.y - 45);
-        game.ctx.restore();
     }
 
     scan () { 
@@ -80,7 +76,7 @@ export class Enemy extends Destructable {
         if (this.attackCount < this.attackTime) return;
         this.attackCount = 0;
         this.shooting = true; 
-        const dam = Math.random() * this.damage; // TODO: too random 
+        const dam = Math.random() * this.dam; // TODO: too random 
         game.spaceship.damage(dam); 
     }
 
@@ -97,5 +93,7 @@ export class Enemy extends Destructable {
             console.log('enemy dropped module: ' + module.toString());
         }
         game.system.enemies.splice(game.system.enemies.indexOf(this), 1);
+        game.player.credits = this.bounty;
+        game.player.rep = this.rep;
     }
 }

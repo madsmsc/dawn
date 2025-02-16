@@ -63,7 +63,7 @@ export class GameEventListener {
         }
 
         if (game.player.docked) return;
-        
+
         // MOVEMENT
         if (event.key === 'q') {
             if (game.ui.qDown) return;
@@ -83,7 +83,7 @@ export class GameEventListener {
                 // console.log('no asteroid selected');
             }
         }
-        
+
         // MODULES
         if (event.key === '1') {
             game.ui.k1down = true;
@@ -100,7 +100,7 @@ export class GameEventListener {
 
         // fly-to
         if (game.ui.qDown) { 
-            game.spaceship.target = clickPos;
+            game.spaceship.approach(clickPos)
             return;
         }
         // select one selectable

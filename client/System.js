@@ -13,7 +13,7 @@ export class System {
         this.asteroids = [];
         this.stations = stations;
         this.connections = [];
-        this.enemies = [ Enemy.orbiting() ];
+        this.enemies = [ Enemy.scanning() ];
     }
 
     update (delta) {
