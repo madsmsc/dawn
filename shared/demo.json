@@ -1,0 +1,31 @@
+[{
+    "user": "demo",
+    "pass": "pass",
+    "player": {
+      "name": "Bob",
+      "credits": 0,
+      "docked": false
+    },
+    "spaceship": {  
+      "type": "frigate",
+      "shield": 50,
+      "maxShield": 80,
+      "hull": 30,
+      "maxHull": 50,
+      "size": 15,
+      "acceleration": 0.0005,
+      "vel": 0,
+      "maxVel": 1.5,
+      "pos": { "x": 500.5, "y": 382 }, 
+      "target": { "x": 500.5, "y": 382 }, 
+      "miningRange": 50, 
+      "mode": 0, 
+      "modules": [
+        { "name": "laser weapon", "sprite": 3, "amount": 1, "unit": "module" }, 
+        { "name": "mining laser", "sprite": 0, "amount": 1, "unit": "module" }, 
+        { "name": "warp drive", "sprite": 8, "amount": 1, "unit": "module" }
+      ],
+      "inventory": []
+    }
+  }
+]

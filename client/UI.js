@@ -55,10 +55,17 @@ export class UI {
         }
         this.drawFps();
         this.drawButtons();
-        // draw system info
-        // ui.drawPanel({ x: 0, y: 100 }, 100, 200);
-        const texts = [`system: ${game.system.name}`, `station: ${game.system.stations[0].name}`];
-        this.drawTexts(texts, { x: 10, y: 120 });
+
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = 'bold 14px Arial';
+        let yOffset = 80;
+        game.ctx.fillText('System', 10, yOffset);
+        game.ctx.font = '12px Arial';
+        game.ctx.fillText(game.system.name, 20, yOffset += 20);
+        game.ctx.font = 'bold 14px Arial';
+        game.ctx.fillText('Station', 10, yOffset += 30);
+        game.ctx.font = '12px Arial';
+        game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
     }
 
     drawIcon (spriteIndex, pos, selected = false, text = undefined, 
@@ -203,8 +210,9 @@ export class UI {
     }
 
     drawFps () {
-        this.drawPanel({ x: 0, y: 0 }, 100, 50);
-        this.drawTexts(['fps: ' + this.fpsDisplay], { x: 10, y: 30 });
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = 'bold 14px Arial';
+        game.ctx.fillText(`fps: ${this.fpsDisplay}`, 10, 30);
     }
 
     drawHealthCircle (radius, percentage, color) {
@@ -261,8 +269,10 @@ export class UI {
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Pilot', this.dialogWidth, yOffset, this.dialogX);
         game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        game.ctx.fillText(`name: ${game.player.name}`, this.dialogX + 30, yOffset += 20);
-        game.ctx.fillText(`credits: ${game.player.credits}`, this.dialogX + 30, yOffset += 20);
+        const text = (str) => { game.ctx.fillText(str, this.dialogX + 30, yOffset += 20); }
+        text(`name: ${game.player.name}`);
+        text(`credits: ${game.player.credits}`);
+        text(`rep: ${game.player.rep}`);
     }
 
     drawSettingsDialog () {
@@ -304,7 +314,7 @@ export class UI {
             game.ctx.fillText(`${module.name}`, x + 30, yOffset);
             game.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
             const amount = module.amount > 1 ? module.amount.toFixed(2) : module.amount;
-            game.ctx.fillText(`${amount} ${module.unit}`, x + 150, yOffset);
+            game.ctx.fillText(`${amount} ${module.unit}`, x + 200, yOffset);
             yOffset += 20;
         });
         return yOffset;

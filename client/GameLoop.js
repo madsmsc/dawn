@@ -25,11 +25,18 @@ export class GameLoop {
             game.ctx.fillText(`user: ${'bob'}`, game.ui.dialogX + 30, yOffset += 20);
             game.ctx.fillText(`pass: ${'1234'}`, game.ui.dialogX + 30, yOffset += 20);
 
+            // TODO: callback instead of repeatedly calling?
             if (!game.server.loggingIn) {
-                console.log('logging in');
                 game.server.login('bob', '1234');
             }
             return requestAnimationFrame(this.gameLoop);
+        }
+
+        if (this.demo) {
+            game.ctx.fillStyle = 'green';
+            game.ctx.font = '22px Arial';
+            const text = (s) => {game.ctx.fillText(s, game.canvas.width / 2, 30)};
+            text('No server - DEMO');
         }
 
         // TODO: move... draw the station UI

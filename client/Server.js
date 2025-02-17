@@ -7,7 +7,8 @@ import { Vec } from './Vec.js';
 import { game } from './game.js';
 
 export class Server {
-    constructor() { 
+    constructor() {
+        this.loginAttempts = 0;
         this.loggingIn = false;
         this.ws = new WebSocket('ws://localhost:8080');
         this.ws.onopen = () => {
@@ -29,12 +30,12 @@ export class Server {
         };
     }
 
-    loadSystem () {
+    loadSystem() {
         // TODO: move logic to server
-        const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 
-                     'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho', 
-                     'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];
-        const stationSuffix = ['Station', 'Hub', 'Port', 'Mining', 'Factory', 'Research', 'Academy']; 
+        const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta',
+            'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho',
+            'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];
+        const stationSuffix = ['Station', 'Hub', 'Port', 'Mining', 'Factory', 'Research', 'Academy'];
 
         const randomNamePrefix = () => {
             return namePrefix[Math.floor(Math.random() * namePrefix.length)];
@@ -45,7 +46,7 @@ export class Server {
         };
 
         const usedSystemNames = [];
-        const randomSystemName = () => {  
+        const randomSystemName = () => {
             let name = `${randomNamePrefix()}-${Math.floor(Math.random() * 9)}`;
             while (usedSystemNames.includes(name)) {
                 name = `${randomNamePrefix()}-${Math.floor(Math.random() * 9)}`;
@@ -71,20 +72,33 @@ export class Server {
         const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()]);
 
         // create connections
-        const A_B = {system: B, distance: 100};
-        const A_C = {system: C, distance: 200};
-        const B_A = {system: A, distance: A_B.distance};
-        const C_A = {system: A, distance: A_C.distance};
+        const A_B = { system: B, distance: 100 };
+        const A_C = { system: C, distance: 200 };
+        const B_A = { system: A, distance: A_B.distance };
+        const C_A = { system: A, distance: A_C.distance };
         A.connections = [A_B, A_C];
         B.connections = [B_A];
         C.connections = [C_A];
-        
+
         return A;
     }
 
-    login (user, pass) {
+    login(user, pass) {
+        if (this.loginAttempts > 5) return;
         if (this.ws.readyState !== WebSocket.OPEN) {
-            console.log('not connected');
+            this.loginAttempts += 1;
+            console.log('login: not connected - login attempt ' + this.loginAttempts);
+            // DEMO mode when no server
+            if (this.loginAttempts === 5) {
+                fetch('../shared/demo.json')
+                    .then(response => response.json())
+                    .then(data => {
+                        game.gameLoop.demo = true;
+                        game.player = new Player(data[0].player);
+                        game.spaceship = new Spaceship(data[0].spaceship);
+                    })
+                    .catch(error => console.log(error));
+            }
             return;
         }
         this.loggingIn = true;

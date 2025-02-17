@@ -36,39 +36,30 @@ export class MissionManager {
     }
 
     draw (x = 10, y = 110, width = 300) {
-        // Draw mission UI
-        // TODO: should probably be conditional
         game.ctx.save();
-        
-        // Draw panel background
-        // game.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        // game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        // ui.roundedRectExt(ctx, x, y, width, 400, 10);
-        
+
         // Draw title
         game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 16px Arial';
-        let yOffset = y + 90;
-        game.ctx.fillText('Missions', x + 20, yOffset);
+        game.ctx.font = 'bold 14px Arial';
+        let yOffset = y + 70;
+        game.ctx.fillText('Missions', x, yOffset);
 
         // Draw active missions
         game.ctx.font = '12px Arial';
         if (this.activeMissions.length === 0) {
-            game.ctx.fillText('No active missions', x + 20, yOffset += 30);
+            game.ctx.fillText('No active missions', x + 10, yOffset += 30);
         } else {
             this.activeMissions.forEach(mission => {
                 game.ctx.fillStyle = 'white';
-                game.ctx.font = '14px Arial';
-                game.ctx.fillText(mission.description, x + 20, yOffset += 40);
+                game.ctx.font = '12px Arial';
+                game.ctx.fillText(mission.description, x + 10, yOffset += 20);
+                game.ctx.fillText(`Reward: ${mission.reward} credits`, x + 10, yOffset += 20);
                 if (mission instanceof MiningMission && mission.canComplete()) {
                     game.ctx.fillStyle = 'yellow';
-                    game.ctx.fillText(`can be completed`, x + 20, yOffset += 20);
-                    if (game.player.docked) {
-                        // TODO: only show this for the first/top mission
-                        game.ctx.fillText(`(N to complete)`, x + 150, yOffset);
-                    }
+                    const str = game.player.docked ? '(N to complete)' : '(complete)';
+                    game.ctx.fillText(str, x + 130, yOffset);
                 }
-                game.ctx.fillText(`Reward: ${mission.reward} credits`, x + 20, yOffset += 20);
+                yOffset += 20
             });
         }
         game.ctx.restore();
