@@ -10,15 +10,27 @@ export class Asteroid extends Selectable {
         this.rotation = Math.random() * Math.PI * 2;
     }
 
+    // TODO: call this in the constructor or in the game loop
+    // just make sure the player, spaceship, station are created.
     moveAway () {
-        // TODO: check if the asteroid is too close to another asteroid
-        // if so, move it away
-        // also, check if the asteroid is too close to the player
-        // if so, move it away
-        // also, check if the asteroid is too close to the spaceship
-        // if so, move it away
-        // also, check if the asteroid is too close to the station
-        // if so, move it away
+        const minDistance = 100;
+        const entities = [...game.system.asteroids, game.player, game.spaceship, game.station];
+        for (const entity of entities) {
+            if (entity !== this) {
+                if (!entity || !entity.pos) {
+                    console.log('missing entity or pos');
+                    continue;
+                }
+                const dx = this.pos.x - entity.pos.x;
+                const dy = this.pos.y - entity.pos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < minDistance) {
+                    // move this asteroid away
+                    this.pos.x += (dx / distance) * (minDistance - distance);
+                    this.pos.y += (dy / distance) * (minDistance - distance);
+                }
+            }
+        }
         return this;
     }
 
