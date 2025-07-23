@@ -10,8 +10,6 @@ export class Asteroid extends Selectable {
         this.rotation = Math.random() * Math.PI * 2;
     }
 
-    // TODO: call this in the constructor or in the game loop
-    // just make sure the player, spaceship, station are created.
     moveAway () {
         const minDistance = 100;
         const entities = [...game.system.asteroids, game.player, game.spaceship, game.station];

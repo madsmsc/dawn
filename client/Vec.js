@@ -13,6 +13,7 @@ export class Vec {
     }
 
     // TODO: should all these method change 'this' or return new?
+    // probably more effecient to change this and let caller use clone() for new reference
     add (v) {
         this.x = this.x + v.x;
         this.y = this.y + v.y;

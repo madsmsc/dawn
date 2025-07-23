@@ -11,12 +11,7 @@ export class GameLoop {
         this.lastDelta = 0;
     }
 
-    gameLoop (delta) {
-        game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
-        const newDelta = delta - this.lastDelta;
-        this.lastDelta = delta;
-
-        // TODO: login UI - move...
+    loginUI () {
         if (!game.player || !game.spaceship){
             game.ui.roundedRect(game.ui.dialogX, game.ui.dialogY, game.ui.dialogWidth, game.ui.dialogHeight, 10);
             let yOffset = 100;
@@ -31,14 +26,18 @@ export class GameLoop {
             }
             return requestAnimationFrame(this.gameLoop);
         }
+    }
 
+    demoText() {
         if (this.demo) {
             game.ctx.fillStyle = 'green';
             game.ctx.font = '22px Arial';
             const text = (s) => {game.ctx.fillText(s, game.canvas.width / 2, 30)};
             text('No server - DEMO');
         }
+    }
 
+    stationUI (newDelta) {
         // TODO: move... draw the station UI
         // TODO: remove all the early returns from the draw methods. 
         // the individual draw methods should not
@@ -63,21 +62,34 @@ export class GameLoop {
             game.ui.update(newDelta).draw();
             return requestAnimationFrame(this.gameLoop);
         }
+    }
 
+    gameLoop (delta) {
+        // timings
+        game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+        const newDelta = delta - this.lastDelta;
+        this.lastDelta = delta;
+        // UI
+        let nextFrame = this.loginUI();
+        if (nextFrame != null) return nextFrame;
+        this.demoText();
+        nextFrame = this.stationUI(newDelta);
+        if (nextFrame != null) return nextFrame;
+        // background
         game.starField.update(newDelta).draw();
-
         // start camera transformation
         game.camera.update();
         game.camera.apply();
+        // update game objects
         game.system.update(newDelta).draw();
         game.spaceship.update(newDelta).draw();
         // stop transformation
         game.camera.restore();
-
+        // update game objects
         game.missionManager.update(newDelta).draw();
         game.player.update(newDelta).draw();
         game.ui.update(newDelta).draw();
-
+        // next frame
         requestAnimationFrame(this.gameLoop);
     }
 

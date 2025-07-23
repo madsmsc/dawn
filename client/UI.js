@@ -140,6 +140,7 @@ export class UI {
             tempCanvas.width = spriteWidth;
             tempCanvas.height = spriteHeight;
 
+            // TODO: too nested. extract to method
             // Extract each sprite
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < columns; col++) {
@@ -238,7 +239,7 @@ export class UI {
     // and it's too complicated
     drawButtons () {
         const border = 15;
-        const off = 40;
+        const off = 50;
         let i = 1;
         let i2pos = (i) => { return { x: border, y: game.canvas.height - i * off - border}; };
         this.drawIcon(SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
