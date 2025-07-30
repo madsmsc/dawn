@@ -2,10 +2,9 @@ import { game } from './game.js';
 import { SPRITE } from '../shared/Constants.js';
 import { Vec } from './Vec.js';
 import { Module } from './Module.js';
-import { Destructable } from './Ship.js';
+import { Destructable } from './Destructable.js';
 
-// TODO: move this reference to the player object, rename to playerShip, and update/draw through player.
-export class Spaceship extends Destructable {
+export class PlayerShip extends Destructable {
     constructor(obj) {
         super();
         // load from DB
@@ -71,6 +70,7 @@ export class Spaceship extends Destructable {
     }
 
     die () {
+        game.player.dead = true;
         console.log('YOU ARE DEAD!');
     }
 }

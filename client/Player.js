@@ -4,6 +4,7 @@ export class Player {
         this.credits = 0;
         this.rep = 0;
         this.docked = undefined; // Station
+        this.ship = undefined;
         Object.assign(this, obj);
     }
 

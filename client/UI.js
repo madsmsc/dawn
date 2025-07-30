@@ -1,108 +1,174 @@
 import { game } from './game.js';
 import { SPRITE } from '../shared/Constants.js';
+import { Vec } from './Vec.js';
+import { Button } from './Button.js';
 
 export class UI {
     constructor() {
-        // TODO: ask Cursor to refactor UI.js to maximize code re-use.
-
-        // TODO: make buttons register themselves with callbacks
-        // and implement it i the GameEventListener
-        // { name (string), upper left (Vec), lower right (Vec), callback (()=>{}) } 
-        this.buttons = [];
         this.selectables = [];
         this.fpsCount = 0;
         this.fpsTime = 0;
         this.fpsDisplay = 0;
-        this.qDown = false;
-        this.aDown = false;
-        this.sDown = false;
-        this.wDown = false;
-        this.eDown = false;
-        this.dDown = false;
-        this.k1down = false;
-        this.k2down = false;
-        this.k3down = false;
         this.dialogWidth = 300;
         this.dialogHeight = 400;
         this.dialogX = game.canvas.width / 2 - this.dialogWidth / 2;
         this.dialogY = game.canvas.height / 2 - this.dialogHeight / 2;
-
-        this.sprites = [];
-        this.loadSprites();
+        this.#loadButtons();
     }
 
-    update (delta) {
+    #loadButtons() {
+        const off = 10;
+        const border = 2;
+        this.buttons = [];
+        let i2vec = (i) => new Vec(border, game.canvas.height - i * off - border);
+        let i = 1;
+        this.buttons.push(new Button('w', i2vec(i++), SPRITE.SHIP));
+        this.buttons.push(new Button('e', i2vec(i++), SPRITE.PILOT));
+        this.buttons.push(new Button('d', i2vec(i++), SPRITE.SETTINGS));
+        i = 3;
+        i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
+        this.buttons.push(new Button('q', i2vec(i++), SPRITE.FLY_TO, () => !game.player.docked));
+        this.buttons.push(new Button('a', i2vec(i++), SPRITE.APPROACH, () => !game.player.docked));
+        this.buttons.push(new Button('s', i2vec(i++), SPRITE.ORBIT, () => !game.player.docked));
+        i = -4;
+        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => !game.player.docked));
+        this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => !game.player.docked));
+        this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked));
+
+        this.buttons.find((b) => b.key === 'w').onDraw = this.drawShipDialog;
+        this.buttons.find((b) => b.key === 'e').onDraw = this.drawPilotDialog;
+        this.buttons.find((b) => b.key === '1').onDraw = this.drawWarpDialog;
+        this.buttons.find((b) => b.key === 'a').onClick = () => {
+            const selected = game.ui.selectables.find(s => s.selected);
+            if (selected) {
+                game.player.ship.approach(selected.pos);
+            } else {
+                // console.log('no asteroid selected');
+            }
+        };
+        this.buttons.find((b) => b.key === 's').onClick = () => {
+            const selected = game.ui.selectables.find(s => s.selected);
+            if (selected) {
+                game.player.ship.orbit(selected.pos);
+            } else {
+                // console.log('no asteroid selected');
+            }
+        };
+
+        this.buttons.push(new Button('f', undefined, undefined));
+        this.buttons.find((b) => b.key === 's').onClick = () => {
+            game.system.handleDocking();
+        };
+
+        this.buttons.push(new Button('m', undefined, () => game.player.docked));
+        this.buttons.find((b) => b.key === 's').onClick = () => {
+            game.player.docked.acceptMission();
+        };
+
+        this.buttons.push(new Button('n', undefined, () => game.player.docked));
+        this.buttons.find((b) => b.key === 's').onClick = () => {
+            game.missionManager.activeMissions.find(m => m.canComplete())?.complete();
+        };
+        
+        const button1 = this.buttons.find((b) => b.key === '1');
+        this.buttons.push(new Button('r', undefined, () => button1.isDown));
+        this.buttons.find((b) => b.key === 'r').onClick = () => {
+            // TODO add loading bar
+            game.system = game.system.connections[0].system;
+            // new Vec(game.canvas.width / 2, game.canvas.height / 2);
+        };
+                
+        this.buttons.push(new Button('t', undefined, () => 
+            button1.isDown && game.system.connections.length > 1));
+        this.buttons.find((b) => b.key === 't').onClick = () => {
+            game.system = game.system.connections[1].system;
+            // new Vec(game.canvas.width / 2, game.canvas.height / 2);
+        };
+    }
+
+    update(delta) {
         this.fpsCount++;
         this.fpsTime += delta;
         if (this.fpsTime >= 1000) {
-
             this.fpsDisplay = this.fpsCount;
             this.fpsCount = 0;
             this.fpsTime = 0;
         }
+        if (this.showStationUI()) {
+            game.missionManager.update(delta);
+        }
         return this;
     }
 
-    draw () {
-        if (this.wDown) {
-            this.drawShipDialog();
-        } else if (this.eDown) {
-            this.drawPilotDialog();
-        } else if (this.dDown) {
-            this.drawSettingsDialog();
-        } else if (this.k1down && !game.player.docked) {
-            this.drawWarpDialog();
-        }
+    draw() {
         this.drawFps();
-        this.drawButtons();
-
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 14px Arial';
-        let yOffset = 80;
-        game.ctx.fillText('System', 10, yOffset);
-        game.ctx.font = '12px Arial';
-        game.ctx.fillText(game.system.name, 20, yOffset += 20);
-        game.ctx.font = 'bold 14px Arial';
-        game.ctx.fillText('Station', 10, yOffset += 30);
-        game.ctx.font = '12px Arial';
-        game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
-    }
-
-    drawIcon (spriteIndex, pos, selected = false, text = undefined, 
-              outline = true, scale = 1, rotation = 0) {
-        const size = 40*scale;
-        if (!this.sprites[spriteIndex]) return;
-        if (selected) game.ctx.globalAlpha = 0.5;
-        if (rotation !== 0) {
-            game.ctx.save();
-            game.ctx.translate(pos.x, pos.y);
-            game.ctx.rotate(rotation);
-            game.ctx.drawImage(this.sprites[spriteIndex], -size/2, -size/2, size, size);
-            game.ctx.restore();
-
+        this.#demoText();
+        if (this.showLoginUI()) { 
+            this.#loginUI(); 
+        } else if (this.showStationUI()) { 
+            this.#stationUI();
+            game.missionManager.draw();
+            game.ui.draw();
         } else {
-            game.ctx.drawImage(this.sprites[spriteIndex], pos.x, pos.y, size, size);
+            this.drawButtons();
+            this.drawHUD();
         }
-        if (outline) {
-            game.ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
-            game.ctx.strokeRect(pos.x, pos.y, 40, 40);
-        }
-        if (text !== undefined) {
-            game.ctx.font = '11px Arial';
-            game.ctx.fillStyle = 'black';
-            game.ctx.fillText(text, pos.x+1, pos.y+5);
-            game.ctx.fillText(text, pos.x-1, pos.y+4);
-            game.ctx.fillStyle = 'white';
-            game.ctx.fillText(text, pos.x, pos.y+4);
-        }
-        game.ctx.globalAlpha = 1;
     }
 
-    roundedRectExt (x, y, width, height, radius) {
+    showLoginUI() {
+        return !game.player || !game.player.ship;
+    }
+
+    showStationUI() {
+        return game.player?.docked;
+    }
+
+    #loginUI() {
+        game.ui.roundedRect(game.ui.dialogX, game.ui.dialogY, game.ui.dialogWidth, game.ui.dialogHeight, 10);
+        let yOffset = 100;
+        yOffset = game.ui.drawSectionHeader('Logging in...', game.ui.dialogWidth, yOffset, game.ui.dialogX);
+        game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        game.ctx.fillText(`user: ${'bob'}`, game.ui.dialogX + 30, yOffset += 20);
+        game.ctx.fillText(`pass: ${'1234'}`, game.ui.dialogX + 30, yOffset += 20);
+
+        // TODO: callback instead of repeatedly calling?
+        if (!game.server.loggingIn) {
+            game.server.login('bob', '1234');
+        }
+    }
+
+    #demoText() {
+        if (this.demo) {
+            game.ctx.fillStyle = 'green';
+            game.ctx.font = '22px Arial';
+            const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, 30) };
+            text('No server - DEMO');
+        }
+    }
+
+    #stationUI() {
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = '22px Arial';
+        let yOffset = 100;
+        const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, yOffset += 30) };
+        text('YOU ARE DOCKED! - (F to undock)');
+        text('this is the station UI!');
+        text('---')
+        const mission = game.player.docked.missionToAccept();
+        if (mission) {
+            text('this is the next mission to accept: (M to accept)');
+            text('---')
+            text(mission.description);
+            text(`Reward: ${mission.reward} credits`);
+            text('---')
+        }
+    }
+
+    roundedRectExt(x, y, width, height, radius) {
         this.roundedRect(x, y, width, height, radius);
     }
 
-    roundedRect (x, y, width, height, radius) {
+    roundedRect(x, y, width, height, radius) {
         game.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
         game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
         game.ctx.lineWidth = 2;
@@ -121,54 +187,7 @@ export class UI {
         game.ctx.stroke();
     }
 
-    loadSprites () {
-        const spriteSheet = new Image();
-        // icons from:
-        // https://game-icons.net/
-        // https://icons8.com/
-        // https://www.flaticon.com/
-        spriteSheet.src = 'client/icons.png';
-        spriteSheet.onload = () => {
-            const spriteWidth = 40;
-            const spriteHeight = 40;
-            const columns = spriteSheet.width / spriteWidth;
-            const rows = spriteSheet.height / spriteHeight;
-            
-            // Create a temporary canvas to extract sprites
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = spriteWidth;
-            tempCanvas.height = spriteHeight;
-
-            // TODO: too nested. extract to method
-            // Extract each sprite
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < columns; col++) {
-                    tempCtx.clearRect(0, 0, spriteWidth, spriteHeight);
-
-                    // Draw the portion of the sprite sheet we want
-                    tempCtx.drawImage(
-                        spriteSheet,
-                        col * spriteWidth,    // source x
-                        row * spriteHeight,   // source y
-                        spriteWidth,          // source width
-                        spriteHeight,         // source height
-                        0,                    // dest x
-                        0,                    // dest y
-                        spriteWidth,          // dest width
-                        spriteHeight          // dest height
-                    );
-                    
-                    // Convert to an image and store
-                    const sprite = new Image();
-                    sprite.src = tempCanvas.toDataURL();
-                    this.sprites.push(sprite);
-                }
-            }
-        };
-    }
-
-    drawWarpDialog () {
+    drawWarpDialog() {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Warp to:', this.dialogWidth, yOffset, this.dialogX);
@@ -185,7 +204,7 @@ export class UI {
         }
     }
 
-    drawPanel (pos, w, h) {
+    drawPanel(pos, w, h) {
         game.ctx.setLineDash([]);
         game.ctx.strokeStyle = 'black';
         game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -196,8 +215,8 @@ export class UI {
         game.ctx.strokeRect(pos.x, pos.y, w, h);
     }
 
-    drawTexts (texts, pos, off = 30, hor = false, 
-               selected = -1, color = 'white') {
+    drawTexts(texts, pos, off = 30, hor = false,
+        selected = -1, color = 'white') {
         let lastLength = 0
         texts.forEach((text, i) => {
             const x = pos.x + (hor ? off * i + lastLength * 8 : 0);
@@ -210,13 +229,13 @@ export class UI {
         });
     }
 
-    drawFps () {
+    drawFps() {
         game.ctx.fillStyle = 'white';
         game.ctx.font = 'bold 14px Arial';
         game.ctx.fillText(`fps: ${this.fpsDisplay}`, 10, 30);
     }
 
-    drawHealthCircle (radius, percentage, color) {
+    drawHealthCircle(radius, percentage, color) {
         const thickness = 8;
         game.ctx.beginPath();
         game.ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
@@ -235,37 +254,33 @@ export class UI {
         game.ctx.lineWidth = 1;
     }
 
-    // TODO: simplify and re-use code for the UI - there's too much
-    // and it's too complicated
-    drawButtons () {
-        const border = 15;
-        const off = 50;
-        let i = 1;
-        let i2pos = (i) => { return { x: border, y: game.canvas.height - i * off - border}; };
-        this.drawIcon(SPRITE.SHIP, i2pos(i++), this.wDown, 'W');
-        this.drawIcon(SPRITE.PILOT, i2pos(i++), this.eDown, 'E');
-        this.drawIcon(SPRITE.SETTINGS, i2pos(i++), this.dDown, 'D');
+    drawButtons() {
+        this.buttons.forEach((b) => { b.draw() });
+    }
+
+    drawHUD() {
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = 'bold 14px Arial';
+        let yOffset = 80;
+        game.ctx.fillText('System', 10, yOffset);
+        game.ctx.font = '12px Arial';
+        game.ctx.fillText(game.system.name, 20, yOffset += 20);
+        game.ctx.font = 'bold 14px Arial';
+        game.ctx.fillText('Station', 10, yOffset += 30);
+        game.ctx.font = '12px Arial';
+        game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
         if (game.player.docked) return;
-        const shieldPercentage = game.spaceship.shield / game.spaceship.maxShield * 100;
-        const hullPercentage = game.spaceship.hull / game.spaceship.maxHull * 100;
+        const shieldPercentage = game.player.ship.shield / game.player.ship.maxShield * 100;
+        const hullPercentage = game.player.ship.hull / game.player.ship.maxHull * 100;
         this.drawHealthCircle(40, shieldPercentage, 'rgba(0, 150, 255, 0.8)');
         this.drawHealthCircle(30, hullPercentage, 'rgba(255, 150, 0, 0.8)');
         this.drawTexts(['shield', `${shieldPercentage.toFixed(1)}%`],
-                    { x: game.canvas.width / 2 - 90, y: game.canvas.height - 80 }, 15);
-        this.drawTexts(['hull', `${hullPercentage.toFixed(1)}%`], 
-                    { x: game.canvas.width / 2 + 60, y: game.canvas.height - 80 }, 15);
-        i = 3;
-        i2pos = (i) => { return { x: game.canvas.width / 2 - off * i, y: game.canvas.height - off - border}; };
-        this.drawIcon(SPRITE.FLY_TO, i2pos(i++), this.qDown, 'Q');
-        this.drawIcon(SPRITE.APPROACH, i2pos(i++), this.aDown, 'A');
-        this.drawIcon(SPRITE.ORBIT, i2pos(i++), this.sDown, 'S');
-        i = -4;
-        this.drawIcon(SPRITE.FIRE, i2pos(i++), this.k3down, '3');
-        this.drawIcon(SPRITE.MINE, i2pos(i++), this.k2down, '2');
-        this.drawIcon(SPRITE.WARP, i2pos(i++), this.k1down, '1');
+            { x: game.canvas.width / 2 - 90, y: game.canvas.height - 80 }, 15);
+        this.drawTexts(['hull', `${hullPercentage.toFixed(1)}%`],
+            { x: game.canvas.width / 2 + 60, y: game.canvas.height - 80 }, 15);
     }
 
-    drawPilotDialog () {
+    drawPilotDialog() {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Pilot', this.dialogWidth, yOffset, this.dialogX);
@@ -276,7 +291,7 @@ export class UI {
         text(`rep: ${game.player.rep}`);
     }
 
-    drawSettingsDialog () {
+    drawSettingsDialog() {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Settings', this.dialogWidth, yOffset, this.dialogX);
@@ -285,16 +300,16 @@ export class UI {
         game.ctx.fillText('Exit Now', this.dialogX + 30, yOffset);
     }
 
-    drawShipDialog () {
+    drawShipDialog() {
         this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = this.drawSectionHeader('Equipped Modules', this.dialogWidth, yOffset, this.dialogX);
-        yOffset = this.drawSectionItems(game.spaceship.modules, yOffset, this.dialogX);
+        yOffset = this.drawSectionItems(game.player.ship.modules, yOffset, this.dialogX);
         yOffset = this.drawSectionHeader('Inventory', this.dialogWidth, yOffset, this.dialogX);
-        this.drawSectionItems(game.spaceship.inventory, yOffset, this.dialogX);
+        this.drawSectionItems(game.player.ship.inventory, yOffset, this.dialogX);
     }
 
-    drawSectionHeader (text, width, yOffset, x) {
+    drawSectionHeader(text, width, yOffset, x) {
         yOffset += 20;
         game.ctx.fillStyle = 'white';
         game.ctx.font = 'bold 20px Arial';
@@ -308,7 +323,7 @@ export class UI {
         return yOffset + 20;
     }
 
-    drawSectionItems (modules, yOffset, x) {
+    drawSectionItems(modules, yOffset, x) {
         modules.forEach((module) => {
             const m = module;
             game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';

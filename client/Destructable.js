@@ -28,7 +28,7 @@ export class Destructable extends Selectable {
         this.attackTime = 1000;
         this.attackCount = 0;
 
-        // this.debug = true; // enable to show paths
+        this.debug = true; // enable to show paths
         this.points = []; // used for orbiting
         this.targetCircle = [];
         this.numPoints = 10;
@@ -50,7 +50,7 @@ export class Destructable extends Selectable {
         const off = this.size * 1.0;
         game.ctx.translate(-off, -off);
         // draw ship
-        game.ui.drawIcon(sprite, { x: 0, y: 0 }, false, undefined, false, 1);
+        game.sprites.draw(sprite, new Vec(0, 0), false, undefined, false, 1);
 
         // draw vector
         game.ctx.translate(off, 0);
@@ -113,13 +113,13 @@ export class Destructable extends Selectable {
     }
 
     approach(target) {
-        // console.log(`setting [${this.type}] target to ${target.toString()} and approaching`);
+        console.log(`setting [${this.type}] target to ${target.toString()} and approaching`);
         this.target = target;
         this.moveMode = MOVE.APPROACH;
     }
 
     orbit(target) {
-        // console.log(`setting [${this.type}] target to ${target.toString()} and orbiting`);
+        console.log(`setting [${this.type}] target to ${target.toString()} and orbiting`);
         this.target = target;
         this.moveMode = MOVE.ORBIT;
         this.nextPoint = undefined;

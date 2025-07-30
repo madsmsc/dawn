@@ -1,6 +1,8 @@
 import { SPRITE, ORE } from '../shared/Constants.js';
 import { Selectable } from './Selectable.js';
 import { game } from './game.js';
+import { Vec } from './Vec.js';
+import { Button } from './Button.js';
 
 export class Station extends Selectable {
     constructor (name, pos) {
@@ -11,18 +13,18 @@ export class Station extends Selectable {
         this.inventory = [];
         this.prices = {
             buy: {
-                [ORE.Iron]: 50,
-                [ORE.Ice]: 100,
-                [ORE.Silicon]: 150,
-                [ORE.Gold]: 200,
-                [ORE.Titanium]: 300
+                [ORE.IRON]: 50,
+                [ORE.ICE]: 100,
+                [ORE.SILICON]: 150,
+                [ORE.GOLD]: 200,
+                [ORE.TITANIUM]: 300
             },
             sell: {
-                [ORE.Iron]: 50/2,
-                [ORE.Ice]: 100/2,
-                [ORE.Silicon]: 150/2,
-                [ORE.Gold]: 200/2,
-                [ORE.Titanium]: 300/2
+                [ORE.IRON]: 50/2,
+                [ORE.ICE]: 100/2,
+                [ORE.SILICON]: 150/2,
+                [ORE.GOLD]: 200/2,
+                [ORE.TITANIUM]: 300/2
 
             }
         };
@@ -32,8 +34,9 @@ export class Station extends Selectable {
         if (game.player.docked) return;
         super.draw();
         game.ctx.save();
-        const p = {x: this.pos.x-20, y: this.pos.y-20};
-        game.ui.drawIcon(SPRITE.STATION, p, false, undefined, false, 1);
+        const p = new Vec(this.pos.x-20, this.pos.y-20);
+        game.ui.buttons.push(new Button(undefined))
+        game.sprites.draw(SPRITE.STATION, p, false, undefined, false, 1);
         // Docking area indicator
         game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
         game.ctx.beginPath();
@@ -67,6 +70,6 @@ export class Station extends Selectable {
     }
 
     canDock () {
-        return this.pos.sub(game.spaceship.pos).length() < this.dockingRadius;
+        return this.pos.sub(game.player.ship.pos).length() < this.dockingRadius;
     }
 }

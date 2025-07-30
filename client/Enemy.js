@@ -1,6 +1,6 @@
 import { game } from './game.js';
 import { SPRITE, MOVE, MODULE } from '../shared/Constants.js';
-import { Destructable } from './Ship.js';
+import { Destructable } from './Destructable.js';
 import { Module } from './Module.js';
 
 export class Enemy extends Destructable {
@@ -57,8 +57,8 @@ export class Enemy extends Destructable {
     }
 
     scan () { 
-        if (this.pos.sub(game.spaceship.pos).length() < this.scanRange) { 
-            return game.spaceship.pos; 
+        if (this.pos.sub(game.player.ship.pos).length() < this.scanRange) { 
+            return game.player.ship.pos; 
         } 
     }
 
@@ -77,7 +77,7 @@ export class Enemy extends Destructable {
         this.attackCount = 0;
         this.shooting = true; 
         const dam = Math.random() * this.dam; // TODO: too random 
-        game.spaceship.damage(dam); 
+        game.player.ship.damage(dam); 
     }
 
     die () {
@@ -89,7 +89,7 @@ export class Enemy extends Destructable {
             const moduleTierIndex = rand(5);
             const moduleTierName = MODULE[moduleTypeName][moduleTierIndex];
             const module = new Module(moduleTierName, undefined, 1, 'module');
-            game.spaceship.inventory.push(module);
+            game.player.ship.inventory.push(module);
             console.log('enemy dropped module: ' + module.toString());
         }
         game.system.enemies.splice(game.system.enemies.indexOf(this), 1);

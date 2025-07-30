@@ -12,13 +12,10 @@ export class Asteroid extends Selectable {
 
     moveAway () {
         const minDistance = 100;
-        const entities = [...game.system.asteroids, game.player, game.spaceship, game.station];
+        const entities = [...game.system.asteroids, game.player, game.player.ship, game.station];
         for (const entity of entities) {
             if (entity !== this) {
-                if (!entity || !entity.pos) {
-                    console.log('missing entity or pos');
-                    continue;
-                }
+                if (!entity || !entity.pos) continue;
                 const dx = this.pos.x - entity.pos.x;
                 const dy = this.pos.y - entity.pos.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
@@ -51,7 +48,7 @@ export class Asteroid extends Selectable {
 
     draw () {
         super.draw();
-        game.ui.drawIcon(SPRITE.ASTEROID, this.pos, false,
+        game.sprites.draw(SPRITE.ASTEROID, this.pos, false,
             game.system.asteroids.indexOf(this), false, 1.5, this.rotation);
     }
 

@@ -8,8 +8,8 @@ export class Camera {
     }
 
     update () {
-        this.x = game.canvas.width/2 - game.spaceship.pos.x;
-        this.y = game.canvas.height/2 - game.spaceship.pos.y;
+        this.x = game.canvas.width/2 - game.player.ship.pos.x;
+        this.y = game.canvas.height/2 - game.player.ship.pos.y;
     }
 
     apply () {

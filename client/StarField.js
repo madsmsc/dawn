@@ -1,45 +1,69 @@
 import { game } from './game.js';
+import { Vec } from './Vec.js';
 
+/* TODO
+add colored "blotches" as galaxies/nebulae
+will need to redraw when flying to new systems because of the colors
+  also just for immersion, so backdrop changes.
+only use integers, not floats in calls to ctx.arc()
+find out how to do performance meassurements.
+  some breakdown of which methods use resources.
+  need some way to meassure if the "improvements" I make
+  actually help or not.
+*/
 export class StarField {
     constructor() {
-        this.stars = [];
-        const createStarLayer = (count, speed, brightness) => {
-            for (let i = 0; i < count; i++) {
-                this.stars.push({
-                    x: Math.random() * game.canvas.width,
-                    y: Math.random() * game.canvas.height,
-                    size: Math.random() * 2 + 1,  // Size between 1-3
-                    speed,
-                    brightness
-                });
-            }
-        };
-        createStarLayer(100, 0.1, 0.2),  // Far layer (slow, dim)
-        createStarLayer(50, 0.15, 0.4),  // Middle layer
-        createStarLayer(25, 0.2, 0.6)   // Close layer (fast, bright)
+        this.layers = [];
+        this.#createStarLayer(1000, 0.01, 0.4); // far, slow, dim
+        this.#createStarLayer(500, 0.015, 0.5); // middle layer
+        this.#createStarLayer(250, 0.02, 0.6);  // close, fast, bright
     }
 
-    update = (delta) => {
-        this.stars.forEach(star => {
-            // Move stars based on their layer speed
-            star.x -= star.speed;
-            star.y -= star.speed;
-            // Wrap stars around the screen
-            if (star.x < 0) star.x = game.canvas.width;
-            if (star.x > game.canvas.width) star.x = 0;
-            if (star.y < 0) star.y = game.canvas.height;
-            if (star.y > game.canvas.height) star.y = 0;
+    #startPos = new Vec(game.canvas.width/2, game.canvas.height/2);
+
+    #createStarLayer(count, speed, brightness) {
+        const stars = [];
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * game.canvas.width,
+                y: Math.random() * game.canvas.height,
+                size: Math.random() * 2 + 1,  // Size between 1-3
+                speed,
+                brightness
+            });
+        }
+        const canvas = document.createElement('canvas');
+        this.layers.push(canvas);
+        canvas.width = game.canvas.width;
+        canvas.height = game.canvas.height;
+        canvas.pos = this.#startPos.clone();
+        canvas.speed = speed;
+        canvas.name = 'canvas' + count;
+
+        const ctx = canvas.getContext("2d");
+        stars.forEach(star => {
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(${game.system.color}, ${star.brightness})`;
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    update(delta) {
+        if (game.player.docked) return;
+        this.layers.forEach((l) => {
+            l.pos.addScalar(-l.speed * delta);
+            if (l.pos.dist(this.#startPos) > game.canvas.width) {
+                l.pos.setV(this.#startPos)
+            }
         });
         return this;
     };
-    
-    draw () {
-        if(game.player.docked) return;
-        this.stars.forEach(star => {
-            game.ctx.beginPath();
-            game.ctx.fillStyle = `rgba(${game.system.color}, ${star.brightness})`;
-            game.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            game.ctx.fill();
+
+    draw() {
+        if (game.player.docked) return;
+        this.layers.forEach((l) => {
+            game.ctx.drawImage(l, l.pos.x, l.pos.x);
         });
     }
 }

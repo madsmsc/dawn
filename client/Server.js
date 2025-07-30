@@ -1,6 +1,6 @@
 import { COLOR } from '../shared/Constants.js';
 import { Player } from './Player.js';
-import { Spaceship } from './Spaceship.js';
+import { PlayerShip } from './PlayerShip.js';
 import { System } from './System.js';
 import { Station } from './Station.js';
 import { Vec } from './Vec.js';
@@ -21,7 +21,7 @@ export class Server {
             console.log(`Message from server: ${data}`);
             if (data.action === 'login') {
                 game.player = new Player(data.player);
-                game.spaceship = new Spaceship(data.spaceship);
+                game.player.ship = new PlayerShip(data.spaceship);
             }
         };
 
@@ -90,12 +90,13 @@ export class Server {
             console.log('login: not connected - login attempt ' + this.loginAttempts);
             // DEMO mode when no server
             if (this.loginAttempts === 5) {
+                console.log('starting DEMO mode without server')
                 fetch('../shared/demo.json')
                     .then(response => response.json())
                     .then(data => {
                         game.gameLoop.demo = true;
                         game.player = new Player(data[0].player);
-                        game.spaceship = new Spaceship(data[0].spaceship);
+                        game.player.ship = new PlayerShip(data[0].spaceship);
                     })
                     .catch(error => console.log(error));
             }

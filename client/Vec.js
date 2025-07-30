@@ -20,6 +20,12 @@ export class Vec {
         return this;
     }
 
+    addScalar (s) {
+        this.x += s;
+        this.y += s;
+        return this;
+    }
+
     sub (v) {
         return new Vec(
             this.x - v.x,
@@ -41,6 +47,11 @@ export class Vec {
         );
     }
 
+    dist (v2) {
+        const diff = new Vec(v2.x - this.x, v2.y - this.y);
+        return diff.length();
+    }
+
     normalize () {
         const len = this.length();
         if (len === 0) return new Vec();
@@ -56,11 +67,17 @@ export class Vec {
     }
 
     toString () {
+        console.log('toString '+this.x+', '+this.y);
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     }
 
     clone () {
         return new Vec(this.x, this.y);
+    }
+
+    setV (v2) {
+        this.x = v2.x;
+        this.y = v2.y;
     }
 
     set (x, y) {

@@ -10,7 +10,7 @@ export class MiningMission extends Mission {
     }
 
     canComplete () {
-        return game.spaceship.inventory
+        return game.player.ship.inventory
             .find(item => item.name === this.requiredOre && item.amount >= this.amount);
     }
 
@@ -21,8 +21,8 @@ export class MiningMission extends Mission {
         cargo.amount -= this.amount;
         // Remove cargo item if empty
         if (cargo.amount <= 0) {
-            const index = game.spaceship.inventory.indexOf(cargo);
-            game.spaceship.inventory.splice(index, 1);
+            const index = game.player.ship.inventory.indexOf(cargo);
+            game.player.ship.inventory.splice(index, 1);
         }
     }
     
