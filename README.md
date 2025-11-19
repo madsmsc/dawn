@@ -17,8 +17,6 @@
 - most activities reward your with credits and/or reputation, and credits rule the galaxy.
 - trade credits for new modules, ships, and even reputation by bribing the right people.
 - crafting system ("research facility") like PoE but using credits when docked in stations
-  - transmut=100, augment=150, alteration=300, regal, alc, ex, scour...
-- "simple" items (white) 0 prefix/suffix. "modified" items (blue) max 1 prefix, 1 suffix. "complex" items (yellow) max 2 prefix, 2 suffix
 - 3 ways to play/progress: kill stuff, missions, and mining.
 - all stations share "folding vault" containing all your items.
 - make small indicators for where stations and asteroids are in your current instance.

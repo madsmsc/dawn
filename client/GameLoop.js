@@ -14,7 +14,6 @@ export class GameLoop {
 
     gameLoop(delta) {
         // timings
-        if (game.player?.dead) { return } // move to UI and show dead screen
         game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
         const newDelta = delta - this.lastDelta;
         this.lastDelta = delta;

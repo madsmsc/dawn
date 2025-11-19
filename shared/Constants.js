@@ -11,6 +11,36 @@ export const ORE = {
     TITANIUM: 4
 };
 
+export const RARITY = {
+    SIMPLE: 0,
+    MODIFIED: 1,
+    COMPLEX: 2
+};
+
+export const AFFIX = {
+    QUALITY: {
+        desc: 'Quality: adds effect of module',
+        tier: [10, 7, 4]
+    },
+    SPEED: {
+        desc: 'Speed: adds ship speed',
+        tier: [10, 7, 4]
+    },
+    FIRE_RATE: {
+        desc: 'Fire rate: adds gun fire speed',
+        tier: [10, 7, 4]
+    },
+    ACCURACY: {
+        desc: 'Accuracy: adds tracking speed',
+        tier: [10, 7, 4]
+    },
+    DAMAGE: {
+        desc: 'Damage: adds gun damage',
+        tier: [10, 7, 4]
+    }
+}
+
+// TODO: try generating these with chatgpt 
 export const SPRITE = {
     // icons
     MINE: 0,

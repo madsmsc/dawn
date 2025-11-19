@@ -2,6 +2,7 @@ import { Selectable } from "./Selectable.js";
 import { Vec } from "./Vec.js"
 import { MOVE } from "../shared/Constants.js"
 import { game } from "./game.js";
+import { Particle } from "./Particle.js";
 
 export class Destructable extends Selectable {
     constructor() {
@@ -90,6 +91,19 @@ export class Destructable extends Selectable {
             });
             game.ctx.stroke();
         }
+
+        if (this.#particles.length > 0) {
+            const width = game.canvas.width;
+            const height = game.canvas.height
+            game.ctx.clearRect(0, 0, width, height);
+            game.ctx.fillStyle = "white";
+            game.ctx.fillRect(0, 0, width, height);
+            this.#particles.forEach((particle, i) => {
+                if (particle.alpha <= 0) {
+                    this.#particles.splice(i, 1);
+                } else particle.update()
+            })
+        }
     }
 
     damage(dam) {
@@ -107,9 +121,16 @@ export class Destructable extends Selectable {
         this.hull -= dam;
     }
 
+    #particles = [];
     die() {
-        // TODO: disable input. draw an explosive death with particles. remove all references
-        // overidden in the children.
+        for (let i = 0; i <= 50; i++) {
+            let dx = (Math.random() - 0.5) * (Math.random() * 6);
+            let dy = (Math.random() - 0.5) * (Math.random() * 6);
+            let radius = Math.random() * 3;
+            let particle = new Particle(0, 0, radius, dx, dy, this.pos);
+            this.#particles.push(particle);
+        }
+        // overidden and called in the children.
     }
 
     approach(target) {
@@ -125,6 +146,7 @@ export class Destructable extends Selectable {
         this.nextPoint = undefined;
     }
 
+    // TODO: movement still sucks. fix it.
     move(delta) {
         this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
         if (this.moveMode === MOVE.APPROACH) {

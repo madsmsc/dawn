@@ -17,29 +17,59 @@ export class UI {
     }
 
     #loadButtons() {
-        const off = 10;
+        const off = 50;
         const border = 2;
         this.buttons = [];
         let i2vec = (i) => new Vec(border, game.canvas.height - i * off - border);
         let i = 1;
-        this.buttons.push(new Button('w', i2vec(i++), SPRITE.SHIP));
-        this.buttons.push(new Button('e', i2vec(i++), SPRITE.PILOT));
-        this.buttons.push(new Button('d', i2vec(i++), SPRITE.SETTINGS));
+        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP));
+        this.buttons.push(new Button('c', i2vec(i++), SPRITE.PILOT));
+        this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS));
         i = 3;
         i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
+        this.buttons.push(new Button('w', i2vec(i++), SPRITE.UP, () => !game.player.docked));
+        this.buttons.push(new Button('a', i2vec(i++), SPRITE.LEFT, () => !game.player.docked));
+        this.buttons.push(new Button('s', i2vec(i++), SPRITE.DOWN, () => !game.player.docked));
+        this.buttons.push(new Button('d', i2vec(i++), SPRITE.RIGHT, () => !game.player.docked));
         this.buttons.push(new Button('q', i2vec(i++), SPRITE.FLY_TO, () => !game.player.docked));
-        this.buttons.push(new Button('a', i2vec(i++), SPRITE.APPROACH, () => !game.player.docked));
-        this.buttons.push(new Button('s', i2vec(i++), SPRITE.ORBIT, () => !game.player.docked));
+        this.buttons.push(new Button('e', i2vec(i++), SPRITE.APPROACH, () => !game.player.docked));
+        this.buttons.push(new Button('r', i2vec(i++), SPRITE.ORBIT, () => !game.player.docked));
         i = -4;
         this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => !game.player.docked));
         this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => !game.player.docked));
         this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked));
 
-        this.buttons.find((b) => b.key === 'w').onDraw = this.drawShipDialog;
-        this.buttons.find((b) => b.key === 'e').onDraw = this.drawPilotDialog;
-        this.buttons.find((b) => b.key === '1').onDraw = this.drawWarpDialog;
-        this.buttons.find((b) => b.key === 'a').onClick = () => {
-            const selected = game.ui.selectables.find(s => s.selected);
+        this.buttons.find((b) => b.key === 'w').onDraw = () => {
+            game.player.ship.vel += game.player.ship.acceleration;
+            if (game.player.ship.vel > game.player.ship.maxVel) {
+                game.player.ship.vel = game.player.ship.maxVel;
+            }
+        };
+        this.buttons.find((b) => b.key === 's').onDraw = () => {
+            game.player.ship.vel -= game.player.ship.acceleration;
+            if (game.player.ship.vel < 0) {
+                game.player.ship.vel = 0;
+            }
+        };
+        this.buttons.find((b) => b.key === 'a').onDraw = () => {
+            game.player.ship.angle -= 1;
+            if (game.player.ship.angle < 0 || game.player.ship.angle > 360) {
+                game.player.ship.angle = 0;
+            }
+        };
+        this.buttons.find((b) => b.key === 'd').onDraw = () => {
+            game.player.ship.angle += 1;
+            if (game.player.ship.angle < 0 || game.player.ship.angle > 360) {
+                game.player.ship.angle = 0;
+            }
+        };
+
+        this.buttons.find((b) => b.key === 'i').onDraw = () => this.drawShipDialog();
+        this.buttons.find((b) => b.key === 'c').onDraw = () => this.drawPilotDialog();
+        this.buttons.find((b) => b.key === 'p').onDraw = () => this.drawSettingsDialog();
+        this.buttons.find((b) => b.key === '3').onDraw = () => this.drawWarpDialog();
+        this.buttons.find((b) => b.key === 'e').onClick = () => {
+            const selected = this.selectables.find(s => s.selected);
             if (selected) {
                 game.player.ship.approach(selected.pos);
             } else {
@@ -47,7 +77,7 @@ export class UI {
             }
         };
         this.buttons.find((b) => b.key === 's').onClick = () => {
-            const selected = game.ui.selectables.find(s => s.selected);
+            const selected = this.selectables.find(s => s.selected);
             if (selected) {
                 game.player.ship.orbit(selected.pos);
             } else {
@@ -108,7 +138,7 @@ export class UI {
         } else if (this.showStationUI()) { 
             this.#stationUI();
             game.missionManager.draw();
-            game.ui.draw();
+            this.draw();
         } else {
             this.drawButtons();
             this.drawHUD();
@@ -123,13 +153,32 @@ export class UI {
         return game.player?.docked;
     }
 
+    roundedRect(x, y, width, height, radius) {
+        game.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
+        game.ctx.lineWidth = 2;
+        game.ctx.beginPath();
+        game.ctx.moveTo(x + radius, y);
+        game.ctx.lineTo(x + width - radius, y);
+        game.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        game.ctx.lineTo(x + width, y + height - radius);
+        game.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        game.ctx.lineTo(x + radius, y + height);
+        game.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        game.ctx.lineTo(x, y + radius);
+        game.ctx.quadraticCurveTo(x, y, x + radius, y);
+        game.ctx.closePath();
+        game.ctx.fill();
+        game.ctx.stroke();
+    }
+
     #loginUI() {
-        game.ui.roundedRect(game.ui.dialogX, game.ui.dialogY, game.ui.dialogWidth, game.ui.dialogHeight, 10);
+        this.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = 100;
-        yOffset = game.ui.drawSectionHeader('Logging in...', game.ui.dialogWidth, yOffset, game.ui.dialogX);
+        yOffset = this.drawSectionHeader('Logging in...', this.dialogWidth, yOffset, this.dialogX);
         game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        game.ctx.fillText(`user: ${'bob'}`, game.ui.dialogX + 30, yOffset += 20);
-        game.ctx.fillText(`pass: ${'1234'}`, game.ui.dialogX + 30, yOffset += 20);
+        game.ctx.fillText(`user: ${'bob'}`, this.dialogX + 30, yOffset += 20);
+        game.ctx.fillText(`pass: ${'1234'}`, this.dialogX + 30, yOffset += 20);
 
         // TODO: callback instead of repeatedly calling?
         if (!game.server.loggingIn) {
@@ -162,29 +211,6 @@ export class UI {
             text(`Reward: ${mission.reward} credits`);
             text('---')
         }
-    }
-
-    roundedRectExt(x, y, width, height, radius) {
-        this.roundedRect(x, y, width, height, radius);
-    }
-
-    roundedRect(x, y, width, height, radius) {
-        game.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.8)';
-        game.ctx.lineWidth = 2;
-        game.ctx.beginPath();
-        game.ctx.moveTo(x + radius, y);
-        game.ctx.lineTo(x + width - radius, y);
-        game.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        game.ctx.lineTo(x + width, y + height - radius);
-        game.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        game.ctx.lineTo(x + radius, y + height);
-        game.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        game.ctx.lineTo(x, y + radius);
-        game.ctx.quadraticCurveTo(x, y, x + radius, y);
-        game.ctx.closePath();
-        game.ctx.fill();
-        game.ctx.stroke();
     }
 
     drawWarpDialog() {

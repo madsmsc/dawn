@@ -70,6 +70,7 @@ export class PlayerShip extends Destructable {
     }
 
     die () {
+        super.die();
         game.player.dead = true;
         console.log('YOU ARE DEAD!');
     }
