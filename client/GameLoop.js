@@ -18,8 +18,10 @@ export class GameLoop {
         const newDelta = delta - this.lastDelta;
         this.lastDelta = delta;
         // UI
-        // game.player?.ship?.damage(1000); // testing damage
-        if (game.ui.showStationUI() || game.ui.showLoginUI()) {
+        // game.player?.ship?.damage(1); // testing damage
+        if (game.ui.showStationUI()
+            || game.ui.showLoginUI()
+            || game.player.dead) {
             game.ui.update(newDelta).draw();
             return requestAnimationFrame(this.gameLoop);
         }

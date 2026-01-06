@@ -15,10 +15,10 @@ export class Button {
     }
 
     keyDown() {
-        if (!down && !up) { // show
+        if (!this.down && !this.up) { // show
             this.down = true;
             this.show = true;
-        } else if (up) { // hide
+        } else if (this.up) { // hide
             this.down = false;
             this.up = false;
             this.show = false;

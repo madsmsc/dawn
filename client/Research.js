@@ -1,4 +1,4 @@
-class Research {
+export class Research {
     constructor(name, short, cost, worksOn, desc) {
         this.name = name; // string
         this.short = short; // string
