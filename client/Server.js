@@ -1,8 +1,8 @@
 import { COLOR } from '../shared/Constants.js';
 import { Player } from './Player.js';
-import { PlayerShip } from './PlayerShip.js';
+import { PlayerShip } from './destructables/PlayerShip.js';
 import { System } from './System.js';
-import { Station } from './Station.js';
+import { Station } from './selectables/Station.js';
 import { Vec } from './Vec.js';
 import { game } from './game.js';
 

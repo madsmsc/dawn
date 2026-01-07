@@ -1,6 +1,6 @@
 import { game } from './game.js';
-import { Asteroid } from './Asteroid.js';
-import { Enemy } from './Enemy.js';
+import { Asteroid } from './selectables/Asteroid.js';
+import { Enemy } from './destructables/Enemy.js';
 
 // TODO: currently warping between systems
 // instead, warp between warpables in system
