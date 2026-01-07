@@ -1,5 +1,5 @@
-import { game } from './game.js';
-import { ORE } from '../shared/Constants.js';
+import { game } from '../game/game.js';
+import { ORE } from '../../shared/Constants.js';
 import { MiningMission } from './MiningMission.js';
 
 export class MissionManager {

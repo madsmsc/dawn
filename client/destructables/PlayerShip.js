@@ -1,8 +1,8 @@
-import { game } from '../game.js';
+import { game } from '../game/game.js';
 import { SPRITE } from '../../shared/Constants.js';
-import { Vec } from '../Vec.js';
-import { Module } from '../Module.js';
-import { Destructable } from '../Destructable.js';
+import { Vec } from '../util/Vec.js';
+import { Module } from '../modules/Module.js';
+import { Destructable } from './Destructable.js';
 
 export class PlayerShip extends Destructable {
     constructor(obj) {

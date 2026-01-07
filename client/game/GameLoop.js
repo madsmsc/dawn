@@ -1,11 +1,11 @@
 import { game } from './game.js';
-import { GameEventListener } from './GameEventListener.js';
-import { UI } from './UI.js';
-import { Server } from './Server.js';
-import { StarField } from './StarField.js';
-import { Camera } from './Camera.js';
-import { MissionManager } from './MissionManager.js';
-import { Sprites } from './Sprites.js';
+import { GameEventListener } from '../events/GameEventListener.js';
+import { UI } from '../ui/UI.js';
+import { Server } from '../Server.js';
+import { StarField } from '../ui/StarField.js';
+import { Camera } from '../Camera.js';
+import { MissionManager } from '../missions/MissionManager.js';
+import { Sprites } from '../ui/Sprites.js';
 
 export class GameLoop {
     constructor() {

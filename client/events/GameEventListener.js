@@ -1,5 +1,5 @@
-import { game } from './game.js';
-import { Vec } from './Vec.js';
+import { game } from '../game/game.js';
+import { Vec } from '../util/Vec.js';
 
 export class GameEventListener {
     constructor() {
@@ -13,10 +13,14 @@ export class GameEventListener {
 
     keyUpListener (event) {
         if (!game.player || !game.player.ship) return;
+        // If Escape pressed, hide all button UIs
+        if (event.key === 'Escape') {
+            game.ui.buttons.forEach((b) => { b.hideUI(); });
+            return;
+        }
         game.ui.buttons.forEach((b) => {
             if (event.key === b.key) b.keyUp();
         });
-        // TODO: escape key all button keyUp() ?
     }
 
     keyDownListener (event) {

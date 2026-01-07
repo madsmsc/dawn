@@ -1,7 +1,7 @@
-import { game } from '../game.js';
+import { game } from '../game/game.js';
 import { SPRITE, MOVE, MODULE } from '../../shared/Constants.js';
-import { Destructable } from '../Destructable.js';
-import { Module } from '../Module.js';
+import { Destructable } from './Destructable.js';
+import { Module } from '../modules/Module.js';
 
 export class Enemy extends Destructable {
     constructor() {

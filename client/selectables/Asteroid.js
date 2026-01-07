@@ -1,5 +1,5 @@
-import { game } from '../game.js';
-import { Selectable } from '../Selectable.js';
+import { game } from '../game/game.js';
+import { Selectable } from './Selectable.js';
 import { SPRITE, ORE } from '../../shared/Constants.js';
 
 export class Asteroid extends Selectable {

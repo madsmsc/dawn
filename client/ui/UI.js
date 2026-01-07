@@ -1,6 +1,6 @@
-import { game } from './game.js';
-import { SPRITE } from '../shared/Constants.js';
-import { Vec } from './Vec.js';
+import { game } from '../game/game.js';
+import { SPRITE } from '../../shared/Constants.js';
+import { Vec } from '../util/Vec.js';
 import { Button } from './Button.js';
 
 export class UI {

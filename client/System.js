@@ -1,4 +1,4 @@
-import { game } from './game.js';
+import { game } from './game/game.js';
 import { Asteroid } from './selectables/Asteroid.js';
 import { Enemy } from './destructables/Enemy.js';
 

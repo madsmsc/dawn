@@ -1,8 +1,8 @@
-import { Selectable } from "./Selectable.js";
-import { Vec } from "./Vec.js"
-import { MOVE } from "../shared/Constants.js"
-import { game } from "./game.js";
-import { Particle } from "./Particle.js";
+import { Selectable } from "../selectables/Selectable.js";
+import { Vec } from "../util/Vec.js"
+import { MOVE } from "../../shared/Constants.js"
+import { game } from "../game.js";
+import { Particle } from "../ui/Particle.js";
 
 export class Destructable extends Selectable {
     constructor() {

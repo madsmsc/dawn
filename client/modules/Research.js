@@ -1,3 +1,5 @@
+import { RARITY } from '../../shared/Constants.js';
+
 export class Research {
     constructor(name, short, cost, worksOn, desc) {
         this.name = name; // string
