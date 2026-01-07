@@ -32,12 +32,13 @@ export class GameLoop {
         game.camera.apply();
         // update game objects
         game.system.update(newDelta).draw();
+        // apply player input before updating/drawing the ship so movement is immediate
+        game.player.update(newDelta).draw();
         game.player.ship.update(newDelta).draw();
         // stop transformation
         game.camera.restore();
         // update game objects
         game.missionManager.update(newDelta).draw();
-        game.player.update(newDelta).draw();
         game.ui.update(newDelta).draw();
         // next frame
         requestAnimationFrame(this.gameLoop);

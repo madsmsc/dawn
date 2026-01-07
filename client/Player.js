@@ -9,6 +9,49 @@ export class Player {
     }
 
     update (delta) {
+        // Apply player WASD input to the player's ship directly (directional movement)
+        if (!this.ship || this.docked) return this;
+        const bW = game.ui.buttons.find(b => b.key === 'w');
+        const bA = game.ui.buttons.find(b => b.key === 'a');
+        const bS = game.ui.buttons.find(b => b.key === 's');
+        const bD = game.ui.buttons.find(b => b.key === 'd');
+        const ship = this.ship;
+        const accel = ship.acceleration || 0.05;
+
+        // Direction vector: D-right, A-left, S-down, W-up
+        const dx = (bD?.down ? 1 : 0) - (bA?.down ? 1 : 0);
+        const dy = (bS?.down ? 1 : 0) - (bW?.down ? 1 : 0);
+        const moveVec = new Vec(dx, dy);
+
+        if (moveVec.x !== 0 || moveVec.y !== 0) {
+            // accelerate in desired direction
+            const dir = moveVec.normalize();
+            ship.velVec = ship.velVec || new Vec(0, 0);
+            ship.velVec.add(dir.scale(accel));
+            // clamp speed
+            const speed = ship.velVec.length();
+            if (speed > ship.maxVel) {
+                ship.velVec = ship.velVec.normalize().scale(ship.maxVel);
+            }
+        } else {
+            // damping
+            ship.velVec = ship.velVec || new Vec(0, 0);
+            ship.velVec.x *= 0.92;
+            ship.velVec.y *= 0.92;
+            if (Math.abs(ship.velVec.x) < 0.001) ship.velVec.x = 0;
+            if (Math.abs(ship.velVec.y) < 0.001) ship.velVec.y = 0;
+        }
+
+        // apply velocity
+        if (ship.velVec && (ship.velVec.x !== 0 || ship.velVec.y !== 0)) {
+            ship.pos.add(ship.velVec);
+            // maintain scalar compatibility
+            ship.vel = ship.velVec.length();
+            ship.angle = Math.atan2(ship.velVec.y, ship.velVec.x);
+        } else {
+            ship.vel = 0;
+        }
+
         return this;
     }
 

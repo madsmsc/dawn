@@ -134,21 +134,31 @@ export class Destructable extends Selectable {
     }
 
     approach(target) {
+        if (this.isPlayer) {
+            console.log(`player cannot use approach`);
+            return;
+        }
         console.log(`setting [${this.type}] target to ${target.toString()} and approaching`);
         this.target = target;
         this.moveMode = MOVE.APPROACH;
     }
 
     orbit(target) {
+        if (this.isPlayer) {
+            console.log(`player cannot orbit`);
+            return;
+        }
         console.log(`setting [${this.type}] target to ${target.toString()} and orbiting`);
         this.target = target;
         this.moveMode = MOVE.ORBIT;
         this.nextPoint = undefined;
     }
 
-    // TODO: movement still sucks. fix it.
+    // Movement: either approach/orbit (AI style), or free flight driven by vel & angle (player movement applied elsewhere)
     move(delta) {
-        this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
+        // Player ships are controlled explicitly (WASD) elsewhere; skip AI movement here.
+        if (this.isPlayer) return;
+
         if (this.moveMode === MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
             if (dir.length() > this.size) {
@@ -157,11 +167,10 @@ export class Destructable extends Selectable {
                 this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
             } else {
                 this.vel = 0;
-            };
+            }
 
         } else if (this.moveMode === MOVE.ORBIT) {
-            // TODO: move targetCircle generation to Selectable class
-            // will have to move since it's based off its pos?
+            // orbit behavior unchanged
             for (let i = 0; i < this.numPoints; i++) {
                 const angle = (i / this.numPoints) * Math.PI * 2; // angle for points in radians
                 this.targetCircle[i].x = this.target.x + this.orbitRadius * Math.cos(angle);

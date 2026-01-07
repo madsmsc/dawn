@@ -28,16 +28,11 @@ export class GameEventListener {
 
     clickListener (event) {
         if (!game.player || !game.player.ship) return;
+        // pass click position to each button so it can react if clicked
         game.ui.buttons.forEach((b) => {
-            if (event.key === b.key) b.click(new Vec(event.x, event.y));
-            // TODO or use clickPos below?
+            b.click(new Vec(event.x, event.y));
         });
         const clickPos = game.camera.screenToWorld(event.x, event.y);
-        // fly-to
-        if (game.ui.qDown) { 
-            game.player.ship.approach(clickPos)
-            return;
-        }
         // select one selectable
         let select = undefined;
         game.ui.selectables.forEach((selectable) => {
