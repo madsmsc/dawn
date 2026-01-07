@@ -1,5 +1,5 @@
-import { Vec } from './Vec.js';
-import { game } from './game.js';
+import { Vec } from '../util/Vec.js';
+import { game } from '../game/game.js';
 
 export class Selectable {
     constructor() {

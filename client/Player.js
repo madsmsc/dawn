@@ -1,3 +1,6 @@
+import { game } from './game/game.js';
+import { Vec } from './util/Vec.js';
+
 export class Player {
     constructor(obj) {
         this.name = '';

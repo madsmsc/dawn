@@ -1,4 +1,4 @@
-import { RARITY, AFFIX } from '../shared/Constants.js';
+import { RARITY, AFFIX } from '../../shared/Constants.js';
 
 export class Module {
     constructor(name, sprite = undefined, amount = 1, unit = 'units') {

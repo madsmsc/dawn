@@ -1,10 +1,10 @@
 import { COLOR } from '../shared/Constants.js';
 import { Player } from './Player.js';
-import { PlayerShip } from './PlayerShip.js';
+import { PlayerShip } from './destructables/PlayerShip.js';
 import { System } from './System.js';
-import { Station } from './Station.js';
-import { Vec } from './Vec.js';
-import { game } from './game.js';
+import { Station } from './selectables/Station.js';
+import { Vec } from './util/Vec.js';
+import { game } from './game/game.js';
 
 export class Server {
     constructor() {
@@ -91,7 +91,7 @@ export class Server {
             // DEMO mode when no server
             if (this.loginAttempts === 5) {
                 console.log('starting DEMO mode without server')
-                fetch('../shared/demo.json')
+                fetch('./demo.json')
                     .then(response => response.json())
                     .then(data => {
                         game.gameLoop.demo = true;

@@ -1,3 +1,4 @@
+import { game } from '../game/game.js';
 
 export class Particle {
     constructor(x, y, radius, dx, dy, pos) {

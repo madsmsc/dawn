@@ -1,8 +1,8 @@
-import { Selectable } from "./Selectable.js";
-import { Vec } from "./Vec.js"
-import { MOVE } from "../shared/Constants.js"
-import { game } from "./game.js";
-import { Particle } from "./Particle.js";
+import { Selectable } from "../selectables/Selectable.js";
+import { Vec } from "../util/Vec.js"
+import { MOVE } from "../../shared/Constants.js"
+import { game } from "../game.js";
+import { Particle } from "../ui/Particle.js";
 
 export class Destructable extends Selectable {
     constructor() {
@@ -21,21 +21,15 @@ export class Destructable extends Selectable {
         this.moveMode = MOVE.APPROACH;
         this.modules = []; // "equipped" modules
         this.inventory = []; // unequipped modules and ore
-        this.orbitRadius = 120; // TODO: should be able to set this in the UI
+        this.orbitRadius = 120; // TODO: should depend on the ship type and weapons/modules
         // TODO: all this should be function of equipped modules
-        this.scanRange = 400;
-        this.attackRange = 150;
-        this.dam = 2;
+        this.scanRange = 10000; // TODO: should depend on ship type and modules
+        this.attackRange = 150; // should depend on ship type and modules ...
+        this.dam = 2; // ...
         this.attackTime = 1000;
         this.attackCount = 0;
 
         this.debug = true; // enable to show paths
-        this.points = []; // used for orbiting
-        this.targetCircle = [];
-        this.numPoints = 10;
-        for (let i = 0; i < this.numPoints; i++) {
-            this.targetCircle.push(new Vec(0, 0));
-        }
     }
 
     update(delta) {
@@ -82,15 +76,7 @@ export class Destructable extends Selectable {
             }
         }
 
-        if (this.debug && this.points) { // draw path taken
-            game.ctx.strokeStyle = 'red';
-            game.ctx.beginPath();
-            game.ctx.moveTo(this.points[0].x, this.points[0].y);
-            this.points.forEach(p => {
-                game.ctx.lineTo(p.x, p.y);
-            });
-            game.ctx.stroke();
-        }
+
 
         if (this.#particles.length > 0) {
             const width = game.canvas.width;
@@ -154,10 +140,12 @@ export class Destructable extends Selectable {
         this.nextPoint = undefined;
     }
 
-    // Movement: either approach/orbit (AI style), or free flight driven by vel & angle (player movement applied elsewhere)
     move(delta) {
-        // Player ships are controlled explicitly (WASD) elsewhere; skip AI movement here.
+        // AI movement - player is controlled in player class
         if (this.isPlayer) return;
+
+        // AI velocity accumulation so approach/orbit actually move
+        this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
 
         if (this.moveMode === MOVE.APPROACH) {
             const dir = this.target.sub(this.pos);
@@ -170,40 +158,33 @@ export class Destructable extends Selectable {
             }
 
         } else if (this.moveMode === MOVE.ORBIT) {
-            // orbit behavior unchanged
-            for (let i = 0; i < this.numPoints; i++) {
-                const angle = (i / this.numPoints) * Math.PI * 2; // angle for points in radians
-                this.targetCircle[i].x = this.target.x + this.orbitRadius * Math.cos(angle);
-                this.targetCircle[i].y = this.target.y + this.orbitRadius * Math.sin(angle);
+            // Smooth orbit: steer tangentially and correct radial error so orbit is smooth and stable
+            if (!this.target) return;
+            const rel = this.pos.sub(this.target);
+            let r = rel.length();
+            // if we are exactly at the center, nudge outwards
+            if (r === 0) {
+                rel.x = this.orbitRadius;
+                rel.y = 0;
+                r = this.orbitRadius;
             }
-            let closestPoint = undefined;
-            let closestDist = 100000;
-            for (const p of this.targetCircle) {
-                const dist = p.sub(this.pos).length();
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPoint = p;
-                }
-            }
-            const orbitDeadzone = 10;
-            const firstNextPoint = !this.nextPoint || closestPoint.equals(this.nextPoint);
-            if (closestDist < orbitDeadzone && firstNextPoint) { // pick next point
-                const closestIndex = this.targetCircle.indexOf(closestPoint);
-                const nextIndex = (closestIndex + 1) % this.numPoints;
-                this.nextPoint = this.targetCircle[nextIndex];
-                const dir = this.nextPoint.sub(this.pos).normalize();
-                this.pos.add(dir.scale(this.vel));
-                this.angle = Math.atan2(dir.y, dir.x);
-            } else if (this.nextPoint) { // go to next point
-                const dir = this.nextPoint.sub(this.pos).normalize();
-                this.pos.add(dir.scale(this.vel));
-                this.angle = Math.atan2(dir.y, dir.x);
-            } else { // go to closest point
-                const dir = closestPoint.sub(this.pos).normalize();
-                this.pos.add(dir.scale(this.vel));
-                this.angle = Math.atan2(dir.y, dir.x);
-            }
+            const dirToSelf = rel.normalize();
+            // tangent direction (perpendicular)
+            const tangent = new Vec(-dirToSelf.y, dirToSelf.x);
+            // choose orbit direction if not set
+            if (this.orbitDir === undefined) this.orbitDir = (Math.random() < 0.5 ? 1 : -1);
+            // tangential component scaled by current vel
+            const tangentialMove = tangent.scale(this.vel * this.orbitDir);
+            // radial correction proportional to the radial error
+            const radialError = r - this.orbitRadius;
+            const radialCorrection = dirToSelf.scale(-radialError * 0.2);
+            // combine steering
+            let moveVec = tangentialMove.add(radialCorrection);
+            // clamp movement to current vel to avoid jumps
+            const maxMove = Math.max(this.vel, 0.01);
+            if (moveVec.length() > maxMove) moveVec = moveVec.normalize().scale(maxMove);
+            this.pos.add(moveVec);
+            if (moveVec.x !== 0 || moveVec.y !== 0) this.angle = Math.atan2(moveVec.y, moveVec.x);
         }
-        if (this.debug) this.points.push(this.pos);
     }
 }

@@ -1,7 +1,7 @@
-import { game } from './game.js';
-import { SPRITE } from '../shared/Constants.js';
-import { Vec } from './Vec.js';
-import { Module } from './Module.js';
+import { game } from '../game/game.js';
+import { SPRITE } from '../../shared/Constants.js';
+import { Vec } from '../util/Vec.js';
+import { Module } from '../modules/Module.js';
 import { Destructable } from './Destructable.js';
 
 export class PlayerShip extends Destructable {
@@ -41,16 +41,6 @@ export class PlayerShip extends Destructable {
     draw () {
         if(game.player.docked) return;
         super.draw(SPRITE.SPACESHIP);
-
-        if (this.debug && this.targetCircle) { // draw target orbit circle
-            game.ctx.strokeStyle = 'blue';
-            game.ctx.beginPath();
-            game.ctx.moveTo(this.targetCircle[0].x, this.targetCircle[0].y);
-            this.targetCircle.forEach(p => {
-                game.ctx.lineTo(p.x, p.y);
-            });
-            game.ctx.stroke();
-        }
     }
 
     mine () {

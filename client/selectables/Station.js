@@ -1,9 +1,9 @@
-import { RARITY, SPRITE, ORE, AFFIX } from '../shared/Constants.js';
-import { Selectable } from './Selectable.js';
-import { game } from './game.js';
-import { Vec } from './Vec.js';
-import { Button } from './Button.js';
-import { Research } from './Research.js';
+import { RARITY, SPRITE, ORE, AFFIX } from '../../shared/Constants.js';
+import { Selectable } from '../selectables/Selectable.js';
+import { game } from '../game/game.js';
+import { Vec } from '../util/Vec.js';
+import { Button } from '../ui/Button.js';
+import { Research } from '../modules/Research.js';
 
 export class Station extends Selectable {
     constructor(name, pos) {

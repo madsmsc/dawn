@@ -1,5 +1,5 @@
 import { Mission } from './Mission.js';
-import { game } from './game.js';
+import { game } from '../game/game.js';
 
 export class MiningMission extends Mission {
     constructor(station, requiredOre, amount, reward) {
