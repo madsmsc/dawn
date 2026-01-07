@@ -10,22 +10,34 @@ export class Button {
         this.up = false;
         this.show = false;
 
-        this.onDraw = () => {};
-        this.onClick = () => {};
+        this.onDraw = () => { };
+        this.onClick = () => { };
     }
 
     keyDown() {
-        if (!this.down && !this.up) { // show
-            this.down = true;
-            this.show = true;
-        } else if (this.up) { // hide
-            this.down = false;
-            this.up = false;
-            this.show = false;
+        if (!this.enabled()) return;
+        // If this button's UI is already shown, toggle it off
+        if (this.show) {
+            this.hideUI();
+            return;
         }
+        // Close any other open button UIs
+        game.ui.buttons.forEach((b) => {
+            if (b !== this) b.hideUI()
+        });
+        this.down = true;
+        this.up = false;
+        this.show = true;
     }
 
-    keyUp () {
+    hideUI() {
+        this.show = false;
+        this.down = false;
+        this.up = false;
+    }
+
+    keyUp() {
+        this.down = false;
         this.up = true;
     }
 
@@ -35,8 +47,8 @@ export class Button {
         }
     }
 
-    draw () {
-        if (this.enabled() && this.show) {
+    draw() {
+        if (this.enabled() && (this.show || this.down)) {
             this.onDraw();
         }
         if (this.enabled() && this.icon && this.pos) {

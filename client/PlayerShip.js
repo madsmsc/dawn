@@ -18,9 +18,15 @@ export class PlayerShip extends Destructable {
         // TODO: for testing
         this.maxVel = 2;
         this.acceleration = 0.05;
+
+        // mark as player-controlled so AI movement is skipped in Destructable.move
+        this.isPlayer = true;
+        // velocity vector for directional movement (WASD)
+        this.velVec = new Vec(0, 0);
     }
 
     update (delta) {
+        // Player ship does not perform AI movement in Destructable.move (isPlayer === true)
         super.update(delta);
         this.attackCount += delta;
         if (game.ui.k2down) this.mine();

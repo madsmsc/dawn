@@ -39,51 +39,30 @@ export class UI {
         this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => !game.player.docked));
         this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked));
 
-        this.buttons.find((b) => b.key === 'w').onDraw = () => {
-            game.player.ship.vel += game.player.ship.acceleration;
-            if (game.player.ship.vel > game.player.ship.maxVel) {
-                game.player.ship.vel = game.player.ship.maxVel;
-            }
-        };
-        this.buttons.find((b) => b.key === 's').onDraw = () => {
-            game.player.ship.vel -= game.player.ship.acceleration;
-            if (game.player.ship.vel < 0) {
-                game.player.ship.vel = 0;
-            }
-        };
-        this.buttons.find((b) => b.key === 'a').onDraw = () => {
-            game.player.ship.angle -= 1;
-            if (game.player.ship.angle < 0 || game.player.ship.angle > 360) {
-                game.player.ship.angle = 0;
-            }
-        };
-        this.buttons.find((b) => b.key === 'd').onDraw = () => {
-            game.player.ship.angle += 1;
-            if (game.player.ship.angle < 0 || game.player.ship.angle > 360) {
-                game.player.ship.angle = 0;
-            }
-        };
+        // TODO: find and remove comments where not necessary
+
+        // TODO: is this necessary? aren't they empty by default?
+        // Movement handled in PlayerShip.update now (WASD). Keep button visuals but don't mutate ship here.
+        this.buttons.find((b) => b.key === 'w').onDraw = () => {};
+        this.buttons.find((b) => b.key === 's').onDraw = () => {};
+        this.buttons.find((b) => b.key === 'a').onDraw = () => {};
+        this.buttons.find((b) => b.key === 'd').onDraw = () => {};
 
         this.buttons.find((b) => b.key === 'i').onDraw = () => this.drawShipDialog();
         this.buttons.find((b) => b.key === 'c').onDraw = () => this.drawPilotDialog();
         this.buttons.find((b) => b.key === 'p').onDraw = () => this.drawSettingsDialog();
         this.buttons.find((b) => b.key === '3').onDraw = () => this.drawWarpDialog();
+        // Approach/orbit behavior removed - WASD controls movement now
         this.buttons.find((b) => b.key === 'e').onClick = () => {
+            // interaction placeholder: use selected
             const selected = this.selectables.find(s => s.selected);
             if (selected) {
-                game.player.ship.approach(selected.pos);
-            } else {
-                // console.log('no asteroid selected');
+                // interaction left intentionally empty; WASD handles movement
             }
         };
-        this.buttons.find((b) => b.key === 's').onClick = () => {
-            const selected = this.selectables.find(s => s.selected);
-            if (selected) {
-                game.player.ship.orbit(selected.pos);
-            } else {
-                // console.log('no asteroid selected');
-            }
-        };
+        // remove orbit-on-'s' click handler (movement is WASD now)
+        this.buttons.find((b) => b.key === 's').onClick = () => {};
+
 
         this.buttons.push(new Button('f', undefined, undefined));
         this.buttons.find((b) => b.key === 's').onClick = () => {
@@ -101,7 +80,7 @@ export class UI {
         };
         
         const button1 = this.buttons.find((b) => b.key === '1');
-        this.buttons.push(new Button('r', undefined, () => button1.isDown));
+        this.buttons.push(new Button('r', undefined, () => button1.down));
         this.buttons.find((b) => b.key === 'r').onClick = () => {
             // TODO add loading bar
             game.system = game.system.connections[0].system;
@@ -109,7 +88,7 @@ export class UI {
         };
                 
         this.buttons.push(new Button('t', undefined, () => 
-            button1.isDown && game.system.connections.length > 1));
+            button1.down && game.system.connections.length > 1));
         this.buttons.find((b) => b.key === 't').onClick = () => {
             game.system = game.system.connections[1].system;
             // new Vec(game.canvas.width / 2, game.canvas.height / 2);
@@ -187,7 +166,7 @@ export class UI {
     }
 
     #demoText() {
-        if (this.demo) {
+        if (game.gameLoop.demo) {
             game.ctx.fillStyle = 'green';
             game.ctx.font = '22px Arial';
             const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, 30) };
