@@ -1,5 +1,5 @@
-import { game } from './game/game.js';
-import { Vec } from './util/Vec.js';
+import { game } from './game.js';
+import { Vec } from './Vec.js';
 
 export class Player {
     constructor(obj) {
@@ -12,6 +12,8 @@ export class Player {
     }
 
     update (delta) {
+        // this.ship?.damage(1); // testing damage
+
         // Apply player WASD input to the player's ship directly (directional movement)
         if (!this.ship || this.docked) return this;
         const bW = game.ui.buttons.find(b => b.key === 'w');
@@ -28,13 +30,13 @@ export class Player {
 
         if (moveVec.x !== 0 || moveVec.y !== 0) {
             // accelerate in desired direction
-            const dir = moveVec.normalize();
+            const dir = moveVec.clone().normalize();
             ship.velVec = ship.velVec || new Vec(0, 0);
             ship.velVec.add(dir.scale(accel));
             // clamp speed
             const speed = ship.velVec.length();
             if (speed > ship.maxVel) {
-                ship.velVec = ship.velVec.normalize().scale(ship.maxVel);
+                ship.velVec = ship.velVec.clone().normalize().scale(ship.maxVel);
             }
         } else {
             // damping
@@ -55,10 +57,11 @@ export class Player {
             ship.vel = 0;
         }
 
+        this.ship.update(delta);
         return this;
     }
 
-    draw () { 
-
+    draw () {
+        this.ship.draw();
     }
 }

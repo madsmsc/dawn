@@ -1,9 +1,9 @@
 import { game } from './game.js';
-import { GameEventListener } from '../events/GameEventListener.js';
+import { GameEventListener } from './GameEventListener.js';
 import { UI } from '../ui/UI.js';
-import { Server } from '../Server.js';
+import { Server } from './Server.js';
 import { StarField } from '../ui/StarField.js';
-import { Camera } from '../Camera.js';
+import { Camera } from './Camera.js';
 import { MissionManager } from '../missions/MissionManager.js';
 import { Sprites } from '../ui/Sprites.js';
 
@@ -13,12 +13,11 @@ export class GameLoop {
     }
 
     gameLoop(delta) {
-        // timings
         game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+        // timings
         const newDelta = delta - this.lastDelta;
         this.lastDelta = delta;
         // UI
-        // game.player?.ship?.damage(1); // testing damage
         if (game.ui.showStationUI()
             || game.ui.showLoginUI()
             || game.player.dead) {
@@ -32,12 +31,10 @@ export class GameLoop {
         game.camera.apply();
         // update game objects
         game.system.update(newDelta).draw();
-        // apply player input before updating/drawing the ship so movement is immediate
         game.player.update(newDelta).draw();
-        game.player.ship.update(newDelta).draw();
         // stop transformation
         game.camera.restore();
-        // update game objects
+        // UI
         game.missionManager.update(newDelta).draw();
         game.ui.update(newDelta).draw();
         // next frame

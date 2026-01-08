@@ -1,5 +1,5 @@
-import { game } from './game/game.js';
-import { Vec } from './util/Vec.js';
+import { game } from './game.js';
+import { Vec } from './Vec.js';
 
 // TODO: i dont know if i already can, but keep player centered and move around space
 // meaning asteroids and stations move around

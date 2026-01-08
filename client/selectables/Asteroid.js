@@ -1,4 +1,4 @@
-import { game } from '../game/game.js';
+import { game } from '../controllers/game.js';
 import { Selectable } from './Selectable.js';
 import { SPRITE, ORE } from '../../shared/Constants.js';
 

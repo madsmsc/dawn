@@ -1,4 +1,4 @@
-import { game } from '../game/game.js';
+import { game } from '../controllers/game.js';
 
 export class Button {
     constructor(key, pos, icon, enabled = () => true) {
@@ -43,6 +43,8 @@ export class Button {
 
     click(clickPos) {
         if (this.pos && clickPos.dist(this.pos) < 40) {
+            // Trigger the same behavior as keyboard press
+            this.keyDown();
             this.onClick();
         }
     }

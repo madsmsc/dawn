@@ -17,20 +17,14 @@ export class Research {
         module.apply(this);
     }
 
+    // TODO: add dialog to station that allows research
     static availableResearch() {
         // big boy station: all research available at this station
         return [
             new Research('Transmute', 'tra', 100, [RARITY.SIMPLE],
-                'turn simple module into modified, allowing 1 prefix and 1 suffix.',
-                (m) => {
-                    m.addPrefixOrSuffix(Math.floor(Math.random() * 2));
-                }),
+                'turn simple module into modified, allowing 1 prefix and 1 suffix.'),
             new Research('Alterate', 'alt', 200, [RARITY.MODIFIED],
-                'reroll prefixes and suffixes on a modified item.',
-                (m) => {
-                    m.removeAllAffixes();
-                    m.addPrefixOrSuffix(Math.floor(Math.random() * 2));
-                }),
+                'reroll prefixes and suffixes on a modified item.'),
             new Research('Augment', 'aug', 150, [RARITY.MODIFIED],
                 'add a missing prefix or suffix to modified item.'),
             new Research('Regal', 'reg', 400, [RARITY.MODIFIED],

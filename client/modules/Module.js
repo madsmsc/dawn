@@ -28,12 +28,13 @@ export class Module {
     }
 
     addPrefixOrSuffix(num) {
-        for (i in num) {
-            const prefixOrSuffix = Math.floor(Math.random() * 2);
-            if (this.canAddAffix(prefixOrSuffix)) {
-                addAffix(prefixOrSuffix);
-            } else if (this.canAddAffix(Math.abs(prefixOrSuffix - 1))) {
-                addAffix(Math.abs(prefixOrSuffix - 1));
+        for (let i = 0; i < num; i++) {
+            const prefixOrSuffix = Math.floor(Math.random() * 2); // 1 = prefix, 0 = suffix
+            const isPrefix = !!prefixOrSuffix;
+            if (this.canAddAffix(isPrefix)) {
+                this.addAffix(isPrefix);
+            } else if (this.canAddAffix(!isPrefix)) {
+                this.addAffix(!isPrefix);
             } else {
                 console.log('cannot add affix');
                 return;

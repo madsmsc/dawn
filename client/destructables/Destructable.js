@@ -1,7 +1,7 @@
 import { Selectable } from "../selectables/Selectable.js";
-import { Vec } from "../util/Vec.js"
+import { Vec } from "../controllers/Vec.js"
 import { MOVE } from "../../shared/Constants.js"
-import { game } from "../game.js";
+import { game } from "../controllers/game.js";
 import { Particle } from "../ui/Particle.js";
 
 export class Destructable extends Selectable {
@@ -29,11 +29,15 @@ export class Destructable extends Selectable {
         this.attackTime = 1000;
         this.attackCount = 0;
 
-        this.debug = true; // enable to show paths
+        
+        // Engine trail settings
+        this.trailSpawnInterval = 30; // ms between trail particle spawns
+        this.trailSpawnTimer = 0;
     }
 
     update(delta) {
         this.move(delta);
+        this.#updateEngineTrails(delta);
     }
 
     draw(sprite) {
@@ -78,12 +82,17 @@ export class Destructable extends Selectable {
 
 
 
+        // Draw engine trail particles
+        this.#trailParticles.forEach((particle, i) => {
+            if (particle.alpha <= 0) {
+                this.#trailParticles.splice(i, 1);
+            } else {
+                particle.update();
+            }
+        });
+        
+        // Draw death explosion particles
         if (this.#particles.length > 0) {
-            const width = game.canvas.width;
-            const height = game.canvas.height
-            game.ctx.clearRect(0, 0, width, height);
-            game.ctx.fillStyle = "white";
-            game.ctx.fillRect(0, 0, width, height);
             this.#particles.forEach((particle, i) => {
                 if (particle.alpha <= 0) {
                     this.#particles.splice(i, 1);
@@ -101,14 +110,57 @@ export class Destructable extends Selectable {
         this.shield = 0;
         if (this.hull <= dam) {
             this.hull = 0;
-            this.die();
+            this.#die();
             return;
         }
         this.hull -= dam;
     }
 
     #particles = [];
-    die() {
+    #trailParticles = [];
+    
+    #updateEngineTrails(delta) {
+        // Only emit trails when ship is moving
+        if (this.vel < 0.1) return;
+        
+        this.trailSpawnTimer += delta;
+        
+        if (this.trailSpawnTimer >= this.trailSpawnInterval) {
+            this.trailSpawnTimer = 0;
+            
+            // Calculate position behind the ship
+            const trailDistance = this.size * 0.8; // Distance behind ship center
+            const trailX = -Math.cos(this.angle) * trailDistance;
+            const trailY = -Math.sin(this.angle) * trailDistance;
+            
+            // Add slight randomness to particle emission
+            const spreadX = (Math.random() - 0.5) * this.size * 0.3;
+            const spreadY = (Math.random() - 0.5) * this.size * 0.3;
+            
+            // Particle velocity opposite to ship direction (trails behind)
+            const particleSpeed = 0.5;
+            const dx = -Math.cos(this.angle) * particleSpeed + (Math.random() - 0.5) * 0.2;
+            const dy = -Math.sin(this.angle) * particleSpeed + (Math.random() - 0.5) * 0.2;
+            
+            const radius = 2 + Math.random() * 2;
+            const particle = new Particle(trailX + spreadX, trailY + spreadY, radius, dx, dy, this.pos.clone());
+            particle.fadeSpeed = 0.02; // Custom fade speed for trails
+            particle.color = this.#getTrailColor();
+            
+            this.#trailParticles.push(particle);
+        }
+    }
+    
+    #getTrailColor() {
+        // Blue-ish engine trail for players, red-ish for enemies
+        if (this.isPlayer) {
+            return `rgba(100, 150, 255, ${1})`;
+        } else {
+            return `rgba(255, 100, 100, ${1})`;
+        }
+    }
+    
+    #die() {
         for (let i = 0; i <= 50; i++) {
             let dx = (Math.random() - 0.5) * (Math.random() * 6);
             let dy = (Math.random() - 0.5) * (Math.random() * 6);
@@ -119,7 +171,7 @@ export class Destructable extends Selectable {
         // overidden and called in the children.
     }
 
-    approach(target) {
+    #approach(target) {
         if (this.isPlayer) {
             console.log(`player cannot use approach`);
             return;
@@ -129,7 +181,7 @@ export class Destructable extends Selectable {
         this.moveMode = MOVE.APPROACH;
     }
 
-    orbit(target) {
+    #orbit(target) {
         if (this.isPlayer) {
             console.log(`player cannot orbit`);
             return;
@@ -148,10 +200,10 @@ export class Destructable extends Selectable {
         this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
 
         if (this.moveMode === MOVE.APPROACH) {
-            const dir = this.target.sub(this.pos);
-            if (dir.length() > this.size) {
-                const normalizedDir = dir.normalize();
-                this.pos.add(normalizedDir.scale(this.vel));
+            const len = this.target.clone().sub(this.pos);
+            if (len.length() > this.size) {
+                const normalizedDir = len.normalize();
+                this.pos.add(len.normalize().scale(this.vel));
                 this.angle = Math.atan2(normalizedDir.y, normalizedDir.x);
             } else {
                 this.vel = 0;
@@ -160,7 +212,7 @@ export class Destructable extends Selectable {
         } else if (this.moveMode === MOVE.ORBIT) {
             // Smooth orbit: steer tangentially and correct radial error so orbit is smooth and stable
             if (!this.target) return;
-            const rel = this.pos.sub(this.target);
+            const rel = this.pos.clone().sub(this.target);
             let r = rel.length();
             // if we are exactly at the center, nudge outwards
             if (r === 0) {
@@ -168,21 +220,21 @@ export class Destructable extends Selectable {
                 rel.y = 0;
                 r = this.orbitRadius;
             }
-            const dirToSelf = rel.normalize();
+            const dirToSelf = rel.clone().normalize();
             // tangent direction (perpendicular)
             const tangent = new Vec(-dirToSelf.y, dirToSelf.x);
             // choose orbit direction if not set
             if (this.orbitDir === undefined) this.orbitDir = (Math.random() < 0.5 ? 1 : -1);
             // tangential component scaled by current vel
-            const tangentialMove = tangent.scale(this.vel * this.orbitDir);
+            const tangentialMove = tangent.clone().scale(this.vel * this.orbitDir);
             // radial correction proportional to the radial error
             const radialError = r - this.orbitRadius;
-            const radialCorrection = dirToSelf.scale(-radialError * 0.2);
+            const radialCorrection = dirToSelf.clone().scale(-radialError * 0.2);
             // combine steering
             let moveVec = tangentialMove.add(radialCorrection);
             // clamp movement to current vel to avoid jumps
             const maxMove = Math.max(this.vel, 0.01);
-            if (moveVec.length() > maxMove) moveVec = moveVec.normalize().scale(maxMove);
+            if (moveVec.length() > maxMove) moveVec = moveVec.clone().normalize().scale(maxMove);
             this.pos.add(moveVec);
             if (moveVec.x !== 0 || moveVec.y !== 0) this.angle = Math.atan2(moveVec.y, moveVec.x);
         }

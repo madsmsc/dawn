@@ -1,5 +1,5 @@
-import { game } from '../game/game.js';
-import { Vec } from '../util/Vec.js';
+import { game } from '../controllers/game.js';
+import { Vec } from '../controllers/Vec.js';
 
 /* TODO
 add colored "blotches" as galaxies/nebulae

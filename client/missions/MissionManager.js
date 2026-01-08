@@ -1,4 +1,4 @@
-import { game } from '../game/game.js';
+import { game } from '../controllers/game.js';
 import { ORE } from '../../shared/Constants.js';
 import { MiningMission } from './MiningMission.js';
 

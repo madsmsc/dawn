@@ -1,4 +1,4 @@
-import { game } from '../game/game.js';
+import { game } from '../controllers/game.js';
 
 export class Mission {
     constructor(description, station, reward) {

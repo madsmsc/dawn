@@ -1,4 +1,4 @@
-import { game } from '../game/game.js';
+import { game } from '../controllers/game.js';
 import { SPRITE, MOVE, MODULE } from '../../shared/Constants.js';
 import { Destructable } from './Destructable.js';
 import { Module } from '../modules/Module.js';
@@ -11,7 +11,6 @@ export class Enemy extends Destructable {
         this.rep = 5;
     }
 
-    // TODO: enemy orbiting doesn't work.
     static orbiting () {
         const e = new Enemy();
         e.hull = 10;
@@ -57,7 +56,7 @@ export class Enemy extends Destructable {
     }
 
     scan () { 
-        if (this.pos.sub(game.player.ship.pos).length() < this.scanRange) { 
+        if (this.pos.clone().sub(game.player.ship.pos).length() < this.scanRange) { 
             return game.player.ship.pos; 
         } 
     }
@@ -67,7 +66,7 @@ export class Enemy extends Destructable {
             return;
         } 
         this.target = target; 
-        if (this.pos.sub(target).length() < this.attackRange) {
+        if (this.pos.clone().sub(target).length() < this.attackRange) {
             this.shoot();
         } 
     }

@@ -1,8 +1,7 @@
-import { RARITY, SPRITE, ORE, AFFIX } from '../../shared/Constants.js';
-import { Selectable } from '../selectables/Selectable.js';
-import { game } from '../game/game.js';
-import { Vec } from '../util/Vec.js';
-import { Button } from '../ui/Button.js';
+import { SPRITE, ORE, AFFIX } from '../../shared/Constants.js';
+import { Selectable } from './Selectable.js';
+import { game } from '../controllers/game.js';
+import { Vec } from '../controllers/Vec.js';
 import { Research } from '../modules/Research.js';
 
 export class Station extends Selectable {
@@ -36,7 +35,6 @@ export class Station extends Selectable {
         super.draw();
         game.ctx.save();
         const p = new Vec(this.pos.x - 20, this.pos.y - 20);
-        game.ui.buttons.push(new Button(undefined))
         game.sprites.draw(SPRITE.STATION, p, false, undefined, false, 1);
         // Docking area indicator
         game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
@@ -83,7 +81,7 @@ export class Station extends Selectable {
     }
 
     canDock() {
-        return this.pos.sub(game.player.ship.pos).length() < this.dockingRadius;
+        return this.pos.clone().sub(game.player.ship.pos).length() < this.dockingRadius;
     }
 
     startFit() {

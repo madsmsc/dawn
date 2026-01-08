@@ -1,10 +1,11 @@
-import { COLOR } from '../shared/Constants.js';
+import { COLOR } from '../../shared/Constants.js';
 import { Player } from './Player.js';
-import { PlayerShip } from './destructables/PlayerShip.js';
+import { PlayerShip } from '../destructables/PlayerShip.js';
 import { System } from './System.js';
-import { Station } from './selectables/Station.js';
-import { Vec } from './util/Vec.js';
-import { game } from './game/game.js';
+import { Station } from '../selectables/Station.js';
+import { Gate } from '../selectables/Gate.js';
+import { Vec } from './Vec.js';
+import { game } from './game.js';
 
 export class Server {
     constructor() {
@@ -67,18 +68,22 @@ export class Server {
         };
 
         // create systems
-        const A = new System(randomSystemName(), COLOR.RED, [randomStation()]);
-        const B = new System(randomSystemName(), COLOR.GREEN, [randomStation()]);
-        const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()]);
+        const A = new System(randomSystemName(), COLOR.RED, [randomStation()], []);
+        const B = new System(randomSystemName(), COLOR.GREEN, [randomStation()], []);
+        const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()], []);
 
-        // create connections
-        const A_B = { system: B, distance: 100 };
-        const A_C = { system: C, distance: 200 };
-        const B_A = { system: A, distance: A_B.distance };
-        const C_A = { system: A, distance: A_C.distance };
-        A.connections = [A_B, A_C];
-        B.connections = [B_A];
-        C.connections = [C_A];
+        // create gates connecting systems
+        const gateA_B = new Gate('Gate to ' + B.name, new Vec(400, 250), B);
+        const gateB_A = new Gate('Gate to ' + A.name, new Vec(200, 250), A);
+        const gateA_C = new Gate('Gate to ' + C.name, new Vec(600, 200), C);
+        const gateC_A = new Gate('Gate to ' + A.name, new Vec(300, 150), A);
+        const gateB_C = new Gate('Gate to ' + C.name, new Vec(500, 300), C);
+        const gateC_B = new Gate('Gate to ' + B.name, new Vec(350, 400), B);
+
+        // add stations and gates as warpables
+        A.warpables = [A.stations[0], gateA_B, gateA_C];
+        B.warpables = [B.stations[0], gateB_A, gateB_C];
+        C.warpables = [C.stations[0], gateC_A, gateC_B];
 
         return A;
     }

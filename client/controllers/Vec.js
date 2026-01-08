@@ -1,19 +1,18 @@
 export class Vec {
     // Static constants
-    // TODO: freeze them
-    static ZERO = new Vec(0, 0);
-    static UP = new Vec(0, -1);
-    static DOWN = new Vec(0, 1);
-    static LEFT = new Vec(-1, 0);
-    static RIGHT = new Vec(1, 0);
+    static ZERO = Object.freeze(new Vec(0, 0));
+    static UP = Object.freeze(new Vec(0, -1));
+    static DOWN = Object.freeze(new Vec(0, 1));
+    static LEFT = Object.freeze(new Vec(-1, 0));
+    static RIGHT = Object.freeze(new Vec(1, 0));
 
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
     }
 
-    // TODO: should all these method change 'this' or return new?
-    // probably more effecient to change this and let caller use clone() for new reference
+    // mutable class! use clone to preverse original object.
+
     add (v) {
         this.x = this.x + v.x;
         this.y = this.y + v.y;
@@ -27,17 +26,15 @@ export class Vec {
     }
 
     sub (v) {
-        return new Vec(
-            this.x - v.x,
-            this.y - v.y,
-        );
+        this.x -= v.x;
+        this.y -= v.y;
+        return this;
     }
 
     scale (n) {
-        return new Vec(
-            this.x * n,
-            this.y * n,
-        );
+        this.x *= n;
+        this.y *= n;
+        return this;
     }
 
     length () {
@@ -54,8 +51,10 @@ export class Vec {
 
     normalize () {
         const len = this.length();
-        if (len === 0) return new Vec();
-        return this.scale(1 / len);
+        if (len === 0) return this;
+        this.x /= len;
+        this.y /= len;
+        return this;
     }
 
     dot (v) {
@@ -86,6 +85,6 @@ export class Vec {
     }
 
     equals (v) {
-        return this.sub(v).length() === 0;
+        return this.clone().sub(v).length() === 0;
     }
 }
