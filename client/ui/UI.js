@@ -16,7 +16,7 @@ export class UI {
         this.fpsDisplay = 0;
         
         // Dialog and HUD dimensions
-        this.dialogWidth = 300;
+        this.dialogWidth = 500;
         this.dialogHeight = 400;
         this.dialogX = game.canvas.width / 2 - this.dialogWidth / 2;
         this.dialogY = game.canvas.height / 2 - this.dialogHeight / 2;
@@ -26,6 +26,7 @@ export class UI {
         
         // Create specialized UI managers
         const uiButtons = new UIButtons();
+        this.uiButtons = uiButtons;
         this.buttons = uiButtons.buttons;
         
         this.dialogs = new UIDialogs(this.dialogWidth, this.dialogHeight, this.dialogX, this.dialogY);
@@ -41,7 +42,7 @@ export class UI {
             this.fpsCount = 0;
             this.fpsTime = 0;
         }
-        if (this.#showStationUI()) {
+        if (this.showStationUI()) {
             game.missionManager.update(delta);
         }
         return this;
@@ -50,23 +51,28 @@ export class UI {
     draw() {
         UIHelper.drawFps();
         this.#demoText();
-        if (this.#showLoginUI()) { 
+        // Reset dialog states each frame
+        this.dialogs.openInfoDialog = false;
+        this.dialogs.openMenuDialog = false;
+        if (this.showLoginUI()) { 
             this.#loginUI(); 
-        } else if (this.#showStationUI()) { 
+        } else if (this.showStationUI()) { 
             this.station.draw();
-            game.missionManager.draw();
-            this.draw();
+            // Keep mission list anchored at the usual left margin while docked
+            game.ctx.textAlign = 'start';
+            game.missionManager.draw(10, 40);
+            this.#drawButtons(); // Draw buttons so their callbacks execute (e.g., E to undock)
         } else {
             this.#drawButtons();
             this.#drawHUD();
         }
     }
 
-    #showLoginUI() {
+    showLoginUI() {
         return !game.player || !game.player.ship;
     }
 
-    #showStationUI() {
+    showStationUI() {
         return game.player && game.player.docked;
     }
 
@@ -75,21 +81,21 @@ export class UI {
         game.ctx.fillStyle = 'white';
         game.ctx.font = '30px Arial';
         let yOffset = 100;
-        text('Enter your name:');
+        text('Logging in...');
     }
 
     #demoText() {
-        if (!game.server) {
+        if (!game.server || !game.server.isConnected) {
             game.ctx.fillStyle = 'white';
             game.ctx.font = '12px Arial';
             const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, yOffset += 15) };
-            let yOffset = game.canvas.height - 20;
+            let yOffset = 5;
             text('No server - DEMO');
         }
     }
 
     #drawButtons() {
-        this.buttons.forEach((b) => { b.draw() });
+        this.uiButtons.draw();
     }
 
     #drawHUD() {
@@ -132,6 +138,7 @@ export class UI {
     setMousePos(mousePos) {
         this.lastMousePos = mousePos;
         this.dialogs.setMousePos(mousePos);
+        this.uiButtons.setMousePos(mousePos);
         this.hud.lastMousePos = mousePos;
     }
 }

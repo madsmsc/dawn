@@ -48,6 +48,11 @@ export class GameEventListener {
             return; // Click was handled by station dialog
         }
         
+        // Check if click is on mission complete button in sidebar
+        if (game.player.docked && game.missionManager.handleCompleteClick(screenPos)) {
+            return; // Click was handled by mission manager
+        }
+        
         // pass click position to each button so it can react if clicked
         game.ui.buttons.forEach((b) => {
             b.click(screenPos);

@@ -41,5 +41,6 @@ export class Gate extends Selectable {
 
     update(delta) {
         // todo start particle animation if activated by you or others
+        return this;
     }
 }

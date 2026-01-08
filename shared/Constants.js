@@ -43,7 +43,7 @@ export const AFFIX = {
 // TODO: try generating these with chatgpt 
 export const SPRITE = {
     // icons
-    MINE: 0,
+    MINE: 6,
     PILOT: 1,
     SHIP: 2,
     FIRE: 3,

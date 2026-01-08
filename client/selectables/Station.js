@@ -25,9 +25,13 @@ export class Station extends Selectable {
                 [ORE.SILICON]: 150 / 2,
                 [ORE.GOLD]: 200 / 2,
                 [ORE.TITANIUM]: 300 / 2
-
             }
         };
+    }
+
+    update(delta) {
+        // Stations are stationary; no movement or state updates needed
+        return this;
     }
 
     draw() {

@@ -110,7 +110,7 @@ export class Destructable extends Selectable {
         this.shield = 0;
         if (this.hull <= dam) {
             this.hull = 0;
-            this.#die();
+            this.die();
             return;
         }
         this.hull -= dam;
@@ -160,15 +160,15 @@ export class Destructable extends Selectable {
         }
     }
     
-    #die() {
+    die() {
         for (let i = 0; i <= 50; i++) {
             let dx = (Math.random() - 0.5) * (Math.random() * 6);
             let dy = (Math.random() - 0.5) * (Math.random() * 6);
             let radius = Math.random() * 3;
-            let particle = new Particle(0, 0, radius, dx, dy, this.pos);
+            let particle = new Particle(this.pos.x, this.pos.y, radius, dx, dy, this.pos);
             this.#particles.push(particle);
         }
-        // overidden and called in the children.
+        // overridden and called in the children.
     }
 
     #approach(target) {

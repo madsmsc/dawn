@@ -68,6 +68,38 @@ export class UIHelper {
         game.ctx.fillText(text, x - textWidth / 2, y - padding);
     }
 
+    static drawTooltipLines(x, y, lines) {
+        const padding = 8;
+        const fontSize = 12;
+        const textLines = Array.isArray(lines) ? lines : [String(lines)];
+        game.ctx.font = `${fontSize}px Arial`;
+        const maxWidth = Math.max(...textLines.map((line) => game.ctx.measureText(line).width));
+        const lineHeight = fontSize + 2;
+        const boxWidth = maxWidth + padding * 2;
+        const boxHeight = textLines.length * lineHeight + padding * 2;
+        const boxX = x - boxWidth / 2;
+        const boxY = y - boxHeight;
+
+        // Background
+        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        game.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Border
+        game.ctx.strokeStyle = 'rgba(100, 150, 255, 0.9)';
+        game.ctx.lineWidth = 2;
+        game.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Text
+        game.ctx.fillStyle = 'white';
+        game.ctx.textAlign = 'left';
+        game.ctx.textBaseline = 'top';
+        textLines.forEach((line, idx) => {
+            game.ctx.fillText(line, boxX + padding, boxY + padding + idx * lineHeight);
+        });
+        game.ctx.textAlign = 'left';
+        game.ctx.textBaseline = 'alphabetic';
+    }
+
     static drawSectionHeader(text, width, yOffset, x) {
         yOffset += 20;
         game.ctx.fillStyle = 'white';
@@ -80,6 +112,22 @@ export class UIHelper {
         game.ctx.stroke();
         game.ctx.font = '14px Arial';
         return yOffset + 20;
+    }
+
+    static drawCenteredHeader(text, width, yOffset, x) {
+        const centerX = x + width / 2;
+        yOffset += 28;
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = 'bold 20px Arial';
+        game.ctx.textAlign = 'center';
+        game.ctx.fillText(text, centerX, yOffset);
+        game.ctx.beginPath();
+        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        game.ctx.moveTo(x + 10, yOffset + 12);
+        game.ctx.lineTo(x + width - 10, yOffset + 12);
+        game.ctx.stroke();
+        game.ctx.font = '14px Arial';
+        return yOffset + 36;
     }
 
     static drawSectionItems(modules, yOffset, x) {

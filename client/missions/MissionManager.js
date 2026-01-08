@@ -7,6 +7,7 @@ export class MissionManager {
         this.availableMissions = [];
         this.activeMissions = [];
         this.completedMissions = [];
+        this.completeButtonBounds = []; // Track clickable complete buttons
     }
 
     generateNewMissions () {
@@ -37,6 +38,7 @@ export class MissionManager {
 
     draw (x = 10, y = 110, width = 300) {
         game.ctx.save();
+        game.ctx.textAlign = 'start';
 
         // Draw title
         game.ctx.fillStyle = 'white';
@@ -47,21 +49,58 @@ export class MissionManager {
         // Draw active missions
         game.ctx.font = '12px Arial';
         if (this.activeMissions.length === 0) {
-            game.ctx.fillText('No active missions', x + 10, yOffset += 30);
+            game.ctx.fillText('No active missions', x, yOffset += 30);
         } else {
-            this.activeMissions.forEach(mission => {
+            this.completeButtonBounds = [];
+            this.activeMissions.forEach((mission, index) => {
                 game.ctx.fillStyle = 'white';
                 game.ctx.font = '12px Arial';
-                game.ctx.fillText(mission.description, x + 10, yOffset += 20);
-                game.ctx.fillText(`Reward: ${mission.reward} credits`, x + 10, yOffset += 20);
-                if (mission instanceof MiningMission && mission.canComplete()) {
-                    game.ctx.fillStyle = 'yellow';
-                    const str = game.player.docked ? '(N to complete)' : '(complete)';
-                    game.ctx.fillText(str, x + 130, yOffset);
+                game.ctx.fillText(mission.description, x, yOffset += 20);
+                game.ctx.fillText(`Reward: ${mission.reward} credits`, x, yOffset += 20);
+                
+                const canComplete = mission.canComplete ? mission.canComplete() : false;
+                if (mission instanceof MiningMission && canComplete) {
+                    // Draw complete button
+                    const buttonX = x + 150;
+                    const buttonY = yOffset - 8;
+                    const buttonWidth = 80;
+                    const buttonHeight = 18;
+                    
+                    game.ctx.fillStyle = 'rgba(100, 255, 100, 0.8)';
+                    game.ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+                    game.ctx.strokeStyle = 'rgba(50, 200, 50, 1)';
+                    game.ctx.lineWidth = 1;
+                    game.ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
+                    game.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                    game.ctx.font = 'bold 10px Arial';
+                    game.ctx.textAlign = 'center';
+                    game.ctx.fillText('Complete', buttonX + buttonWidth / 2, buttonY + 13);
+                    game.ctx.textAlign = 'start'; // Reset alignment
+                    
+                    this.completeButtonBounds.push({
+                        mission: mission,
+                        x: buttonX,
+                        y: buttonY,
+                        width: buttonWidth,
+                        height: buttonHeight
+                    });
                 }
                 yOffset += 20
             });
         }
         game.ctx.restore();
+    }
+
+    handleCompleteClick(clickPos) {
+        for (const btn of this.completeButtonBounds) {
+            if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
+                clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                if (btn.mission.canComplete && btn.mission.canComplete()) {
+                    btn.mission.complete();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

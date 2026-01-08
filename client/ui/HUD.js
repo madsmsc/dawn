@@ -11,43 +11,43 @@ export class HUD {
 
     draw() {
         const centerX = game.canvas.width / 2;
-        const centerY = game.canvas.height - 100;
-        const shieldRadius = 40;
-        const hullRadius = 30;
+        const centerY = game.canvas.height - 9;
+        const shieldRadius = 70;
+        const hullRadius = 50;
         const shieldPercentage = (game.player.ship.shield / game.player.ship.maxShield) * 100;
         const hullPercentage = (game.player.ship.hull / game.player.ship.maxHull) * 100;
 
         // Draw shield circle
-        this.#drawHealthCircle(shieldRadius, shieldPercentage, 'rgba(100, 150, 255, 0.6)');
+        this.#drawHealthCircle(shieldRadius, shieldPercentage, 'rgba(30, 60, 120, 0.6)', centerY);
 
         // Draw hull circle
-        this.#drawHealthCircle(hullRadius, hullPercentage, 'rgba(255, 100, 100, 0.6)');
+        this.#drawHealthCircle(hullRadius, hullPercentage, 'rgba(120, 30, 30, 0.6)', centerY);
 
-        // Draw velocity bar (30x40px) positioned in lower left of hull circle
-        const barWidth = 30;
-        const barHeight = 40;
+        // Draw velocity bar (horizontal, 80x15px) positioned above HUD
+        const barWidth = 60;
+        const barHeight = 20;
         const barX = centerX - barWidth / 2;
-        const barY = centerY - 20;
+        const barY = centerY - 15;
 
         // Background
         game.ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
         game.ctx.fillRect(barX, barY, barWidth, barHeight);
 
-        // Bar fill (green, filling from bottom to top)
+        // Bar fill (green, filling from left to right)
         const velPercentage = game.player.ship.vel / game.player.ship.maxVel;
-        const fillHeight = barHeight * velPercentage;
-        game.ctx.fillStyle = 'rgba(100, 255, 100, 0.8)';
-        game.ctx.fillRect(barX, barY + barHeight - fillHeight, barWidth, fillHeight);
+        const fillWidth = barWidth * velPercentage;
+        game.ctx.fillStyle = 'rgba(30, 150, 30, 0.8)';
+        game.ctx.fillRect(barX, barY, fillWidth, barHeight);
 
-        // Bar border
-        game.ctx.strokeStyle = 'rgba(150, 150, 150, 0.8)';
+        // Velocity text on bar
+        UIHelper.drawTexts([game.player.ship.vel.toFixed(1)],
+            { x: barX + barWidth / 2 - 8, y: barY + 15 }, 12);
         game.ctx.lineWidth = 1;
-        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-        UIHelper.drawTexts(['shield', `${shieldPercentage.toFixed(1)}%`],
-            { x: game.canvas.width / 2 - 90, y: game.canvas.height - 80 }, 15);
-        UIHelper.drawTexts(['hull', `${hullPercentage.toFixed(1)}%`],
-            { x: game.canvas.width / 2 + 60, y: game.canvas.height - 80 }, 15);
+        UIHelper.drawTexts([`${shieldPercentage.toFixed(0)}%`],
+            { x: game.canvas.width / 2 - 12, y: centerY - 65 }, 15);
+        UIHelper.drawTexts([`${hullPercentage.toFixed(0)}%`],
+            { x: game.canvas.width / 2 - 12, y: centerY - 45 }, 15);
 
         // Draw tooltips on hover
         if (this.lastMousePos) {
@@ -73,16 +73,16 @@ export class HUD {
                     `Velocity: ${game.player.ship.vel.toFixed(2)} / ${game.player.ship.maxVel}`
                 );
             }
-            // Check if hovering over shield circle (outer circle, radius 40 ± 4 for thickness)
-            else if (distToShield >= 36 && distToShield <= 44) {
+            // Check if hovering over shield circle (outer circle, radius 70 ± 4 for thickness)
+            else if (distToShield >= 66 && distToShield <= 74) {
                 UIHelper.drawTooltip(
                     this.lastMousePos.x,
                     this.lastMousePos.y - 20,
                     `Shield: ${game.player.ship.shield.toFixed(1)} / ${game.player.ship.maxShield}`
                 );
             }
-            // Check if hovering over hull circle (inner circle, radius 30 ± 4 for thickness)
-            else if (distToHull >= 26 && distToHull <= 34) {
+            // Check if hovering over hull circle (inner circle, radius 50 ± 4 for thickness)
+            else if (distToHull >= 46 && distToHull <= 54) {
                 UIHelper.drawTooltip(
                     this.lastMousePos.x,
                     this.lastMousePos.y - 20,
@@ -92,22 +92,21 @@ export class HUD {
         }
     }
 
-    #drawHealthCircle(radius, percentage, color) {
+    #drawHealthCircle(radius, percentage, color, centerY) {
         const centerX = game.canvas.width / 2;
-        const centerY = game.canvas.height - 100;
 
-        // Background circle
-        game.ctx.fillStyle = color;
+        // Background semi-circle (top half, hollow, fat stroke)
+        game.ctx.strokeStyle = color;
+        game.ctx.lineWidth = 8;
         game.ctx.beginPath();
-        game.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        game.ctx.fill();
+        game.ctx.arc(centerX, centerY, radius, 0, Math.PI, true);
+        game.ctx.stroke();
 
-        // Progress arc (pie slice)
-        game.ctx.fillStyle = color.replace('0.6', '1');
+        // Progress arc (left side shrinks moving right as damage taken, right side fixed at 0)
+        game.ctx.strokeStyle = color.replace('0.6', '1');
+        game.ctx.lineWidth = 12;
         game.ctx.beginPath();
-        game.ctx.moveTo(centerX, centerY);
-        game.ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * percentage / 100), false);
-        game.ctx.lineTo(centerX, centerY);
-        game.ctx.fill();
+        game.ctx.arc(centerX, centerY, radius, -(Math.PI * percentage / 100), 0, false);
+        game.ctx.stroke();
     }
 }

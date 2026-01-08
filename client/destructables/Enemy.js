@@ -36,6 +36,8 @@ export class Enemy extends Destructable {
     update (delta) {
         super.update(delta);
 
+        if (this.isDead) return this;
+
         this.target = game.system.asteroids[0].pos;
         this.moveMode = MOVE.ORBIT;
 
@@ -80,6 +82,8 @@ export class Enemy extends Destructable {
     }
 
     die () {
+        super.die();
+        this.isDead = true;
         const rand = (max) => Math.floor(Math.random() * max); 
         const moduleAmount = rand(2) + 1; // drop 1-2 modules
         for (let i = 0; i < moduleAmount; i++) {
@@ -91,7 +95,6 @@ export class Enemy extends Destructable {
             game.player.ship.inventory.push(module);
             console.log('enemy dropped module: ' + module.toString());
         }
-        game.system.enemies.splice(game.system.enemies.indexOf(this), 1);
         game.player.credits = this.bounty;
         game.player.rep = this.rep;
     }

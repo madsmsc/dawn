@@ -9,6 +9,7 @@ export class InventoryGrid {
         this.draggedFrom = null; // { type: 'equipped'|'inventory', index: number }
         this.dragOffset = { x: 0, y: 0 };
         this.hoveredSlot = null;
+        this.lastMousePos = null;
         
         // Grid layouts
         this.equippedGrid = {
@@ -51,6 +52,31 @@ export class InventoryGrid {
         }
         
         return yOffset;
+    }
+
+    drawEquipped(columnX, columnWidth, yOffset) {
+        this.equippedGrid.x = columnX;
+        this.equippedGrid.y = yOffset;
+        this.#drawGrid(game.player.ship.modules, this.equippedGrid, 'equipped');
+        this.#drawHoverTooltip();
+    }
+
+    drawInventoryOnly(columnX, columnWidth, yOffset) {
+        this.inventoryGrid.x = columnX;
+        this.inventoryGrid.y = yOffset;
+        this.#drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
+        this.#drawHoverTooltip();
+    }
+
+    drawDraggedItem() {
+        if (this.draggedItem && this.lastMousePos) {
+            this.#drawItem(
+                this.draggedItem,
+                this.lastMousePos.x - this.dragOffset.x,
+                this.lastMousePos.y - this.dragOffset.y,
+                true
+            );
+        }
     }
 
     #drawGrid(items, grid, gridType) {
@@ -213,6 +239,50 @@ export class InventoryGrid {
             
             this.hoveredSlot = null;
         }
+    }
+
+    #drawHoverTooltip() {
+        if (!this.hoveredSlot || !this.lastMousePos) return;
+        const { type, index } = this.hoveredSlot;
+        const sourceArray = type === 'equipped' ? game.player.ship.modules : game.player.ship.inventory;
+        if (index >= sourceArray.length) return;
+        const item = sourceArray[index];
+        if (!item) return;
+        const lines = this.#buildTooltipLines(item);
+        UIHelper.drawTooltipLines(this.lastMousePos.x + 16, this.lastMousePos.y - 12, lines);
+    }
+
+    #buildTooltipLines(item) {
+        const rarityLabel = this.#rarityLabel(item.rarity);
+        const amountText = item.amount > 1 ? `${this.#formatAmount(item.amount)} ${item.unit}` : `${item.unit || ''}`.trim();
+        const lines = [
+            `${rarityLabel} ${item.name}`.trim(),
+            amountText || '1 unit'
+        ];
+
+        const affixLines = [...(item.prefixes || []), ...(item.suffixes || [])]
+            .map(([affix, tier]) => {
+                const desc = affix?.desc || 'Affix';
+                const tierVal = Array.isArray(affix?.tier) ? affix.tier[tier] : undefined;
+                return tierVal !== undefined ? `${desc} (+${tierVal})` : desc;
+            });
+        if (affixLines.length) {
+            lines.push('Affixes:', ...affixLines);
+        }
+        return lines;
+    }
+
+    #rarityLabel(rarity) {
+        if (rarity === 0 || rarity === 'SIMPLE') return 'Simple';
+        if (rarity === 1 || rarity === 'MODIFIED') return 'Modified';
+        if (rarity === 2 || rarity === 'COMPLEX') return 'Complex';
+        return 'Common';
+    }
+
+    #formatAmount(amount) {
+        if (amount >= 1000) return `${Math.floor(amount)}+`;
+        if (Number.isInteger(amount)) return amount.toString();
+        return amount.toFixed(1);
     }
 
     handleMouseUp(clickPos) {

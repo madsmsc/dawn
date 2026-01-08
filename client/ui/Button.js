@@ -1,11 +1,12 @@
 import { game } from '../controllers/game.js';
 
 export class Button {
-    constructor(key, pos, icon, enabled = () => true) {
+    constructor(key, pos, icon, enabled = () => true, tooltip = null) {
         this.key = key;
         this.pos = pos;
         this.icon = icon;
         this.enabled = enabled;
+        this.tooltip = tooltip;
         this.down = false;
         this.up = false;
         this.show = false;
@@ -14,20 +15,32 @@ export class Button {
         this.onClick = () => { };
     }
 
+    isEnabled() {
+        if (typeof this.enabled === 'function') return this.enabled();
+        return !!this.enabled;
+    }
+
     keyDown() {
-        if (!this.enabled()) return;
-        // If this button's UI is already shown, toggle it off
-        if (this.show) {
-            this.hideUI();
-            return;
+        if (!this.isEnabled()) return;
+        
+        // Only toggle/close other UIs if this button has a UI dialog
+        if (this.onDraw && this.onDraw.toString() !== '() => { }') {
+            // If this button's UI is already shown, toggle it off
+            if (this.show) {
+                this.hideUI();
+                return;
+            }
+            // Close any other open button UIs (only for UI buttons)
+            game.ui.buttons.forEach((b) => {
+                if (b !== this && b.onDraw && b.onDraw.toString() !== '() => { }') {
+                    b.hideUI();
+                }
+            });
+            this.show = true;
         }
-        // Close any other open button UIs
-        game.ui.buttons.forEach((b) => {
-            if (b !== this) b.hideUI()
-        });
+        
         this.down = true;
         this.up = false;
-        this.show = true;
     }
 
     hideUI() {
@@ -42,19 +55,24 @@ export class Button {
     }
 
     click(clickPos) {
-        if (this.pos && clickPos.dist(this.pos) < 40) {
-            // Trigger the same behavior as keyboard press
-            this.keyDown();
-            this.onClick();
+        if (this.pos) {
+            const centerX = this.pos.x + 20;
+            const centerY = this.pos.y + 20;
+            const distance = Math.sqrt((clickPos.x - centerX) ** 2 + (clickPos.y - centerY) ** 2);
+            if (distance < 20) {
+                // Trigger the same behavior as keyboard press
+                this.keyDown();
+                this.onClick();
+            }
         }
     }
 
     draw() {
-        if (this.enabled() && (this.show || this.down)) {
+        if (this.isEnabled() && (this.show || this.down)) {
             this.onDraw();
         }
-        if (this.enabled() && this.icon && this.pos) {
-            game.sprites.draw(this.icon, this.pos, this.down, this.key);
+        if (this.isEnabled() && this.icon && this.pos) {
+            game.sprites.draw(this.icon, this.pos, this.show || this.down, this.key);
         }
     }
 }

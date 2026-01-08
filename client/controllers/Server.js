@@ -9,7 +9,7 @@ import { game } from './game.js';
 
 export class Server {
     constructor() {
-        this.loginAttempts = 0;
+        this.loginAttempts = 4; // TODO: set to 4 for testing - set to 0 for production
         this.loggingIn = false;
         this.ws = new WebSocket('ws://localhost:8080');
         this.ws.onopen = () => {
@@ -28,7 +28,11 @@ export class Server {
 
         this.ws.onclose = () => {
             console.log('Connection closed');
+            this.isConnected = false;
         };
+
+        // Start periodic login retries; fallback to demo handled in login()
+        this.startLoginRetry();
     }
 
     loadSystem() {
@@ -96,7 +100,7 @@ export class Server {
             // DEMO mode when no server
             if (this.loginAttempts === 5) {
                 console.log('starting DEMO mode without server')
-                fetch('./demo.json')
+                fetch('client/demo.json')
                     .then(response => response.json())
                     .then(data => {
                         game.gameLoop.demo = true;
@@ -114,5 +118,17 @@ export class Server {
             pass
         };
         this.ws.send(JSON.stringify(message));
+    }
+
+    startLoginRetry() {
+        if (this.loginInterval) return;
+        this.loginInterval = setInterval(() => {
+            if (game.player && game.player.ship) {
+                clearInterval(this.loginInterval);
+                this.loginInterval = undefined;
+                return;
+            }
+            this.login('demo', 'pass');
+        }, 1000);
     }
 }

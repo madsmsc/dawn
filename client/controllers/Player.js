@@ -21,30 +21,26 @@ export class Player {
         const bS = game.ui.buttons.find(b => b.key === 's');
         const bD = game.ui.buttons.find(b => b.key === 'd');
         const ship = this.ship;
-        const accel = ship.acceleration || 0.05;
 
         // Direction vector: D-right, A-left, S-down, W-up
         const dx = (bD?.down ? 1 : 0) - (bA?.down ? 1 : 0);
         const dy = (bS?.down ? 1 : 0) - (bW?.down ? 1 : 0);
         const moveVec = new Vec(dx, dy);
 
+        ship.velVec = ship.velVec || new Vec(0, 0);
+
         if (moveVec.x !== 0 || moveVec.y !== 0) {
-            // accelerate in desired direction
+            // Smoothly interpolate toward desired direction (hybrid physics/arcade)
             const dir = moveVec.clone().normalize();
-            ship.velVec = ship.velVec || new Vec(0, 0);
-            ship.velVec.add(dir.scale(accel));
-            // clamp speed
-            const speed = ship.velVec.length();
-            if (speed > ship.maxVel) {
-                ship.velVec = ship.velVec.clone().normalize().scale(ship.maxVel);
-            }
+            const targetVel = dir.scale(ship.maxVel);
+            ship.velVec.x += (targetVel.x - ship.velVec.x) * ship.acceleration;
+            ship.velVec.y += (targetVel.y - ship.velVec.y) * ship.acceleration;
         } else {
-            // damping
-            ship.velVec = ship.velVec || new Vec(0, 0);
-            ship.velVec.x *= 0.92;
-            ship.velVec.y *= 0.92;
-            if (Math.abs(ship.velVec.x) < 0.001) ship.velVec.x = 0;
-            if (Math.abs(ship.velVec.y) < 0.001) ship.velVec.y = 0;
+            // Gentle damping when no input
+            ship.velVec.x *= 0.90;
+            ship.velVec.y *= 0.90;
+            if (Math.abs(ship.velVec.x) < 0.01) ship.velVec.x = 0;
+            if (Math.abs(ship.velVec.y) < 0.01) ship.velVec.y = 0;
         }
 
         // apply velocity

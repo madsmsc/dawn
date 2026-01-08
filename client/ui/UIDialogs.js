@@ -15,6 +15,8 @@ export class UIDialogs {
         this.warpableButtons = []; // Track clickable warpable items
         this.lastMousePos = null; // Track mouse position for hover effects
         this.inventoryGrid = new InventoryGrid();
+        this.openInfoDialog = false;
+        this.openMenuDialog = false;
     }
 
     drawWarpDialog() {
@@ -73,6 +75,7 @@ export class UIDialogs {
     }
 
     drawMenuDialog() {
+        this.openMenuDialog = true;
         UIHelper.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
         let yOffset = this.dialogY;
         yOffset = UIHelper.drawSectionHeader('Menu', this.dialogWidth, yOffset, this.dialogX);
@@ -82,19 +85,42 @@ export class UIDialogs {
     }
 
     drawInfoDialog() {
+        this.openInfoDialog = true;
+        // Draw extended backdrop covering the entire dialog area
         UIHelper.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
-        let yOffset = this.dialogY;
         
-        // Pilot info section
-        yOffset = UIHelper.drawSectionHeader('Pilot', this.dialogWidth, yOffset, this.dialogX);
+        // Create two-column layout
+        const columnWidth = (this.dialogWidth - 60) / 2; // Account for padding
+        const leftX = this.dialogX + 15;
+        const rightX = leftX + columnWidth + 30;
+        const leftSectionOffset = 30;
+        let yOffset = this.dialogY + 15;
+        
+        // LEFT COLUMN: Pilot info and Equipped modules
+        yOffset = UIHelper.drawSectionHeader('Pilot', columnWidth, yOffset, leftX);
         game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        game.ctx.fillText(`${game.player.name}`, this.dialogX + 30, yOffset);
+        game.ctx.font = '14px Arial';
+        game.ctx.fillText(`${game.player.name}`, leftX+leftSectionOffset, yOffset);
         game.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-        game.ctx.fillText(`${game.player.credits} credits | ${game.player.rep} rep`, this.dialogX + 30, yOffset += 20);
+        game.ctx.font = '12px Arial';
+        game.ctx.fillText(`${game.player.credits} credits`, leftX+leftSectionOffset, yOffset += 18);
+        game.ctx.fillText(`${game.player.rep} rep`, leftX+leftSectionOffset, yOffset += 16);
         
-        // Draw inventory grid
-        yOffset += 10;
-        this.inventoryGrid.draw(this.dialogX, this.dialogWidth, yOffset);
+        // Draw equipped modules section in left column
+        yOffset += 15;
+        yOffset = UIHelper.drawSectionHeader('Equipment', columnWidth, yOffset, leftX);
+        const equippedYStart = yOffset;
+        this.inventoryGrid.drawEquipped(leftX+leftSectionOffset, columnWidth, yOffset);
+        
+        // RIGHT COLUMN: Inventory
+        let rightYOffset = this.dialogY + 15;
+        rightYOffset = UIHelper.drawSectionHeader('Inventory', columnWidth, rightYOffset, rightX);
+        this.inventoryGrid.drawInventoryOnly(rightX, columnWidth, rightYOffset);
+        
+        // Draw dragged item on top
+        if (this.inventoryGrid.draggedItem) {
+            this.inventoryGrid.drawDraggedItem();
+        }
     }
 
     warpToTarget(target) {

@@ -15,9 +15,6 @@ export class PlayerShip extends Destructable {
 
         this.miningRange = 11; // TODO: should be a function of the mining module equipped
         this.dam = 8; // override dam, 4x the enemy
-        // TODO: for testing
-        this.maxVel = 2;
-        this.acceleration = 0.05;
 
         // mark as player-controlled so AI movement is skipped in Destructable.move
         this.isPlayer = true;
@@ -35,14 +32,14 @@ export class PlayerShip extends Destructable {
         super.update(delta);
         this.attackCount += delta;
         
-        // Mine if button exists and is pressed
+        // Mine if button is toggled on
         const mineButton = game.ui.buttons.find(b => b.key === '2');
-        if (mineButton?.down) this.mine();
+        if (mineButton?.show) this.mine();
         
-        // Fire if button exists and is pressed
-        if (game.system.enemies && this.attackCount > this.attackTime) {
+        // Fire if button is toggled on
+        if (game.system.enemies && game.system.enemies.length > 0 && this.attackCount > this.attackTime) {
             const fireButton = game.ui.buttons.find(b => b.key === '1');
-            if (fireButton?.down) {
+            if (fireButton?.show) {
                 this.attackCount = 0;
                 this.shooting = true; 
                 game.system.enemies[0].damage(this.dam);
