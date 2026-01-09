@@ -37,13 +37,19 @@ export class PlayerShip extends Destructable {
         if (mineButton?.show) this.mine();
         
         // Fire if button is toggled on
-        if (game.system.enemies && game.system.enemies.length > 0 && this.attackCount > this.attackTime) {
-            const fireButton = game.ui.buttons.find(b => b.key === '1');
+        const fireButton = game.ui.buttons.find(b => b.key === '1');
+        const aliveEnemies = game.system.enemies?.filter(e => !e.isDead) || [];
+        
+        if (aliveEnemies.length > 0 && this.attackCount > this.attackTime) {
             if (fireButton?.show) {
                 this.attackCount = 0;
+                this.target = aliveEnemies[0].pos.clone();
                 this.shooting = true; 
-                game.system.enemies[0].damage(this.dam);
+                aliveEnemies[0].damage(this.dam);
             }
+        } else if (fireButton?.show && aliveEnemies.length === 0) {
+            // No alive enemies left - toggle off weapon
+            fireButton.show = false;
         }
         
         // Update mining progress
@@ -67,13 +73,29 @@ export class PlayerShip extends Destructable {
                         game.system.asteroids.splice(asteroidIndex, 1);
                     }
                     
+                    // Toggle off mining button since asteroid is gone
+                    const mineButton = game.ui.buttons.find(b => b.key === '2');
+                    if (mineButton) mineButton.show = false;
+                    
                     ores.forEach(ore => {
-                        const oreModule = this.inventory.find(m => m.name === ore.type);
-                        if (oreModule) {
-                            oreModule.amount += ore.amount;
-                        } else {
-                            const m = new Module(ore.type, SPRITE.MINE, ore.amount, 'kg');
+                        let remaining = ore.amount;
+                        
+                        // Try to add to existing stacks first
+                        const existingStacks = this.inventory.filter(m => m.name === ore.type);
+                        for (const stack of existingStacks) {
+                            if (remaining <= 0) break;
+                            const spaceInStack = stack.stackSize - stack.amount;
+                            const toAdd = Math.min(remaining, spaceInStack);
+                            stack.amount += toAdd;
+                            remaining -= toAdd;
+                        }
+                        
+                        // Add remaining ore as new stacks
+                        while (remaining > 0) {
+                            const amountForStack = Math.min(remaining, new Module(ore.type, SPRITE.MINE, 0, 'kg').stackSize);
+                            const m = new Module(ore.type, SPRITE.MINE, amountForStack, 'kg');
                             this.inventory.push(m);
+                            remaining -= amountForStack;
                         }
                     });
                     
@@ -89,24 +111,6 @@ export class PlayerShip extends Destructable {
     draw () {
         if(game.player.docked) return;
         super.draw(SPRITE.SPACESHIP);
-        
-        // Draw mining progress bar if mining
-        if (this.miningTarget && this.miningProgress > 0) {
-            const barWidth = this.size * 2;
-            const barHeight = 4;
-            const barX = this.pos.x - barWidth / 2;
-            const barY = this.pos.y - this.size - 10;
-            
-            game.ctx.fillStyle = '#333';
-            game.ctx.fillRect(barX, barY, barWidth, barHeight);
-            
-            game.ctx.fillStyle = '#00ff00';
-            game.ctx.fillRect(barX, barY, barWidth * this.miningProgress, barHeight);
-            
-            game.ctx.strokeStyle = '#00ff00';
-            game.ctx.lineWidth = 1;
-            game.ctx.strokeRect(barX, barY, barWidth, barHeight);
-        }
     }
 
     mine () {

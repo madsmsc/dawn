@@ -1,5 +1,6 @@
 import { game } from '../controllers/game.js';
 import { Selectable } from './Selectable.js';
+import { ICON_SIZE } from '../../shared/Constants.js';
 
 export class Gate extends Selectable {
     constructor(name, pos, targetSystem = null) {
@@ -7,7 +8,7 @@ export class Gate extends Selectable {
         this.name = name;
         this.pos = pos;
         this.targetSystem = targetSystem; // Reference to the system this gate leads to
-        this.size = 20;
+        this.size = ICON_SIZE / 2;
     }
 
     // TODO find gate sprite

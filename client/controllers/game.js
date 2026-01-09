@@ -10,5 +10,6 @@ export const game = {
     starField: undefined,
     camera: undefined,
     missionManager: undefined,
-    enemies: undefined
+    enemies: undefined,
+    quantumStash: [] // Shared storage across all stations
 };

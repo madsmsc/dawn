@@ -70,7 +70,7 @@ export class Destructable extends Selectable {
                 this.shooting = false;
             } else {
                 game.ctx.lineWidth = 3;
-                game.ctx.strokeStyle = 'yellow';
+                game.ctx.strokeStyle = 'rgba(200, 100, 255, 1)';
                 game.ctx.globalAlpha = 1.0 - this.attackCount / 500.0;
                 game.ctx.beginPath();
                 game.ctx.moveTo(this.pos.x, this.pos.y);

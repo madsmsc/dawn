@@ -1,6 +1,8 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
 
+// TODO: introduce new modules for increasing inventory size
+
 export class InventoryGrid {
     constructor() {
         this.cellSize = 40;
@@ -25,7 +27,17 @@ export class InventoryGrid {
             x: 0,
             y: 0
         };
+        
+        this.stashGrid = {
+            cols: 5,
+            rows: 4,
+            x: 0,
+            y: 0
+        };
     }
+
+    // TODO: make the text be longer for modules
+    // and probably break it.
 
     draw(dialogX, dialogWidth, yOffset) {
         // Draw equipped modules section
@@ -65,6 +77,13 @@ export class InventoryGrid {
         this.inventoryGrid.x = columnX;
         this.inventoryGrid.y = yOffset;
         this.#drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
+        this.#drawHoverTooltip();
+    }
+
+    drawStash(columnX, columnWidth, yOffset) {
+        this.stashGrid.x = columnX;
+        this.stashGrid.y = yOffset;
+        this.#drawGrid(game.quantumStash, this.stashGrid, 'stash');
         this.#drawHoverTooltip();
     }
 
@@ -202,6 +221,20 @@ export class InventoryGrid {
             return true;
         }
         
+        // Check stash (if docked)
+        if (game.player.docked) {
+            const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
+            if (stashIndex !== -1 && stashIndex < game.quantumStash.length) {
+                this.draggedItem = game.quantumStash[stashIndex];
+                this.draggedFrom = { type: 'stash', index: stashIndex };
+                this.dragOffset = {
+                    x: clickPos.x - (this.stashGrid.x + (stashIndex % this.stashGrid.cols) * (this.cellSize + this.cellPadding)),
+                    y: clickPos.y - (this.stashGrid.y + Math.floor(stashIndex / this.stashGrid.cols) * (this.cellSize + this.cellPadding))
+                };
+                return true;
+            }
+        }
+        
         return false;
     }
 
@@ -222,6 +255,14 @@ export class InventoryGrid {
                 return;
             }
             
+            if (game.player.docked) {
+                const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
+                if (stashIndex !== -1) {
+                    this.hoveredSlot = { type: 'stash', index: stashIndex };
+                    return;
+                }
+            }
+            
             this.hoveredSlot = null;
         } else {
             // Update hovered slot while dragging
@@ -237,6 +278,14 @@ export class InventoryGrid {
                 return;
             }
             
+            if (game.player.docked) {
+                const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
+                if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
+                    this.hoveredSlot = { type: 'stash', index: stashIndex };
+                    return;
+                }
+            }
+            
             this.hoveredSlot = null;
         }
     }
@@ -244,8 +293,15 @@ export class InventoryGrid {
     #drawHoverTooltip() {
         if (!this.hoveredSlot || !this.lastMousePos) return;
         const { type, index } = this.hoveredSlot;
-        const sourceArray = type === 'equipped' ? game.player.ship.modules : game.player.ship.inventory;
-        if (index >= sourceArray.length) return;
+        let sourceArray;
+        if (type === 'equipped') {
+            sourceArray = game.player.ship.modules;
+        } else if (type === 'inventory') {
+            sourceArray = game.player.ship.inventory;
+        } else if (type === 'stash') {
+            sourceArray = game.quantumStash;
+        }
+        if (!sourceArray || index >= sourceArray.length) return;
         const item = sourceArray[index];
         if (!item) return;
         const lines = this.#buildTooltipLines(item);
@@ -298,6 +354,11 @@ export class InventoryGrid {
             const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
             if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
                 targetSlot = { type: 'inventory', index: inventoryIndex };
+            } else if (game.player.docked) {
+                const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
+                if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
+                    targetSlot = { type: 'stash', index: stashIndex };
+                }
             }
         }
         
@@ -335,12 +396,43 @@ export class InventoryGrid {
     }
 
     #moveItem(from, to) {
-        const sourceArray = from.type === 'equipped' ? game.player.ship.modules : game.player.ship.inventory;
-        const targetArray = to.type === 'equipped' ? game.player.ship.modules : game.player.ship.inventory;
+        // Get source and target arrays
+        let sourceArray, targetArray;
+        if (from.type === 'equipped') {
+            sourceArray = game.player.ship.modules;
+        } else if (from.type === 'inventory') {
+            sourceArray = game.player.ship.inventory;
+        } else if (from.type === 'stash') {
+            sourceArray = game.quantumStash;
+        }
+        
+        if (to.type === 'equipped') {
+            targetArray = game.player.ship.modules;
+        } else if (to.type === 'inventory') {
+            targetArray = game.player.ship.inventory;
+        } else if (to.type === 'stash') {
+            targetArray = game.quantumStash;
+        }
         
         // Get the items
         const sourceItem = sourceArray[from.index];
         const targetItem = to.index < targetArray.length ? targetArray[to.index] : null;
+        
+        // Check if we can stack items (same name, both have stackSize)
+        if (targetItem && sourceItem.name === targetItem.name && sourceItem.stackSize && targetItem.stackSize) {
+            const spaceInTarget = sourceItem.stackSize - targetItem.amount;
+            if (spaceInTarget > 0) {
+                const amountToMove = Math.min(sourceItem.amount, spaceInTarget);
+                targetItem.amount += amountToMove;
+                sourceItem.amount -= amountToMove;
+                
+                // Remove source item if depleted
+                if (sourceItem.amount <= 0) {
+                    sourceArray.splice(from.index, 1);
+                }
+                return;
+            }
+        }
         
         // Remove source item
         sourceArray.splice(from.index, 1);

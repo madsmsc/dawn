@@ -89,6 +89,9 @@ export class Server {
         B.warpables = [B.stations[0], gateB_A, gateB_C];
         C.warpables = [C.stations[0], gateC_A, gateC_B];
 
+        // Initialize quantum stash (shared across all stations)
+        game.quantumStash = [];
+
         return A;
     }
 

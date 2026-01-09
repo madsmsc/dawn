@@ -1,4 +1,5 @@
 import { RARITY, AFFIX } from '../../shared/Constants.js';
+import { ORE, STACK_SIZES } from '../../shared/Constants.js';
 
 export class Module {
     constructor(name, sprite = undefined, amount = 1, unit = 'units') {
@@ -9,6 +10,10 @@ export class Module {
         this.rarity = undefined;
         this.prefixes = []; // [key,tier] []
         this.suffixes = []; // [key,tier] []
+        
+        // Determine stack size based on whether this is ore or a module
+        const oreNames = Object.keys(ORE);
+        this.stackSize = oreNames.includes(name) ? STACK_SIZES.ORE : STACK_SIZES.MODULE;
     }
 
     canAddAffix(isPrefix) {

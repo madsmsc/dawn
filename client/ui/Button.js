@@ -1,4 +1,5 @@
 import { game } from '../controllers/game.js';
+import { ICON_SIZE } from '../../shared/Constants.js';
 
 export class Button {
     constructor(key, pos, icon, enabled = () => true, tooltip = null) {
@@ -56,10 +57,10 @@ export class Button {
 
     click(clickPos) {
         if (this.pos) {
-            const centerX = this.pos.x + 20;
-            const centerY = this.pos.y + 20;
+            const centerX = this.pos.x + ICON_SIZE / 2;
+            const centerY = this.pos.y + ICON_SIZE / 2;
             const distance = Math.sqrt((clickPos.x - centerX) ** 2 + (clickPos.y - centerY) ** 2);
-            if (distance < 20) {
+            if (distance < ICON_SIZE / 2) {
                 // Trigger the same behavior as keyboard press
                 this.keyDown();
                 this.onClick();

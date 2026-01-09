@@ -1,4 +1,5 @@
 import { game } from '../controllers/game.js';
+import { ICON_SIZE } from '../../shared/Constants.js';
 
 export class Sprites {
     constructor() {
@@ -6,14 +7,11 @@ export class Sprites {
         this.#loadSprites();
     }
 
-    #spriteWidth = 40;
-    #spriteHeight = 40;
-
     draw(spriteIndex, pos, selected = false, text = undefined,
         outline = true, scale = 1, rotation = 0) {
         const sprite = this.sprites[spriteIndex];
         if (!sprite) return;
-        const size = 40 * scale;
+        const size = ICON_SIZE * scale;
         if (selected) game.ctx.globalAlpha = 0.5;
         if (rotation !== 0) {
             game.ctx.save();
@@ -26,7 +24,7 @@ export class Sprites {
         }
         if (outline) {
             game.ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
-            game.ctx.strokeRect(pos.x, pos.y, 40, 40);
+            game.ctx.strokeRect(pos.x, pos.y, ICON_SIZE, ICON_SIZE);
         }
         if (text !== undefined) {
             game.ctx.font = '11px Arial';
@@ -39,6 +37,7 @@ export class Sprites {
         game.ctx.globalAlpha = 1;
     }
 
+    // TODO: when replacing icons, the links/references can be removed.
     #loadSprites() {
         const spriteSheet = new Image();
         // icons from:
@@ -47,16 +46,14 @@ export class Sprites {
         // https://www.flaticon.com/
         spriteSheet.src = 'client/icons.png';
         spriteSheet.onload = () => {
-            const spriteWidth = 40;
-            const spriteHeight = 40;
-            const columns = spriteSheet.width / spriteWidth;
-            const rows = spriteSheet.height / spriteHeight;
+            const columns = spriteSheet.width / ICON_SIZE;
+            const rows = spriteSheet.height / ICON_SIZE;
 
             // Create a temporary canvas to extract sprites
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = spriteWidth;
-            tempCanvas.height = spriteHeight;
+            tempCanvas.width = ICON_SIZE;
+            tempCanvas.height = ICON_SIZE;
             this.#extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas);
         };
     }
@@ -64,18 +61,18 @@ export class Sprites {
     #extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas) {
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < columns; col++) {
-                tempCtx.clearRect(0, 0, this.#spriteWidth, this.#spriteHeight);
+                tempCtx.clearRect(0, 0, ICON_SIZE, ICON_SIZE);
                 // Draw the portion of the sprite sheet we want
                 tempCtx.drawImage(
                     spriteSheet,
-                    col * this.#spriteWidth,    // source x
-                    row * this.#spriteHeight,   // source y
-                    this.#spriteWidth,          // source width
-                    this.#spriteHeight,         // source height
+                    col * ICON_SIZE,    // source x
+                    row * ICON_SIZE,   // source y
+                    ICON_SIZE,          // source width
+                    ICON_SIZE,         // source height
                     0,                          // dest x
                     0,                          // dest y
-                    this.#spriteWidth,          // dest width
-                    this.#spriteHeight          // dest height
+                    ICON_SIZE,          // dest width
+                    ICON_SIZE          // dest height
                 );
                 // Convert to an image and store
                 const sprite = new Image();

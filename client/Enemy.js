@@ -1,7 +1,7 @@
-import { game } from '../controllers/game.js';
-import { SPRITE, MOVE, MODULE } from '../../shared/Constants.js';
+import { game } from './game.js';
+import { SPRITE, MOVE, MODULE } from '../shared/Constants.js';
 import { Destructable } from './Destructable.js';
-import { Module } from '../modules/Module.js';
+import { Module } from './Module.js';
 
 export class Enemy extends Destructable {
     constructor() {
@@ -11,6 +11,7 @@ export class Enemy extends Destructable {
         this.rep = 5;
     }
 
+    // TODO: enemy orbiting doesn't work.
     static orbiting () {
         const e = new Enemy();
         e.hull = 10;
@@ -36,8 +37,6 @@ export class Enemy extends Destructable {
     update (delta) {
         super.update(delta);
 
-        if (this.isDead) return this;
-
         this.target = game.system.asteroids[0].pos;
         this.moveMode = MOVE.ORBIT;
 
@@ -49,36 +48,15 @@ export class Enemy extends Destructable {
     draw () {
         super.draw(SPRITE.SHIP);
 
-        // Health bars above enemy
-        const barWidth = 40;
-        const barHeight = 4;
-        const barSpacing = 6;
-        const barX = this.pos.x - barWidth / 2;
-        const barY = this.pos.y - 50;
-
-        // Shield bar (blue)
-        const shieldPercentage = (this.shield / this.maxShield) * 100;
-        game.ctx.fillStyle = 'rgba(30, 60, 120, 0.7)';
-        game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
-        game.ctx.fillRect(barX, barY, (barWidth * shieldPercentage) / 100, barHeight);
-
-        // Hull bar (red) - below shield bar
-        const hullPercentage = (this.hull / this.maxHull) * 100;
-        game.ctx.fillStyle = 'rgba(120, 30, 30, 0.7)';
-        game.ctx.fillRect(barX, barY + barHeight + barSpacing, barWidth, barHeight);
-        game.ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
-        game.ctx.fillRect(barX, barY + barHeight + barSpacing, (barWidth * hullPercentage) / 100, barHeight);
-
         // Enemy type label
         game.ctx.fillStyle = 'white';
         game.ctx.font = '14px Arial';
         game.ctx.textAlign = 'center';
-        game.ctx.fillText(this.type, this.pos.x, this.pos.y - 30);
+        game.ctx.fillText(this.type, this.pos.x, this.pos.y - 45);
     }
 
     scan () { 
-        if (this.pos.clone().sub(game.player.ship.pos).length() < this.scanRange) { 
+        if (this.pos.sub(game.player.ship.pos).length() < this.scanRange) { 
             return game.player.ship.pos; 
         } 
     }
@@ -88,7 +66,7 @@ export class Enemy extends Destructable {
             return;
         } 
         this.target = target; 
-        if (this.pos.clone().sub(target).length() < this.attackRange) {
+        if (this.pos.sub(target).length() < this.attackRange) {
             this.shoot();
         } 
     }
@@ -102,8 +80,6 @@ export class Enemy extends Destructable {
     }
 
     die () {
-        super.die();
-        this.isDead = true;
         const rand = (max) => Math.floor(Math.random() * max); 
         const moduleAmount = rand(2) + 1; // drop 1-2 modules
         for (let i = 0; i < moduleAmount; i++) {
@@ -115,6 +91,7 @@ export class Enemy extends Destructable {
             game.player.ship.inventory.push(module);
             console.log('enemy dropped module: ' + module.toString());
         }
+        game.system.enemies.splice(game.system.enemies.indexOf(this), 1);
         game.player.credits = this.bounty;
         game.player.rep = this.rep;
     }

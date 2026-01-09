@@ -1,5 +1,5 @@
 import { game } from '../controllers/game.js';
-import { SPRITE } from '../../shared/Constants.js';
+import { SPRITE, ICON_SIZE } from '../../shared/Constants.js';
 import { Vec } from '../controllers/Vec.js';
 import { Button } from './Button.js';
 import { UIHelper } from './UIHelper.js';
@@ -20,7 +20,7 @@ export class UIButtons {
         this.buttons.push(new Button('s', undefined, undefined, () => !game.player.docked, ['Move backward']));
         this.buttons.push(new Button('d', undefined, undefined, () => !game.player.docked, ['Turn right']));
         let i = 3;
-        const off = 50;
+        const off = ICON_SIZE + 10;
         const border = 2;
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
         this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP, () => true, ['Ship / Inventory', 'Toggle info dialog (I)']));
@@ -72,9 +72,9 @@ export class UIButtons {
     #isHoveringButton(button, pos) {
         if (!button.pos || !pos) return false;
         if (!button.isEnabled()) return false;
-        const centerX = button.pos.x + 20;
-        const centerY = button.pos.y + 20;
+        const centerX = button.pos.x + ICON_SIZE / 2;
+        const centerY = button.pos.y + ICON_SIZE / 2;
         const distance = Math.sqrt((pos.x - centerX) ** 2 + (pos.y - centerY) ** 2);
-        return distance <= 22;
+        return distance <= ICON_SIZE / 2 + 2;
     }
 }

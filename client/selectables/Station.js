@@ -1,4 +1,4 @@
-import { SPRITE, ORE, AFFIX } from '../../shared/Constants.js';
+import { SPRITE, ORE, AFFIX, ICON_SIZE } from '../../shared/Constants.js';
 import { Selectable } from './Selectable.js';
 import { game } from '../controllers/game.js';
 import { Vec } from '../controllers/Vec.js';
@@ -38,7 +38,7 @@ export class Station extends Selectable {
         if (game.player.docked) return;
         super.draw();
         game.ctx.save();
-        const p = new Vec(this.pos.x - 20, this.pos.y - 20);
+        const p = new Vec(this.pos.x - ICON_SIZE / 2, this.pos.y - ICON_SIZE / 2);
         game.sprites.draw(SPRITE.STATION, p, false, undefined, false, 1);
         // Docking area indicator
         game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';

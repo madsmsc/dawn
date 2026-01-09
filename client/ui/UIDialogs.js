@@ -112,10 +112,27 @@ export class UIDialogs {
         const equippedYStart = yOffset;
         this.inventoryGrid.drawEquipped(leftX+leftSectionOffset, columnWidth, yOffset);
         
-        // RIGHT COLUMN: Inventory
+        // RIGHT COLUMN: Inventory (and Quantum Stash if docked side-by-side)
         let rightYOffset = this.dialogY + 15;
-        rightYOffset = UIHelper.drawSectionHeader('Inventory', columnWidth, rightYOffset, rightX);
-        this.inventoryGrid.drawInventoryOnly(rightX, columnWidth, rightYOffset);
+        
+        if (game.player.docked) {
+            // When docked, show inventory and stash side-by-side
+            const halfColumnWidth = (columnWidth - 15) / 2;
+            
+            // Ship Inventory (left half)
+            rightYOffset = UIHelper.drawSectionHeader('Ship Inventory', halfColumnWidth, rightYOffset, rightX);
+            this.inventoryGrid.drawInventoryOnly(rightX, halfColumnWidth, rightYOffset);
+            
+            // Quantum Stash (right half)
+            const stashX = rightX + halfColumnWidth + 15;
+            const stashYOffset = this.dialogY + 15;
+            UIHelper.drawSectionHeader('Quantum Stash', halfColumnWidth, stashYOffset, stashX);
+            this.inventoryGrid.drawStash(stashX, halfColumnWidth, stashYOffset + 20);
+        } else {
+            // When not docked, show only inventory
+            rightYOffset = UIHelper.drawSectionHeader('Inventory', columnWidth, rightYOffset, rightX);
+            this.inventoryGrid.drawInventoryOnly(rightX, columnWidth, rightYOffset);
+        }
         
         // Draw dragged item on top
         if (this.inventoryGrid.draggedItem) {

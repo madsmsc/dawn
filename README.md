@@ -9,6 +9,9 @@
 
 # TODOs
 
+- aoe weapon, long cast time
+- move progress bar to above the modules in the hud
+- add progress bar to laser and warp drive
 - ambience: music, lasers, particle trails, background planets with rings, etc.
 - shoot mercenaries to increase fighter reputation
 - mine asteroids to increase miner reputation

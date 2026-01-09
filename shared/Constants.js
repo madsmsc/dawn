@@ -1,3 +1,12 @@
+// Icon dimensions - square sprites from icon sheet
+export const ICON_SIZE = 40;
+
+// Stack sizes for inventory items
+export const STACK_SIZES = {
+    MODULE: 1,
+    ORE: 20
+};
+
 export const MOVE = {
     APPROACH: 0,
     ORBIT: 1
