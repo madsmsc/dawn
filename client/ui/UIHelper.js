@@ -1,10 +1,12 @@
 import { game } from '../controllers/game.js';
+import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 /**
  * UIHelper provides shared drawing utilities for UI rendering
  */
 export class UIHelper {
-    static roundedRect(x, y, width, height, radius) {
+    static drawDialog(x, y, width, height) {
+        const radius = 10;
         game.ctx.beginPath();
         game.ctx.moveTo(x + radius, y);
         game.ctx.lineTo(x + width - radius, y);
@@ -16,22 +18,47 @@ export class UIHelper {
         game.ctx.lineTo(x, y + radius);
         game.ctx.quadraticCurveTo(x, y, x + radius, y);
         game.ctx.closePath();
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARK;
         game.ctx.fill();
-        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
         game.ctx.lineWidth = 2;
         game.ctx.stroke();
     }
 
-    static drawPanel(pos, w, h) {
-        game.ctx.setLineDash([]);
-        game.ctx.strokeStyle = 'black';
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        game.ctx.fillRect(pos.x, pos.y, w, h);
+    static drawMission(x, y, width, height, button = null) {
+        // Mission box background
+        game.ctx.fillStyle = UI_COLORS.BG_PANEL;
+        game.ctx.fillRect(x, y, width, height);
 
-        game.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+        // Left accent bar
+        game.ctx.fillStyle = UI_COLORS.SHIELD_FILL;
+        game.ctx.fillRect(x, y, 4, height);
+
+        // Border
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
         game.ctx.lineWidth = 2;
-        game.ctx.strokeRect(pos.x, pos.y, w, h);
+        game.ctx.strokeRect(x, y, width, height);
+
+        // Draw button if provided
+        if (button) {
+            game.ctx.fillStyle = button.enabled ? UI_COLORS.TEXT_REWARD : UI_COLORS.BUTTON_DISABLED;
+            game.ctx.fillRect(button.x, button.y, button.width, button.height);
+            game.ctx.strokeStyle = button.enabled ? UI_COLORS.BUTTON_ENABLED_BORDER : UI_COLORS.BUTTON_DISABLED;
+            game.ctx.lineWidth = 1;
+            game.ctx.strokeRect(button.x, button.y, button.width, button.height);
+            game.ctx.fillStyle = button.enabled ? UI_COLORS.BORDER_DARK : UI_COLORS.TEXT_DISABLED;
+            game.ctx.font = UI_FONTS.BUTTON;
+            game.ctx.textAlign = 'center';
+            game.ctx.fillText(button.text, button.x + button.width / 2, button.y + button.height / 2 + 5);
+        }
+    }
+
+    static drawPanel(x, y, width, height) {
+        game.ctx.fillStyle = UI_COLORS.BG_DARK;
+        game.ctx.fillRect(x, y, width, height);
+        game.ctx.strokeStyle = UI_COLORS.BORDER_DARK;
+        game.ctx.lineWidth = 2;
+        game.ctx.strokeRect(x, y, width, height);
     }
 
     static drawTexts(texts, pos, off = 30, hor = false, color = 'white') {
@@ -41,30 +68,30 @@ export class UIHelper {
     }
 
     static drawFps() {
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = '14px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.MEDIUM;
         game.ctx.fillText(`FPS: ${game.ui.fpsDisplay}`, game.canvas.width - 60, 20);
     }
 
     static drawTooltip(x, y, text) {
         const padding = 8;
         const fontSize = 12;
-        game.ctx.font = `${fontSize}px Arial`;
+        game.ctx.font = UI_FONTS.SMALL;
         const textWidth = game.ctx.measureText(text).width;
         const boxWidth = textWidth + padding * 2;
         const boxHeight = fontSize + padding * 2;
 
         // Draw dark background
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(x - boxWidth / 2, y - boxHeight, boxWidth, boxHeight);
 
         // Draw blue border
-        game.ctx.strokeStyle = 'rgba(100, 150, 255, 0.9)';
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(x - boxWidth / 2, y - boxHeight, boxWidth, boxHeight);
 
         // Draw text
-        game.ctx.fillStyle = 'white';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
         game.ctx.fillText(text, x - textWidth / 2, y - padding);
     }
 
@@ -72,7 +99,7 @@ export class UIHelper {
         const padding = 8;
         const fontSize = 12;
         const textLines = Array.isArray(lines) ? lines : [String(lines)];
-        game.ctx.font = `${fontSize}px Arial`;
+        game.ctx.font = UI_FONTS.SMALL;
         const maxWidth = Math.max(...textLines.map((line) => game.ctx.measureText(line).width));
         const lineHeight = fontSize + 2;
         const boxWidth = maxWidth + padding * 2;
@@ -81,16 +108,16 @@ export class UIHelper {
         const boxY = y - boxHeight;
 
         // Background
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
         // Border
-        game.ctx.strokeStyle = 'rgba(100, 150, 255, 0.9)';
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
         // Text
-        game.ctx.fillStyle = 'white';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
         game.ctx.textAlign = 'left';
         game.ctx.textBaseline = 'top';
         textLines.forEach((line, idx) => {
@@ -102,43 +129,31 @@ export class UIHelper {
 
     static drawSectionHeader(text, width, yOffset, x) {
         yOffset += 20;
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 20px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.TITLE;
         game.ctx.fillText(text, x + 20, yOffset += 20);
         game.ctx.beginPath();
-        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
         game.ctx.moveTo(x + 10, yOffset += 20);
         game.ctx.lineTo(x + width - 10, yOffset);
         game.ctx.stroke();
-        game.ctx.font = '14px Arial';
+        game.ctx.font = UI_FONTS.MEDIUM;
         return yOffset + 20;
     }
 
     static drawCenteredHeader(text, width, yOffset, x) {
         const centerX = x + width / 2;
         yOffset += 28;
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 20px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.TITLE;
         game.ctx.textAlign = 'center';
         game.ctx.fillText(text, centerX, yOffset);
         game.ctx.beginPath();
-        game.ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
         game.ctx.moveTo(x + 10, yOffset + 12);
         game.ctx.lineTo(x + width - 10, yOffset + 12);
         game.ctx.stroke();
-        game.ctx.font = '14px Arial';
+        game.ctx.font = UI_FONTS.MEDIUM;
         return yOffset + 36;
-    }
-
-    static drawSectionItems(modules, yOffset, x) {
-        modules.forEach((module) => {
-            game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-            game.ctx.fillText(`${module.name}`, x + 30, yOffset);
-            game.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-            const amount = module.amount > 1 ? module.amount.toFixed(2) : module.amount;
-            game.ctx.fillText(`${amount} ${module.unit}`, x + 200, yOffset);
-            yOffset += 20;
-        });
-        return yOffset;
     }
 }

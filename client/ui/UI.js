@@ -1,9 +1,11 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
 import { UIButtons } from './UIButtons.js';
+import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { UIDialogs } from './UIDialogs.js';
 import { UIStation } from './UIStation.js';
 import { HUD } from './HUD.js';
+import { InventoryGrid } from './InventoryGrid.js';
 
 /**
  * UI is the main orchestrator for all UI rendering and interaction
@@ -24,13 +26,16 @@ export class UI {
         // Last mouse position for hover effects
         this.lastMousePos = null;
         
+        // Shared inventory grid for all UI components
+        this.inventoryGrid = new InventoryGrid();
+        
         // Create specialized UI managers
         const uiButtons = new UIButtons();
         this.uiButtons = uiButtons;
         this.buttons = uiButtons.buttons;
         
-        this.dialogs = new UIDialogs(this.dialogWidth, this.dialogHeight, this.dialogX, this.dialogY);
-        this.station = new UIStation();
+        this.dialogs = new UIDialogs(this.dialogWidth, this.dialogHeight, this.dialogX, this.dialogY, this.inventoryGrid);
+        this.station = new UIStation(this.inventoryGrid);
         this.hud = new HUD();
     }
 
@@ -58,9 +63,6 @@ export class UI {
             this.#loginUI(); 
         } else if (this.showStationUI()) { 
             this.station.draw();
-            // Keep mission list anchored at the usual left margin while docked
-            game.ctx.textAlign = 'start';
-            game.missionManager.draw(10, 40);
             this.#drawButtons(); // Draw buttons so their callbacks execute (e.g., E to undock)
         } else {
             this.#drawButtons();
@@ -78,16 +80,16 @@ export class UI {
 
     #loginUI() {
         const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, yOffset += 30) };
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = '30px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.LARGE;
         let yOffset = 100;
         text('Logging in...');
     }
 
     #demoText() {
         if (!game.server || !game.server.isConnected) {
-            game.ctx.fillStyle = 'white';
-            game.ctx.font = '12px Arial';
+            game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+            game.ctx.font = UI_FONTS.SMALL;
             const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, yOffset += 15) };
             let yOffset = 5;
             text('No server - DEMO');
@@ -100,15 +102,15 @@ export class UI {
 
     #drawHUD() {
         // System and station info
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 14px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.HEADER;
         let yOffset = 80;
         game.ctx.fillText('System', 10, yOffset);
-        game.ctx.font = '12px Arial';
+        game.ctx.font = UI_FONTS.SMALL;
         game.ctx.fillText(game.system.name, 20, yOffset += 20);
-        game.ctx.font = 'bold 14px Arial';
+        game.ctx.font = UI_FONTS.HEADER;
         game.ctx.fillText('Station', 10, yOffset += 30);
-        game.ctx.font = '12px Arial';
+        game.ctx.font = UI_FONTS.SMALL;
         game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
         
         if (game.player.docked) return;
@@ -126,6 +128,10 @@ export class UI {
         return this.station.handleStationDialogClick(clickPos);
     }
     
+    handleStationDialogMouseUp(clickPos) {
+        return this.station.handleStationDialogMouseUp(clickPos);
+    }
+    
     handleInfoDialogMouseDown(clickPos) {
         return this.dialogs.handleInfoDialogMouseDown(clickPos);
     }
@@ -140,5 +146,8 @@ export class UI {
         this.dialogs.setMousePos(mousePos);
         this.uiButtons.setMousePos(mousePos);
         this.hud.lastMousePos = mousePos;
+        if (game.player && game.player.docked) {
+            this.station.setMousePos(mousePos);
+        }
     }
 }

@@ -1,16 +1,6 @@
 import { game } from '../controllers/game.js';
 import { Vec } from '../controllers/Vec.js';
 
-/* TODO
-add colored "blotches" as galaxies/nebulae
-will need to redraw when flying to new systems because of the colors
-  also just for immersion, so backdrop changes.
-only use integers, not floats in calls to ctx.arc()
-find out how to do performance meassurements.
-  some breakdown of which methods use resources.
-  need some way to meassure if the "improvements" I make
-  actually help or not.
-*/
 export class StarField {
     constructor() {
         this.layers = [];

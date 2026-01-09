@@ -18,8 +18,4 @@ export class Mission {
         this.active = false;
         game.player.credits += this.reward;
     }
-
-    update (delta) {
-
-    }
 }

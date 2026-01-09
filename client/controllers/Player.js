@@ -11,7 +11,7 @@ export class Player {
         Object.assign(this, obj);
     }
 
-    update (delta) {
+    update(delta) {
         // this.ship?.damage(1); // testing damage
 
         // Apply player WASD input to the player's ship directly (directional movement)
@@ -57,7 +57,7 @@ export class Player {
         return this;
     }
 
-    draw () {
+    draw() {
         this.ship.draw();
     }
 }

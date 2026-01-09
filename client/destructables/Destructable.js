@@ -12,7 +12,10 @@ export class Destructable extends Selectable {
         this.shield = 0;
         this.maxHull = 0;
         this.hull = 0;
-
+        // Engine trail settings
+        this.trailSpawnInterval = 30; // ms between trail particle spawns
+        this.trailSpawnTimer = 0;
+        // Movement and combat
         this.type = '';
         this.acceleration = 0.05;
         this.vel = 0;
@@ -28,12 +31,10 @@ export class Destructable extends Selectable {
         this.dam = 2; // ...
         this.attackTime = 1000;
         this.attackCount = 0;
-
-        
-        // Engine trail settings
-        this.trailSpawnInterval = 30; // ms between trail particle spawns
-        this.trailSpawnTimer = 0;
     }
+
+    #particles = [];
+    #trailParticles = [];
 
     update(delta) {
         this.move(delta);
@@ -80,8 +81,6 @@ export class Destructable extends Selectable {
             }
         }
 
-
-
         // Draw engine trail particles
         this.#trailParticles.forEach((particle, i) => {
             if (particle.alpha <= 0) {
@@ -90,7 +89,7 @@ export class Destructable extends Selectable {
                 particle.update();
             }
         });
-        
+
         // Draw death explosion particles
         if (this.#particles.length > 0) {
             this.#particles.forEach((particle, i) => {
@@ -116,41 +115,38 @@ export class Destructable extends Selectable {
         this.hull -= dam;
     }
 
-    #particles = [];
-    #trailParticles = [];
-    
     #updateEngineTrails(delta) {
         // Only emit trails when ship is moving
         if (this.vel < 0.1) return;
-        
+
         this.trailSpawnTimer += delta;
-        
+
         if (this.trailSpawnTimer >= this.trailSpawnInterval) {
             this.trailSpawnTimer = 0;
-            
+
             // Calculate position behind the ship
             const trailDistance = this.size * 0.8; // Distance behind ship center
             const trailX = -Math.cos(this.angle) * trailDistance;
             const trailY = -Math.sin(this.angle) * trailDistance;
-            
+
             // Add slight randomness to particle emission
             const spreadX = (Math.random() - 0.5) * this.size * 0.3;
             const spreadY = (Math.random() - 0.5) * this.size * 0.3;
-            
+
             // Particle velocity opposite to ship direction (trails behind)
             const particleSpeed = 0.5;
             const dx = -Math.cos(this.angle) * particleSpeed + (Math.random() - 0.5) * 0.2;
             const dy = -Math.sin(this.angle) * particleSpeed + (Math.random() - 0.5) * 0.2;
-            
+
             const radius = 2 + Math.random() * 2;
             const particle = new Particle(trailX + spreadX, trailY + spreadY, radius, dx, dy, this.pos.clone());
             particle.fadeSpeed = 0.02; // Custom fade speed for trails
             particle.color = this.#getTrailColor();
-            
+
             this.#trailParticles.push(particle);
         }
     }
-    
+
     #getTrailColor() {
         // Blue-ish engine trail for players, red-ish for enemies
         if (this.isPlayer) {
@@ -159,7 +155,7 @@ export class Destructable extends Selectable {
             return `rgba(255, 100, 100, ${1})`;
         }
     }
-    
+
     die() {
         for (let i = 0; i <= 50; i++) {
             let dx = (Math.random() - 0.5) * (Math.random() * 6);
@@ -169,27 +165,6 @@ export class Destructable extends Selectable {
             this.#particles.push(particle);
         }
         // overridden and called in the children.
-    }
-
-    #approach(target) {
-        if (this.isPlayer) {
-            console.log(`player cannot use approach`);
-            return;
-        }
-        console.log(`setting [${this.type}] target to ${target.toString()} and approaching`);
-        this.target = target;
-        this.moveMode = MOVE.APPROACH;
-    }
-
-    #orbit(target) {
-        if (this.isPlayer) {
-            console.log(`player cannot orbit`);
-            return;
-        }
-        console.log(`setting [${this.type}] target to ${target.toString()} and orbiting`);
-        this.target = target;
-        this.moveMode = MOVE.ORBIT;
-        this.nextPoint = undefined;
     }
 
     move(delta) {

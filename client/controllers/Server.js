@@ -31,12 +31,11 @@ export class Server {
             this.isConnected = false;
         };
 
-        // Start periodic login retries; fallback to demo handled in login()
-        this.startLoginRetry();
+        this.startLoginRetry(); // periodic login retries; fallback to demo handled in login()
     }
 
     loadSystem() {
-        // TODO: move logic to server
+        // TODO: move this to server - along with a lot of other logic
         const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta',
             'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho',
             'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];

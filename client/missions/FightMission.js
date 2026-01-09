@@ -16,8 +16,4 @@ export class FightMission extends Mission {
     complete () {
         this.completeSuper();
     }
-    
-    update (delta) {
-
-    }
 }

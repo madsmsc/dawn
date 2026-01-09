@@ -1,5 +1,6 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
+import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 // TODO: introduce new modules for increasing inventory size
 
@@ -103,7 +104,7 @@ export class InventoryGrid {
         const totalHeight = grid.rows * (this.cellSize + this.cellPadding);
         
         // Draw grid background
-        game.ctx.fillStyle = 'rgba(20, 20, 40, 0.6)';
+        game.ctx.fillStyle = UI_COLORS.BG_GRID;
         game.ctx.fillRect(grid.x, grid.y, totalWidth, totalHeight);
         
         // Draw grid cells
@@ -120,14 +121,14 @@ export class InventoryGrid {
                 
                 // Draw cell background
                 if (isHovered && this.draggedItem) {
-                    game.ctx.fillStyle = 'rgba(100, 150, 255, 0.4)';
+                    game.ctx.fillStyle = UI_COLORS.HOVER;
                 } else {
-                    game.ctx.fillStyle = 'rgba(50, 50, 80, 0.5)';
+                    game.ctx.fillStyle = UI_COLORS.BG_GRID;
                 }
                 game.ctx.fillRect(x, y, this.cellSize, this.cellSize);
                 
                 // Draw cell border
-                game.ctx.strokeStyle = isHovered ? 'rgba(150, 200, 255, 0.8)' : 'rgba(100, 100, 150, 0.5)';
+                game.ctx.strokeStyle = isHovered ? UI_COLORS.HOVER_BORDER : UI_COLORS.BORDER;
                 game.ctx.lineWidth = 1;
                 game.ctx.strokeRect(x, y, this.cellSize, this.cellSize);
                 
@@ -157,8 +158,8 @@ export class InventoryGrid {
         game.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
         
         // Draw item icon/text
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = 'bold 10px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.LABEL;
         game.ctx.textAlign = 'center';
         game.ctx.textBaseline = 'middle';
         
@@ -168,8 +169,8 @@ export class InventoryGrid {
         
         // Draw amount if > 1
         if (item.amount > 1) {
-            game.ctx.font = '9px Arial';
-            game.ctx.fillStyle = 'rgba(255, 255, 100, 0.9)';
+            game.ctx.font = UI_FONTS.TINY;
+            game.ctx.fillStyle = UI_COLORS.TEXT_HIGHLIGHT;
             const amountText = item.amount > 999 ? '999+' : item.amount.toFixed(0);
             game.ctx.fillText(amountText, x + this.cellSize / 2, y + this.cellSize - 8);
         }
@@ -222,7 +223,7 @@ export class InventoryGrid {
         }
         
         // Check stash (if docked)
-        if (game.player.docked) {
+        if (game.player && game.player.docked) {
             const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
             if (stashIndex !== -1 && stashIndex < game.quantumStash.length) {
                 this.draggedItem = game.quantumStash[stashIndex];
@@ -255,7 +256,7 @@ export class InventoryGrid {
                 return;
             }
             
-            if (game.player.docked) {
+            if (game.player && game.player.docked) {
                 const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
@@ -278,7 +279,7 @@ export class InventoryGrid {
                 return;
             }
             
-            if (game.player.docked) {
+            if (game.player && game.player.docked) {
                 const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
@@ -354,7 +355,7 @@ export class InventoryGrid {
             const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
             if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
                 targetSlot = { type: 'inventory', index: inventoryIndex };
-            } else if (game.player.docked) {
+            } else if (game.player && game.player.docked) {
                 const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
                 if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
                     targetSlot = { type: 'stash', index: stashIndex };

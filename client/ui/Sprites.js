@@ -1,5 +1,5 @@
 import { game } from '../controllers/game.js';
-import { ICON_SIZE } from '../../shared/Constants.js';
+import { ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 export class Sprites {
     constructor() {
@@ -27,11 +27,11 @@ export class Sprites {
             game.ctx.strokeRect(pos.x, pos.y, ICON_SIZE, ICON_SIZE);
         }
         if (text !== undefined) {
-            game.ctx.font = '11px Arial';
+            game.ctx.font = UI_FONTS.SMALL;
             game.ctx.fillStyle = 'black';
             game.ctx.fillText(text, pos.x + 1, pos.y + 5);
             game.ctx.fillText(text, pos.x - 1, pos.y + 4);
-            game.ctx.fillStyle = 'white';
+            game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
             game.ctx.fillText(text, pos.x, pos.y + 4);
         }
         game.ctx.globalAlpha = 1;

@@ -66,8 +66,4 @@ export class MiningMission extends Mission {
             }
         }
     }
-    
-    update (delta) {
-        super.update(delta);
-    }
 }

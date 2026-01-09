@@ -13,43 +13,43 @@ export class Vec {
 
     // mutable class! use clone to preverse original object.
 
-    add (v) {
+    add(v) {
         this.x = this.x + v.x;
         this.y = this.y + v.y;
         return this;
     }
 
-    addScalar (s) {
+    addScalar(s) {
         this.x += s;
         this.y += s;
         return this;
     }
 
-    sub (v) {
+    sub(v) {
         this.x -= v.x;
         this.y -= v.y;
         return this;
     }
 
-    scale (n) {
+    scale(n) {
         this.x *= n;
         this.y *= n;
         return this;
     }
 
-    length () {
+    length() {
         return Math.sqrt(
             this.x * this.x +
             this.y * this.y
         );
     }
 
-    dist (v2) {
+    dist(v2) {
         const diff = new Vec(v2.x - this.x, v2.y - this.y);
         return diff.length();
     }
 
-    normalize () {
+    normalize() {
         const len = this.length();
         if (len === 0) return this;
         this.x /= len;
@@ -57,34 +57,22 @@ export class Vec {
         return this;
     }
 
-    dot (v) {
-        return this.x * v.x + this.y * v.y;
-    }
-
-    cross (v) {
-        return this.x * v.y - this.y * v.x;
-    }
-
-    toString () {
-        console.log('toString '+this.x+', '+this.y);
+    toString() {
+        console.log('toString ' + this.x + ', ' + this.y);
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     }
 
-    clone () {
+    clone() {
         return new Vec(this.x, this.y);
     }
 
-    setV (v2) {
+    setV(v2) {
         this.x = v2.x;
         this.y = v2.y;
     }
 
-    set (x, y) {
+    set(x, y) {
         this.x = x;
         this.y = y;
-    }
-
-    equals (v) {
-        return this.clone().sub(v).length() === 0;
     }
 }

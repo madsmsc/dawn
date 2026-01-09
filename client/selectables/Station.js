@@ -1,4 +1,4 @@
-import { SPRITE, ORE, AFFIX, ICON_SIZE } from '../../shared/Constants.js';
+import { SPRITE, ORE, AFFIX, ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { Selectable } from './Selectable.js';
 import { game } from '../controllers/game.js';
 import { Vec } from '../controllers/Vec.js';
@@ -46,23 +46,11 @@ export class Station extends Selectable {
         game.ctx.arc(this.pos.x, this.pos.y, this.dockingRadius, 0, Math.PI * 2);
         game.ctx.stroke();
         // Station name
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = '14px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.MEDIUM;
         game.ctx.textAlign = 'center';
         game.ctx.fillText(this.name, this.pos.x, this.pos.y - 45);
         game.ctx.restore();
-    }
-
-    drawResearch() {
-        const available = Research.availableResearch();
-        // draw box
-        available.forEach((a) => {
-            // draw square with abbreviation and cost
-            // grey out the ones that you cannot afford
-            // red out the ones that are not applicable to the item
-            // 2 colored lines of text explaining the disabling
-            // fix Name,Desc mouse-over.
-        });
     }
 
     missionsAtStation() {
@@ -86,37 +74,5 @@ export class Station extends Selectable {
 
     canDock() {
         return this.pos.clone().sub(game.player.ship.pos).length() < this.dockingRadius;
-    }
-
-    startFit() {
-        // show fitting dialog
-        // and some way to put inventory modules into fitting
-    }
-
-    applyFit() {
-        const ship = game.player.ship;
-        // TODO: do not apply directly to fields
-        // make modifiers so the "base ship values" are not changed
-        // actually, maybe those should be inherited from the ship type
-        // and the ships should not have their own totals?
-        // but then the totals would have to be calculated each time?
-        // maybe I do need the totals. but also the base. both?
-        for(const module in ship.modules) {
-            // apply effect of MODULE on ship
-            // TODO: do something for constant.module like affix.
-            const affixes = module.prefixes.concat(module.suffixes);
-            for (const affix in affixes) {
-                // apply effect of AFFIX on ship 
-                if (affix[0] === AFFIX.DAMAGE.key) {
-                    ship.dam *= AFFIX.DAMAGE.tier[affix[1]];
-                } else if (affix[0] === AFFIX.SPEED.key) {
-                    ship.maxVel *= AFFIX.DAMAGE.tier[affix[1]];
-                    ship.acceleration *= AFFIX.DAMAGE.tier[affix[1]];
-                } else if (affix[0] === AFFIX.ACCURACY.key) {
-                    // add tracking
-                    ship.miningRange = 11;
-                }
-            }
-        }
     }
 }

@@ -1,6 +1,6 @@
 import { game } from '../controllers/game.js';
 import { Selectable } from './Selectable.js';
-import { ICON_SIZE } from '../../shared/Constants.js';
+import { ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 export class Gate extends Selectable {
     constructor(name, pos, targetSystem = null) {
@@ -35,7 +35,7 @@ export class Gate extends Selectable {
         
         // Draw gate label
         game.ctx.fillStyle = 'cyan';
-        game.ctx.font = '12px Arial';
+        game.ctx.font = UI_FONTS.SMALL;
         game.ctx.textAlign = 'center';
         game.ctx.fillText(this.name, this.pos.x, this.pos.y - this.size - 10);
     }

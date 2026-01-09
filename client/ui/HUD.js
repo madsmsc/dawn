@@ -1,5 +1,6 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
+import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 /**
  * HUD manages head-up display rendering: health circles, shields, velocity bar, tooltips
@@ -30,10 +31,10 @@ export class HUD {
         const hullPercentage = (game.player.ship.hull / game.player.ship.maxHull) * 100;
 
         // Draw shield circle
-        this.#drawHealthCircle(shieldRadius, shieldPercentage, 'rgba(30, 60, 120, 0.6)', centerY);
+        this.#drawHealthCircle(shieldRadius, shieldPercentage, UI_COLORS.SHIELD_BG, centerY);
 
         // Draw hull circle
-        this.#drawHealthCircle(hullRadius, hullPercentage, 'rgba(120, 30, 30, 0.6)', centerY);
+        this.#drawHealthCircle(hullRadius, hullPercentage, UI_COLORS.HULL_BG, centerY);
 
         // Draw percentages
         UIHelper.drawTexts([`${shieldPercentage.toFixed(0)}%`],
@@ -49,13 +50,13 @@ export class HUD {
         const barY = centerY - 15;
 
         // Background
-        game.ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(barX, barY, barWidth, barHeight);
 
         // Bar fill (green, filling from left to right)
         const velPercentage = game.player.ship.vel / game.player.ship.maxVel;
         const fillWidth = barWidth * velPercentage;
-        game.ctx.fillStyle = 'rgba(30, 150, 30, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.BAR_GREEN;
         game.ctx.fillRect(barX, barY, fillWidth, barHeight);
 
         // Velocity text on bar
@@ -74,12 +75,12 @@ export class HUD {
         const miningBarY = game.canvas.height - 80;
         
         // Background
-        game.ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(miningBarX, miningBarY, miningBarWidth, miningBarHeight);
         
         // Bar fill (yellow, filling from left to right)
         const miningFillWidth = miningBarWidth * game.player.ship.miningProgress;
-        game.ctx.fillStyle = 'rgba(200, 200, 50, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.BAR_YELLOW;
         game.ctx.fillRect(miningBarX, miningBarY, miningFillWidth, miningBarHeight);
         
         // Border
@@ -102,12 +103,12 @@ export class HUD {
         const laserCooldownPercentage = Math.min(game.player.ship.attackCount / game.player.ship.attackTime, 1);
         
         // Background
-        game.ctx.fillStyle = 'rgba(50, 50, 50, 0.7)';
+        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(laserBarX, laserBarY, laserBarWidth, laserBarHeight);
         
         // Bar fill (red, filling from left to right)
         const laserFillWidth = laserBarWidth * laserCooldownPercentage;
-        game.ctx.fillStyle = 'rgba(255, 80, 80, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.HULL_FILL;
         game.ctx.fillRect(laserBarX, laserBarY, laserFillWidth, laserBarHeight);
         
         // Border

@@ -1,26 +1,26 @@
 import { game } from '../controllers/game.js';
 import { Vec } from '../controllers/Vec.js';
 import { UIHelper } from './UIHelper.js';
-import { InventoryGrid } from './InventoryGrid.js';
+import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
 /**
  * UIDialogs manages all dialog UI rendering and interactions: info, menu, warp
  */
 export class UIDialogs {
-    constructor(dialogWidth, dialogHeight, dialogX, dialogY) {
+    constructor(dialogWidth, dialogHeight, dialogX, dialogY, inventoryGrid) {
         this.dialogWidth = dialogWidth;
         this.dialogHeight = dialogHeight;
         this.dialogX = dialogX;
         this.dialogY = dialogY;
         this.warpableButtons = []; // Track clickable warpable items
         this.lastMousePos = null; // Track mouse position for hover effects
-        this.inventoryGrid = new InventoryGrid();
+        this.inventoryGrid = inventoryGrid;
         this.openInfoDialog = false;
         this.openMenuDialog = false;
     }
 
     drawWarpDialog() {
-        UIHelper.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        UIHelper.drawDialog(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight);
         let yOffset = this.dialogY;
         yOffset = UIHelper.drawSectionHeader('Warp to:', this.dialogWidth, yOffset, this.dialogX);
         
@@ -76,33 +76,37 @@ export class UIDialogs {
 
     drawMenuDialog() {
         this.openMenuDialog = true;
-        UIHelper.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        UIHelper.drawDialog(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight);
         let yOffset = this.dialogY;
         yOffset = UIHelper.drawSectionHeader('Menu', this.dialogWidth, yOffset, this.dialogX);
         yOffset += 20;
-        game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
         game.ctx.fillText('Exit Now', this.dialogX + 30, yOffset);
     }
 
     drawInfoDialog() {
         this.openInfoDialog = true;
+        
+        // Position dialog at left edge when docked, centered otherwise
+        const dialogX = game.player && game.player.docked ? 0 : this.dialogX;
+        
         // Draw extended backdrop covering the entire dialog area
-        UIHelper.roundedRect(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight, 10);
+        UIHelper.drawDialog(dialogX, this.dialogY, this.dialogWidth, this.dialogHeight);
         
         // Create two-column layout
         const columnWidth = (this.dialogWidth - 60) / 2; // Account for padding
-        const leftX = this.dialogX + 15;
+        const leftX = dialogX + 15;
         const rightX = leftX + columnWidth + 30;
         const leftSectionOffset = 30;
         let yOffset = this.dialogY + 15;
         
         // LEFT COLUMN: Pilot info and Equipped modules
         yOffset = UIHelper.drawSectionHeader('Pilot', columnWidth, yOffset, leftX);
-        game.ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
-        game.ctx.font = '14px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
+        game.ctx.font = UI_FONTS.MEDIUM;
         game.ctx.fillText(`${game.player.name}`, leftX+leftSectionOffset, yOffset);
-        game.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-        game.ctx.font = '12px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_LIGHT;
+        game.ctx.font = UI_FONTS.SMALL;
         game.ctx.fillText(`${game.player.credits} credits`, leftX+leftSectionOffset, yOffset += 18);
         game.ctx.fillText(`${game.player.rep} rep`, leftX+leftSectionOffset, yOffset += 16);
         
@@ -112,27 +116,12 @@ export class UIDialogs {
         const equippedYStart = yOffset;
         this.inventoryGrid.drawEquipped(leftX+leftSectionOffset, columnWidth, yOffset);
         
-        // RIGHT COLUMN: Inventory (and Quantum Stash if docked side-by-side)
+        // RIGHT COLUMN: Inventory
         let rightYOffset = this.dialogY + 15;
         
-        if (game.player.docked) {
-            // When docked, show inventory and stash side-by-side
-            const halfColumnWidth = (columnWidth - 15) / 2;
-            
-            // Ship Inventory (left half)
-            rightYOffset = UIHelper.drawSectionHeader('Ship Inventory', halfColumnWidth, rightYOffset, rightX);
-            this.inventoryGrid.drawInventoryOnly(rightX, halfColumnWidth, rightYOffset);
-            
-            // Quantum Stash (right half)
-            const stashX = rightX + halfColumnWidth + 15;
-            const stashYOffset = this.dialogY + 15;
-            UIHelper.drawSectionHeader('Quantum Stash', halfColumnWidth, stashYOffset, stashX);
-            this.inventoryGrid.drawStash(stashX, halfColumnWidth, stashYOffset + 20);
-        } else {
-            // When not docked, show only inventory
-            rightYOffset = UIHelper.drawSectionHeader('Inventory', columnWidth, rightYOffset, rightX);
-            this.inventoryGrid.drawInventoryOnly(rightX, columnWidth, rightYOffset);
-        }
+        // Show inventory
+        rightYOffset = UIHelper.drawSectionHeader('Inventory', columnWidth, rightYOffset, rightX);
+        this.inventoryGrid.drawInventoryOnly(rightX, columnWidth, rightYOffset);
         
         // Draw dragged item on top
         if (this.inventoryGrid.draggedItem) {

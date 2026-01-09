@@ -1,5 +1,5 @@
 import { game } from '../controllers/game.js';
-import { SPRITE, MOVE, MODULE } from '../../shared/Constants.js';
+import { SPRITE, MOVE, MODULE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { Destructable } from './Destructable.js';
 import { Module } from '../modules/Module.js';
 
@@ -58,21 +58,21 @@ export class Enemy extends Destructable {
 
         // Shield bar (blue)
         const shieldPercentage = (this.shield / this.maxShield) * 100;
-        game.ctx.fillStyle = 'rgba(30, 60, 120, 0.7)';
+        game.ctx.fillStyle = UI_COLORS.SHIELD_BG;
         game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.SHIELD_FILL;
         game.ctx.fillRect(barX, barY, (barWidth * shieldPercentage) / 100, barHeight);
 
         // Hull bar (red) - below shield bar
         const hullPercentage = (this.hull / this.maxHull) * 100;
-        game.ctx.fillStyle = 'rgba(120, 30, 30, 0.7)';
+        game.ctx.fillStyle = UI_COLORS.HULL_BG;
         game.ctx.fillRect(barX, barY + barHeight + barSpacing, barWidth, barHeight);
-        game.ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+        game.ctx.fillStyle = UI_COLORS.HULL_FILL;
         game.ctx.fillRect(barX, barY + barHeight + barSpacing, (barWidth * hullPercentage) / 100, barHeight);
 
         // Enemy type label
-        game.ctx.fillStyle = 'white';
-        game.ctx.font = '14px Arial';
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.MEDIUM;
         game.ctx.textAlign = 'center';
         game.ctx.fillText(this.type, this.pos.x, this.pos.y - 30);
     }

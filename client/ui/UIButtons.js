@@ -23,7 +23,7 @@ export class UIButtons {
         const off = ICON_SIZE + 10;
         const border = 2;
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
-        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP, () => true, ['Ship / Inventory', 'Toggle info dialog (I)']));
+        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP, () => !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
         this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS, () => true, ['Menu', 'Open game menu (P)']));
         i = -4;
         this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
