@@ -67,54 +67,56 @@ export class HUD {
     #drawMiningProgressBar() {
         if (!game.player.ship.miningTarget || game.player.ship.miningProgress === 0) return;
 
-        const miningBarWidth = 50;
-        const miningBarHeight = 8;
-        // Position above the mining button (second from right of center)
-        const off = 40 + 10; // ICON_SIZE + 10
-        const miningBarX = game.canvas.width / 2 - off * -3 - miningBarWidth / 2;
-        const miningBarY = game.canvas.height - 80;
+        const miningButton = game.ui?.buttons?.find((b) => b.key === '2');
+        if (!miningButton || !miningButton.pos) return;
+
+        const barWidth = 40; // ICON_SIZE
+        const barHeight = 4;
+        const barX = miningButton.pos.x;
+        const barY = miningButton.pos.y - 8; // 8px above the button
         
         // Background
-        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
-        game.ctx.fillRect(miningBarX, miningBarY, miningBarWidth, miningBarHeight);
+        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        game.ctx.fillRect(barX, barY, barWidth, barHeight);
         
-        // Bar fill (yellow, filling from left to right)
-        const miningFillWidth = miningBarWidth * game.player.ship.miningProgress;
-        game.ctx.fillStyle = UI_COLORS.BAR_YELLOW;
-        game.ctx.fillRect(miningBarX, miningBarY, miningFillWidth, miningBarHeight);
+        // Bar fill (blue, filling from left to right based on progress)
+        const miningFillWidth = barWidth * game.player.ship.miningProgress;
+        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.9)';
+        game.ctx.fillRect(barX, barY, miningFillWidth, barHeight);
         
         // Border
-        game.ctx.strokeStyle = 'rgba(200, 200, 100, 0.8)';
+        game.ctx.strokeStyle = 'rgba(100, 150, 255, 1)';
         game.ctx.lineWidth = 1;
-        game.ctx.strokeRect(miningBarX, miningBarY, miningBarWidth, miningBarHeight);
+        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     #drawLaserCooldownBar() {
         // Only show when weapon is cooling down (not ready)
         if (game.player.ship.attackCount >= game.player.ship.attackTime) return;
         
-        const laserBarWidth = 50;
-        const laserBarHeight = 8;
-        // Position above the weapons button (third from right of center)
-        const off = 40 + 10; // ICON_SIZE + 10
-        const laserBarX = game.canvas.width / 2 - off * -2 - laserBarWidth / 2;
-        const laserBarY = game.canvas.height - 80;
+        const laserButton = game.ui?.buttons?.find((b) => b.key === '1');
+        if (!laserButton || !laserButton.pos) return;
+
+        const barWidth = 40; // ICON_SIZE
+        const barHeight = 4;
+        const barX = laserButton.pos.x;
+        const barY = laserButton.pos.y - 8; // 8px above the button
         
         const laserCooldownPercentage = Math.min(game.player.ship.attackCount / game.player.ship.attackTime, 1);
         
         // Background
-        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
-        game.ctx.fillRect(laserBarX, laserBarY, laserBarWidth, laserBarHeight);
+        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        game.ctx.fillRect(barX, barY, barWidth, barHeight);
         
-        // Bar fill (red, filling from left to right)
-        const laserFillWidth = laserBarWidth * laserCooldownPercentage;
-        game.ctx.fillStyle = UI_COLORS.HULL_FILL;
-        game.ctx.fillRect(laserBarX, laserBarY, laserFillWidth, laserBarHeight);
+        // Bar fill (purple to match laser color, filling from left to right)
+        const laserFillWidth = barWidth * laserCooldownPercentage;
+        game.ctx.fillStyle = 'rgba(200, 100, 255, 0.9)';
+        game.ctx.fillRect(barX, barY, laserFillWidth, barHeight);
         
         // Border
-        game.ctx.strokeStyle = 'rgba(200, 100, 100, 0.8)';
+        game.ctx.strokeStyle = 'rgba(200, 100, 255, 1)';
         game.ctx.lineWidth = 1;
-        game.ctx.strokeRect(laserBarX, laserBarY, laserBarWidth, laserBarHeight);
+        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     #drawHoverTooltips(centerX, centerY) {

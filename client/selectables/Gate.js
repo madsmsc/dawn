@@ -44,4 +44,10 @@ export class Gate extends Selectable {
         // todo start particle animation if activated by you or others
         return this;
     }
+
+    canJump() {
+        // Check if player is within jump range
+        const jumpRange = 150;
+        return this.pos.clone().sub(game.player.ship.pos).length() < jumpRange;
+    }
 }

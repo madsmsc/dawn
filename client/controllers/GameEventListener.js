@@ -40,8 +40,10 @@ export class GameEventListener {
         if (game.ui.handleWarpDialogClick(screenPos)) {
             return; // Click was handled by warp dialog
         }
-        // Check if click is on station mission accept button
-        if (game.ui.handleStationDialogClick(screenPos)) {
+        // Check if click is on station dialog (but skip stash tab since it uses mouseDown/mouseUp)
+        if (game.player.docked && game.ui.station.currentTab === 'stash') {
+            // Stash tab uses mouseDown/mouseUp events, skip click handling
+        } else if (game.ui.handleStationDialogClick(screenPos)) {
             return; // Click was handled by station dialog
         }
         // pass click position to each button so it can react if clicked

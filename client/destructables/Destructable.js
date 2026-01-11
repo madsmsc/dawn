@@ -53,15 +53,15 @@ export class Destructable extends Selectable {
         game.sprites.draw(sprite, new Vec(0, 0), false, undefined, false, 1);
 
         // draw vector
-        game.ctx.translate(off, 0);
-        game.ctx.lineWidth = 3;
-        game.ctx.globalAlpha = 0.3;
-        game.ctx.strokeStyle = 'rgb(40, 40, 255)';
-        game.ctx.beginPath();
-        game.ctx.setLineDash([]);
-        game.ctx.moveTo(0, 0);
-        game.ctx.lineTo(0, -this.vel * 30);
-        game.ctx.stroke();
+        // game.ctx.translate(off, 0);
+        // game.ctx.lineWidth = 3;
+        // game.ctx.globalAlpha = 0.3;
+        // game.ctx.strokeStyle = 'rgb(40, 40, 255)';
+        // game.ctx.beginPath();
+        // game.ctx.setLineDash([]);
+        // game.ctx.moveTo(0, 0);
+        // game.ctx.lineTo(0, -this.vel * 30);
+        // game.ctx.stroke();
 
         game.ctx.restore();
 
@@ -71,7 +71,7 @@ export class Destructable extends Selectable {
                 this.shooting = false;
             } else {
                 game.ctx.lineWidth = 3;
-                game.ctx.strokeStyle = 'rgba(200, 100, 255, 1)';
+                game.ctx.strokeStyle = this.isPlayer ? 'rgba(200, 100, 255, 1)' : 'rgba(255, 200, 50, 1)';
                 game.ctx.globalAlpha = 1.0 - this.attackCount / 500.0;
                 game.ctx.beginPath();
                 game.ctx.moveTo(this.pos.x, this.pos.y);

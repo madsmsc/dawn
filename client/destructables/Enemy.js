@@ -20,6 +20,7 @@ export class Enemy extends Destructable {
 
         e.target = e.pos;
         e.moveMode = MOVE.ORBIT;
+        e.orbitRadius = 100 + Math.random() * 40; // Random orbit 100-140
         e.scanRange = 0;
         return e;
     }
@@ -30,6 +31,7 @@ export class Enemy extends Destructable {
         e.maxHull = 10;
         e.shield = 10;
         e.maxShield = 10;
+        e.orbitRadius = 100 + Math.random() * 40; // Random orbit 100-140
         return e;
     }
 
@@ -38,8 +40,12 @@ export class Enemy extends Destructable {
 
         if (this.isDead) return this;
 
-        this.target = game.system.asteroids[0].pos;
-        this.moveMode = MOVE.ORBIT;
+        // Get first asteroid from current instance if available
+        const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+        if (instanceAsteroids.length > 0) {
+            this.target = instanceAsteroids[0].pos;
+            this.moveMode = MOVE.ORBIT;
+        }
 
         this.attackCount += delta;
         this.attack(this.scan());
@@ -113,7 +119,7 @@ export class Enemy extends Destructable {
             const moduleTierName = MODULE[moduleTypeName][moduleTierIndex];
             const module = new Module(moduleTierName, undefined, 1, 'module');
             game.player.ship.inventory.push(module);
-            console.log('enemy dropped module: ' + module.toString());
+            game.ui.messages.addMessage(`Received: ${moduleTierName}`);
         }
         game.player.credits = this.bounty;
         game.player.rep = this.rep;

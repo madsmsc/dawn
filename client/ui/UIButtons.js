@@ -25,16 +25,17 @@ export class UIButtons {
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
         this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP, () => !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
         this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS, () => true, ['Menu', 'Open game menu (P)']));
-        i = -4;
+        i = -5;
+        this.buttons.push(new Button('4', i2vec(i++), SPRITE.SHIP, () => !game.player.docked && this.#hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
         this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
         this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => !game.player.docked && this.#hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
-        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => !game.player.docked, ['Weapons', 'Fire primary weapons (1)']));
+        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => !game.player.docked && this.#hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
 
         this.buttons.find((b) => b.key === 'i').onDraw = () => game.ui.dialogs.drawInfoDialog();
         this.buttons.find((b) => b.key === 'p').onDraw = () => game.ui.dialogs.drawMenuDialog();
-        this.buttons.find((b) => b.key === '1').onDraw = () => { /* Fire toggle - no dialog */ };
-        this.buttons.find((b) => b.key === '2').onDraw = () => { /* Mine toggle - no dialog */ };
         this.buttons.find((b) => b.key === '3').onDraw = () => game.ui.dialogs.drawWarpDialog();
+        
+        // Buttons 1, 2, 4 are toggle-only (no dialogs) - don't set onDraw so they can be active simultaneously
         
         // TODO: not all the tooltip args here makes sense - some buttons aren't rendered.
 
@@ -53,6 +54,7 @@ export class UIButtons {
 
     draw() {
         this.buttons.forEach((b) => { b.draw() });
+        this.#drawDroneProgressBar();
         this.#drawHoverTooltip();
     }
 
@@ -67,6 +69,32 @@ export class UIButtons {
         game.ctx.save();
         UIHelper.drawTooltipLines(this.lastMousePos.x + 14, this.lastMousePos.y - 18, hovered.tooltip);
         game.ctx.restore();
+    }
+
+    #drawDroneProgressBar() {
+        const droneButton = this.buttons.find((b) => b.key === '4');
+        if (!droneButton || !droneButton.pos || !droneButton.show) return;
+        
+        // Only show progress bar when drones are deployed
+        if (game.player.ship.drones.length === 0) return;
+        
+        const barWidth = 40; // ICON_SIZE
+        const barHeight = 4;
+        const barX = droneButton.pos.x;
+        const barY = droneButton.pos.y - 8; // 8px above the button
+        
+        // Background
+        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        game.ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Full progress bar (always 100% while drones are active)
+        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.9)';
+        game.ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Border
+        game.ctx.strokeStyle = 'rgba(100, 150, 255, 1)';
+        game.ctx.lineWidth = 1;
+        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     #isHoveringButton(button, pos) {

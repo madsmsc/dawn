@@ -6,6 +6,7 @@ import { UIDialogs } from './UIDialogs.js';
 import { UIStation } from './UIStation.js';
 import { HUD } from './HUD.js';
 import { InventoryGrid } from './InventoryGrid.js';
+import { MessageQueue } from './MessageQueue.js';
 
 /**
  * UI is the main orchestrator for all UI rendering and interaction
@@ -28,6 +29,9 @@ export class UI {
         
         // Shared inventory grid for all UI components
         this.inventoryGrid = new InventoryGrid();
+        
+        // Message queue for on-screen notifications
+        this.messages = new MessageQueue();
         
         // Create specialized UI managers
         const uiButtons = new UIButtons();
@@ -117,6 +121,9 @@ export class UI {
         
         // Draw HUD health circles and velocity bar
         this.hud.draw();
+        
+        // Draw on-screen messages
+        this.messages.draw();
     }
 
     // Public methods for click handling (called from GameEventListener)
@@ -149,5 +156,10 @@ export class UI {
         if (game.player && game.player.docked) {
             this.station.setMousePos(mousePos);
         }
+    }
+    
+    update(delta) {
+        this.messages.update(delta);
+        return this;
     }
 }

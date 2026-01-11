@@ -1,7 +1,7 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
 import { Research } from '../modules/Research.js';
-import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
+import { UI_COLORS, UI_FONTS, ORE } from '../../shared/Constants.js';
 
 export class UIStation {
     constructor(inventoryGrid) {
@@ -9,6 +9,11 @@ export class UIStation {
         this.currentTab = 'station'; // 'station', 'missions', 'research', 'stash'
         this.tabBounds = {}; // Track clickable tab areas
         this.inventoryGrid = inventoryGrid;
+        this.salvageMode = false; // Track if salvage mode is active
+        this.stashButtonBounds = {}; // Track stash button click areas
+        this.salvageClickStart = null; // Track where salvage click started (item index)
+        this.salvageButtonClickStart = false; // Track if salvage button was clicked
+        this.repairButtonBounds = null; // Track repair button click area
     }
 
     #drawItemBox(x, y, width, height, text, bgColor, borderColor, textColor, font) {
@@ -103,24 +108,96 @@ export class UIStation {
 
     #drawStationTab(dialogX, yOffset, dialogWidth, dialogHeight) {
         let y = yOffset;
+        
+        // Station name
+        y = UIHelper.drawCenteredHeader(game.player.docked.name, dialogWidth, y, dialogX);
         const centerX = dialogX + dialogWidth / 2;
-        y = UIHelper.drawCenteredHeader(`Docked at ${game.player.docked.name}`, dialogWidth, y, dialogX);
-        this.#drawText('Welcome aboard, Commander!', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.HEADER);
+
+        // Ship Status Section
+        y += 10;
+        this.#drawText('Ship Status', centerX, y, UI_COLORS.TEXT_WHITE, UI_FONTS.MEDIUM);
+        y += 25;
+
+        const ship = game.player.ship;
+        const shieldPercent = (ship.shield / ship.maxShield * 100).toFixed(0);
+        const hullPercent = (ship.hull / ship.maxHull * 100).toFixed(0);
+        
+        // Shield bar
+        this.#drawText(`Shield: ${ship.shield.toFixed(0)} / ${ship.maxShield} (${shieldPercent}%)`, centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        y += 20;
+        const shieldBarWidth = 300;
+        const shieldBarHeight = 20;
+        const shieldBarX = centerX - shieldBarWidth / 2;
+        game.ctx.fillStyle = UI_COLORS.BG_PANEL;
+        game.ctx.fillRect(shieldBarX, y - 15, shieldBarWidth, shieldBarHeight);
+        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+        game.ctx.fillRect(shieldBarX, y - 15, shieldBarWidth * (ship.shield / ship.maxShield), shieldBarHeight);
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
+        game.ctx.strokeRect(shieldBarX, y - 15, shieldBarWidth, shieldBarHeight);
+        
+        y += 15;
+        // Hull bar
+        this.#drawText(`Hull: ${ship.hull.toFixed(0)} / ${ship.maxHull} (${hullPercent}%)`, centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        y += 20;
+        game.ctx.fillStyle = UI_COLORS.BG_PANEL;
+        game.ctx.fillRect(shieldBarX, y - 15, shieldBarWidth, shieldBarHeight);
+        game.ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+        game.ctx.fillRect(shieldBarX, y - 15, shieldBarWidth * (ship.hull / ship.maxHull), shieldBarHeight);
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
+        game.ctx.strokeRect(shieldBarX, y - 15, shieldBarWidth, shieldBarHeight);
+
         y += 30;
-        y = UIHelper.drawCenteredHeader('Available Services', dialogWidth, y, dialogX);
-        const services = [
-            { name: 'Repair & Refit' },
-            { name: 'Cargo Bay' },
-            { name: 'Market' }
-        ];
-        services.forEach((service) => {
-            const itemHeight = 40;
-            this.#drawItemBox(dialogX + 20, y, dialogWidth - 40, itemHeight,
-                service.name,
-                UI_COLORS.BG_PANEL, UI_COLORS.BORDER,
-                UI_COLORS.TEXT_PRIMARY, UI_FONTS.ITEM);
-            y += itemHeight + 8;
-        });
+
+        // Repair section
+        const missingShield = ship.maxShield - ship.shield;
+        const missingHull = ship.maxHull - ship.hull;
+        const shieldCost = Math.ceil(missingShield * 1); // 1 credit per shield
+        const hullCost = Math.ceil(missingHull * 2); // 2 credits per hull
+        const totalCost = shieldCost + hullCost;
+
+        if (totalCost > 0) {
+            // Repair button
+            const buttonWidth = 150;
+            const buttonHeight = 40;
+            const buttonX = centerX - buttonWidth / 2;
+            const buttonY = y;
+
+            const canAfford = game.player.credits >= totalCost;
+            const buttonColor = canAfford ? 'rgba(100, 200, 100, 0.3)' : 'rgba(100, 100, 100, 0.2)';
+            const borderColor = canAfford ? 'rgba(150, 255, 150, 0.8)' : 'rgba(150, 150, 150, 0.5)';
+
+            game.ctx.fillStyle = buttonColor;
+            game.ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+            game.ctx.strokeStyle = borderColor;
+            game.ctx.lineWidth = 2;
+            game.ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
+
+            this.#drawText('Repair Ship', centerX, buttonY + 25, canAfford ? UI_COLORS.TEXT_WHITE : UI_COLORS.TEXT_DISABLED, UI_FONTS.MEDIUM);
+
+            // Store button bounds for click detection
+            this.repairButtonBounds = { x: buttonX, y: buttonY, width: buttonWidth, height: buttonHeight, cost: totalCost, canAfford };
+
+            y += buttonHeight + 15;
+
+            // Cost breakdown
+            this.#drawText(`Total Cost: ${totalCost} credits`, centerX, y, UI_COLORS.TEXT_COST, UI_FONTS.SMALL);
+            y += 18;
+            if (missingShield > 0) {
+                this.#drawText(`Shield repair: ${shieldCost} credits (${missingShield.toFixed(0)} points)`, centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+                y += 16;
+            }
+            if (missingHull > 0) {
+                this.#drawText(`Hull repair: ${hullCost} credits (${missingHull.toFixed(0)} points)`, centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+                y += 16;
+            }
+
+            if (!canAfford) {
+                this.#drawText(`Insufficient credits (need ${totalCost - game.player.credits} more)`, centerX, y, UI_COLORS.TEXT_COST, UI_FONTS.SMALL);
+            }
+        } else {
+            this.repairButtonBounds = null;
+            this.#drawText('Ship is fully repaired', centerX, y, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL);
+        }
     }
 
     #drawMissionsTab(dialogX, yOffset, dialogWidth, dialogHeight) {
@@ -265,8 +342,16 @@ export class UIStation {
             for (const completeBtn of this.missionCompleteButtons) {
                 if (clickPos.x >= completeBtn.x && clickPos.x <= completeBtn.x + completeBtn.width &&
                     clickPos.y >= completeBtn.y && clickPos.y <= completeBtn.y + completeBtn.height) {
-                    if (completeBtn.mission.canComplete && completeBtn.mission.canComplete()) {
+                    // Verify mission is still active before completing
+                    if (game.missionManager.activeMissions.includes(completeBtn.mission) &&
+                        completeBtn.mission.canComplete && completeBtn.mission.canComplete()) {
                         completeBtn.mission.complete();
+                        // Remove from active missions immediately to update UI
+                        const index = game.missionManager.activeMissions.indexOf(completeBtn.mission);
+                        if (index > -1) {
+                            game.missionManager.activeMissions.splice(index, 1);
+                            game.missionManager.completedMissions.push(completeBtn.mission);
+                        }
                         return true;
                     }
                 }
@@ -283,9 +368,53 @@ export class UIStation {
             }
         }
 
+        // Check if click is on repair button (only if on station tab)
+        if (this.currentTab === 'station' && this.repairButtonBounds) {
+            const btn = this.repairButtonBounds;
+            if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
+                clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                if (btn.canAfford) {
+                    // Perform repair
+                    game.player.credits -= btn.cost;
+                    game.player.ship.shield = game.player.ship.maxShield;
+                    game.player.ship.hull = game.player.ship.maxHull;
+                    return true;
+                }
+            }
+        }
+
         // Handle inventory/stash interactions on stash tab
         if (this.currentTab === 'stash') {
-            return this.inventoryGrid.handleMouseDown(clickPos);
+            // Check if click is on Stash All button
+            if (this.stashButtonBounds.stashAll) {
+                const btn = this.stashButtonBounds.stashAll;
+                if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
+                    clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                    this.#stashAll();
+                    return true;
+                }
+            }
+            
+            // Check if click is on Salvage button
+            if (this.stashButtonBounds.salvage) {
+                const btn = this.stashButtonBounds.salvage;
+                if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
+                    clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                    // Track that salvage button was clicked, but don't toggle yet
+                    this.salvageButtonClickStart = true;
+                    return true;
+                }
+            }
+            
+            // If in salvage mode, handle salvage clicks
+            // Skip if we're toggling salvage mode (button was just clicked)
+            if (this.salvageMode && !this.salvageButtonClickStart) {
+                // Store click position but don't salvage yet - wait for mouse up
+                this.salvageClickStart = this.#getSalvageItemIndex(clickPos);
+                return this.salvageClickStart !== null;
+            }
+            
+            return this.inventoryGrid.handleMouseDown(clickPos, this.salvageMode);
         }
 
         return false;
@@ -294,6 +423,33 @@ export class UIStation {
     handleStationDialogMouseUp(clickPos) {
         // Handle inventory/stash drag-and-drop on stash tab
         if (this.currentTab === 'stash') {
+            // Check if mouse up is on Salvage button - toggle only if mouse down was also on it
+            if (this.stashButtonBounds.salvage && this.salvageButtonClickStart) {
+                const btn = this.stashButtonBounds.salvage;
+                if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
+                    clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                    this.salvageMode = !this.salvageMode;
+                    this.salvageClickStart = null;
+                    this.salvageButtonClickStart = false;
+                    return true;
+                }
+                this.salvageButtonClickStart = false;
+                return false;
+            }
+            
+            // If in salvage mode and we have a click start, check if mouse up is on same item
+            if (this.salvageMode && this.salvageClickStart !== null) {
+                const mouseUpIndex = this.#getSalvageItemIndex(clickPos);
+                if (mouseUpIndex === this.salvageClickStart) {
+                    // Mouse down and up on same item - execute salvage
+                    const salvaged = this.#handleSalvageAtIndex(mouseUpIndex);
+                    this.salvageClickStart = null;
+                    if (salvaged) return true;
+                }
+                this.salvageClickStart = null;
+                return false;
+            }
+            
             return this.inventoryGrid.handleMouseUp(clickPos);
         }
         return false;
@@ -316,13 +472,107 @@ export class UIStation {
         this.#drawText('Shared storage across all stations', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 30;
         
+        // Draw buttons
+        const buttonWidth = 120;
+        const buttonHeight = 30;
+        const buttonSpacing = 10;
+        const buttonsX = centerX - buttonWidth - buttonSpacing / 2;
+        
+        // Stash All button
+        const stashAllX = buttonsX;
+        this.stashButtonBounds.stashAll = { x: stashAllX, y: y, width: buttonWidth, height: buttonHeight };
+        game.ctx.fillStyle = 'rgba(50, 150, 50, 0.5)';
+        game.ctx.fillRect(stashAllX, y, buttonWidth, buttonHeight);
+        game.ctx.strokeStyle = 'rgba(100, 200, 100, 0.8)';
+        game.ctx.lineWidth = 2;
+        game.ctx.strokeRect(stashAllX, y, buttonWidth, buttonHeight);
+        game.ctx.fillStyle = 'white';
+        game.ctx.font = 'bold 12px Arial';
+        game.ctx.textAlign = 'center';
+        game.ctx.fillText('Stash All', stashAllX + buttonWidth / 2, y + buttonHeight / 2 + 4);
+        
+        // Salvage button
+        const salvageX = buttonsX + buttonWidth + buttonSpacing;
+        this.stashButtonBounds.salvage = { x: salvageX, y: y, width: buttonWidth, height: buttonHeight };
+        const salvageColor = this.salvageMode ? 'rgba(255, 100, 100, 0.7)' : 'rgba(150, 100, 50, 0.5)';
+        const salvageBorder = this.salvageMode ? 'rgba(255, 150, 150, 1)' : 'rgba(200, 150, 100, 0.8)';
+        game.ctx.fillStyle = salvageColor;
+        game.ctx.fillRect(salvageX, y, buttonWidth, buttonHeight);
+        game.ctx.strokeStyle = salvageBorder;
+        game.ctx.lineWidth = 2;
+        game.ctx.strokeRect(salvageX, y, buttonWidth, buttonHeight);
+        game.ctx.fillStyle = 'white';
+        game.ctx.fillText(this.salvageMode ? 'Salvage: ON' : 'Salvage', salvageX + buttonWidth / 2, y + buttonHeight / 2 + 4);
+        
+        y += buttonHeight + 20;
+        
+        // Show salvage instructions when active
+        if (this.salvageMode) {
+            this.#drawText('Click non-ore items to salvage for credits', centerX, y, UI_COLORS.TEXT_HIGHLIGHT, UI_FONTS.SMALL);
+            y += 20;
+        }
+        
         // Draw quantum stash centered
         const stashX = dialogX + (dialogWidth - 250) / 2;
-        this.inventoryGrid.drawStash(stashX, 250, y);
+        this.inventoryGrid.drawStash(stashX, 250, y, this.salvageMode);
         
         // Draw dragged item on top
         if (this.inventoryGrid.draggedItem) {
             this.inventoryGrid.drawDraggedItem();
         }
+    }
+    
+    #stashAll() {
+        // Move all items from inventory to stash
+        const itemsToMove = [...game.player.ship.inventory];
+        game.player.ship.inventory = [];
+        game.quantumStash.push(...itemsToMove);
+        game.ui.messages.addMessage(`Stashed ${itemsToMove.length} items`);
+    }
+    
+    #getSalvageItemIndex(clickPos) {
+        // Get stash grid position
+        const stashGrid = this.inventoryGrid.stashGrid;
+        const relX = clickPos.x - stashGrid.x;
+        const relY = clickPos.y - stashGrid.y;
+        
+        if (relX < 0 || relY < 0) return null;
+        
+        const cellSize = this.inventoryGrid.cellSize;
+        const cellPadding = this.inventoryGrid.cellPadding;
+        const col = Math.floor(relX / (cellSize + cellPadding));
+        const row = Math.floor(relY / (cellSize + cellPadding));
+        
+        if (col >= stashGrid.cols || row >= stashGrid.rows) return null;
+        
+        // Check if actually inside the cell (not in padding)
+        const cellX = relX % (cellSize + cellPadding);
+        const cellY = relY % (cellSize + cellPadding);
+        if (cellX >= cellSize || cellY >= cellSize) return null;
+        
+        const index = row * stashGrid.cols + col;
+        if (index >= game.quantumStash.length) return null;
+        
+        return index;
+    }
+    
+    #handleSalvageAtIndex(index) {
+        if (index === null || index >= game.quantumStash.length) return false;
+        
+        const item = game.quantumStash[index];
+        
+        // Check if item is ore (don't allow salvaging ore)
+        const oreNames = Object.keys(ORE);
+        if (oreNames.includes(item.name)) {
+            return false; // Ore items are not salvageable
+        }
+        
+        // Salvage the item for credits
+        const salvageValue = 10 + Math.floor(Math.random() * 20); // 10-30 credits
+        game.player.credits += salvageValue;
+        game.quantumStash.splice(index, 1);
+        game.ui.messages.addMessage(`Salvaged ${item.name} for ${salvageValue} credits`);
+        
+        return true;
     }
 }

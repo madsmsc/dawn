@@ -3,6 +3,7 @@ import { SPRITE } from '../../shared/Constants.js';
 import { Vec } from '../controllers/Vec.js';
 import { Module } from '../modules/Module.js';
 import { Destructable } from './Destructable.js';
+import { Drone } from './Drone.js';
 
 export class PlayerShip extends Destructable {
     constructor(obj) {
@@ -13,8 +14,8 @@ export class PlayerShip extends Destructable {
         this.pos = new Vec(obj.pos.x, obj.pos.y);
         this.target = new Vec(obj.target.x, obj.target.y);
 
-        this.miningRange = 11; // TODO: should be a function of the mining module equipped
-        this.dam = 8; // override dam, 4x the enemy
+        this.miningRange = 22; // TODO: should be a function of the mining module equipped
+        this.dam = 4; // override dam, 2x the enemy
 
         // mark as player-controlled so AI movement is skipped in Destructable.move
         this.isPlayer = true;
@@ -25,6 +26,10 @@ export class PlayerShip extends Destructable {
         this.miningTarget = null; // which asteroid we're mining
         this.miningProgress = 0; // 0-1 progress on current target
         this.miningDuration = 2000; // 2 seconds to mine an asteroid
+        
+        // Drone state
+        this.drones = []; // Active drones
+        this.maxDrones = 3; // Maximum number of drones
     }
 
     update (delta) {
@@ -32,13 +37,17 @@ export class PlayerShip extends Destructable {
         super.update(delta);
         this.attackCount += delta;
         
+        // Update drones
+        this.updateDrones(delta);
+        
         // Mine if button is toggled on
         const mineButton = game.ui.buttons.find(b => b.key === '2');
         if (mineButton?.show) this.mine();
         
         // Fire if button is toggled on
         const fireButton = game.ui.buttons.find(b => b.key === '1');
-        const aliveEnemies = game.system.enemies?.filter(e => !e.isDead) || [];
+        const instanceEnemies = game.system.currentInstance ? game.system.currentInstance.enemies : [];
+        const aliveEnemies = instanceEnemies.filter(e => !e.isDead);
         
         if (aliveEnemies.length > 0 && this.attackCount > this.attackTime) {
             if (fireButton?.show) {
@@ -68,9 +77,10 @@ export class PlayerShip extends Destructable {
                 if (this.miningProgress >= 1) {
                     // Mining complete - harvest the ore
                     const ores = this.miningTarget.mine();
-                    const asteroidIndex = game.system.asteroids.indexOf(this.miningTarget);
+                    const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+                    const asteroidIndex = instanceAsteroids.indexOf(this.miningTarget);
                     if (asteroidIndex !== -1) {
-                        game.system.asteroids.splice(asteroidIndex, 1);
+                        instanceAsteroids.splice(asteroidIndex, 1);
                     }
                     
                     // Toggle off mining button since asteroid is gone
@@ -97,6 +107,9 @@ export class PlayerShip extends Destructable {
                             this.inventory.push(m);
                             remaining -= amountForStack;
                         }
+                        
+                        // Show message about mined ore
+                        game.ui.messages.addMessage(`Mined: ${ore.amount.toFixed(0)} kg ${ore.type}`);
                     });
                     
                     this.miningTarget = null;
@@ -111,6 +124,23 @@ export class PlayerShip extends Destructable {
     draw () {
         if(game.player.docked) return;
         super.draw(SPRITE.SPACESHIP);
+        
+        // Draw mining laser when actively mining
+        if (this.miningTarget) {
+            game.ctx.lineWidth = 4; // Thicker laser for mining
+            game.ctx.strokeStyle = 'rgba(50, 255, 50, 0.8)'; // Green laser
+            game.ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 100) * 0.2; // Pulsing effect
+            game.ctx.beginPath();
+            game.ctx.moveTo(this.pos.x, this.pos.y);
+            game.ctx.lineTo(this.miningTarget.pos.x, this.miningTarget.pos.y);
+            game.ctx.stroke();
+            game.ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw drones
+        this.drones.forEach(drone => {
+            if (!drone.isDead) drone.draw();
+        });
     }
 
     mine () {
@@ -118,7 +148,8 @@ export class PlayerShip extends Destructable {
         if (this.miningTarget) return;
         
         // Find an asteroid in mining range and target it
-        game.system.asteroids.forEach((a) => {
+        const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+        instanceAsteroids.forEach((a) => {
             const dist = this.pos.clone().sub(a.pos).length();
             const range = this.miningRange + a.size;
             if (dist > range) return;
@@ -135,5 +166,49 @@ export class PlayerShip extends Destructable {
         super.die();
         game.player.dead = true;
         console.log('YOU ARE DEAD!');
+    }
+    
+    updateDrones(delta) {
+        const droneButton = game.ui.buttons.find(b => b.key === '4');
+        
+        // Deploy drones if button is active and we don't have full complement
+        if (droneButton?.show && this.drones.length < this.maxDrones) {
+            this.deployDrones();
+        }
+        
+        // Recall drones if button is toggled off
+        if (droneButton && !droneButton.show && this.drones.length > 0) {
+            this.recallDrones();
+        }
+        
+        // Update all active drones
+        this.drones.forEach(drone => {
+            if (!drone.isDead) {
+                drone.update(delta);
+            }
+        });
+        
+        // Remove dead drones
+        this.drones = this.drones.filter(d => !d.isDead);
+    }
+    
+    deployDrones() {
+        // Deploy remaining drones up to max
+        while (this.drones.length < this.maxDrones) {
+            const drone = new Drone(this);
+            // Spread drones randomly around the ship for chaotic movement
+            const angle = Math.random() * Math.PI * 2;
+            const spawnDist = 25;
+            drone.pos.x = this.pos.x + Math.cos(angle) * spawnDist;
+            drone.pos.y = this.pos.y + Math.sin(angle) * spawnDist;
+            // Give each drone a random initial velocity direction
+            drone.angle = angle;
+            this.drones.push(drone);
+        }
+    }
+    
+    recallDrones() {
+        // Clear all drones (they disappear)
+        this.drones = [];
     }
 }

@@ -27,8 +27,13 @@ export class UIDialogs {
         // Clear warpable buttons for this frame
         this.warpableButtons = [];
         
-        // Draw all warpables as clickable items
+        // Draw all warpables as clickable items (except current instance)
+        const currentWarpable = game.system.currentInstance?.warpable;
+        
         game.system.warpables.forEach((warpable) => {
+            // Skip the warpable we're currently at
+            if (warpable === currentWarpable) return;
+            
             const itemHeight = 60;
             const itemY = yOffset;
             
@@ -130,29 +135,36 @@ export class UIDialogs {
     }
 
     warpToTarget(target) {
-        // If target is a gate, warp to the connected system
-        if (target.targetSystem) {
-            game.system = target.targetSystem;
-            // Position player near the gate entrance in new system
-            game.player.ship.pos = target.pos.clone().add(new Vec(50, 50));
-        } else {
-            // Warp to station or other warpable
-            game.player.ship.pos = target.pos.clone().add(new Vec(30, 30));
-        }
+        console.log('Warping to:', target.name, 'at position:', target.pos);
+        
+        // Warp menu only warps within the same system - it doesn't jump through gates
+        // Gates can only be jumped through by pressing E when near them
+        console.log('Warping to warpable in same system');
+        game.system.setCurrentInstance(target);
+        game.player.ship.pos.x = target.pos.x + 30;
+        game.player.ship.pos.y = target.pos.y + 30;
+        
+        console.log('Player position after warp:', game.player.ship.pos);
         // Close warp dialog after warping
         const warpButton = game.ui.buttons.find((b) => b.key === '3');
         if (warpButton) warpButton.hideUI();
     }
 
     handleWarpDialogClick(clickPos) {
-        // Check if warp dialog is open
+        // Check if warp dialog is open (check show state, not down state)
         const warpButton = game.ui.buttons.find((b) => b.key === '3');
-        if (!warpButton || !warpButton.down) return false;
+        if (!warpButton || !warpButton.show) {
+            console.log('Warp dialog not open, button show state:', warpButton?.show);
+            return false;
+        }
+        
+        console.log('Checking warp dialog click at:', clickPos, 'against', this.warpableButtons.length, 'buttons');
         
         // Check if click is on a warpable item
         for (const btn of this.warpableButtons) {
             if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
                 clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
+                console.log('Clicked on warpable button:', btn.warpable.name);
                 this.warpToTarget(btn.warpable);
                 return true;
             }
@@ -168,7 +180,7 @@ export class UIDialogs {
     handleInfoDialogMouseDown(clickPos) {
         // Check if info dialog is open
         const infoButton = game.ui.buttons.find((b) => b.key === 'i');
-        if (!infoButton || !infoButton.down) return false;
+        if (!infoButton || !infoButton.show) return false;
         
         return this.inventoryGrid.handleMouseDown(clickPos);
     }
@@ -176,7 +188,7 @@ export class UIDialogs {
     handleInfoDialogMouseUp(clickPos) {
         // Check if info dialog is open
         const infoButton = game.ui.buttons.find((b) => b.key === 'i');
-        if (!infoButton || !infoButton.down) return false;
+        if (!infoButton || !infoButton.show) return false;
         
         return this.inventoryGrid.handleMouseUp(clickPos);
     }

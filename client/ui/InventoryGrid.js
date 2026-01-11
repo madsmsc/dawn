@@ -1,8 +1,13 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
-import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
+import { UI_COLORS, UI_FONTS, ORE } from '../../shared/Constants.js';
 
 // TODO: introduce new modules for increasing inventory size
+
+// TODO: split equipped modules into 4 active, 2 passive - with text indicators
+// new ships can have more passive modules, no ship has more than 4 actives
+
+// turn credit and rep into favor. and use favor to research.
 
 export class InventoryGrid {
     constructor() {
@@ -81,10 +86,10 @@ export class InventoryGrid {
         this.#drawHoverTooltip();
     }
 
-    drawStash(columnX, columnWidth, yOffset) {
+    drawStash(columnX, columnWidth, yOffset, salvageMode = false) {
         this.stashGrid.x = columnX;
         this.stashGrid.y = yOffset;
-        this.#drawGrid(game.quantumStash, this.stashGrid, 'stash');
+        this.#drawGrid(game.quantumStash, this.stashGrid, 'stash', salvageMode);
         this.#drawHoverTooltip();
     }
 
@@ -99,7 +104,7 @@ export class InventoryGrid {
         }
     }
 
-    #drawGrid(items, grid, gridType) {
+    #drawGrid(items, grid, gridType, salvageMode = false) {
         const totalWidth = grid.cols * (this.cellSize + this.cellPadding);
         const totalHeight = grid.rows * (this.cellSize + this.cellPadding);
         
@@ -137,7 +142,9 @@ export class InventoryGrid {
                     const item = items[index];
                     // Don't draw if this is the item being dragged
                     if (this.draggedItem !== item) {
-                        this.#drawItem(item, x, y, false);
+                        // Check if item should be greyed out in salvage mode
+                        const isGreyedOut = salvageMode && Object.keys(ORE).includes(item.name);
+                        this.#drawItem(item, x, y, false, isGreyedOut);
                     }
                 }
             }
@@ -146,19 +153,20 @@ export class InventoryGrid {
         return grid.y + totalHeight + this.cellPadding;
     }
 
-    #drawItem(item, x, y, isDragging) {
+    #drawItem(item, x, y, isDragging, isGreyedOut = false) {
         // Draw item background with rarity color
         const rarityColor = this.#getRarityColor(item.rarity);
-        game.ctx.fillStyle = rarityColor;
+        game.ctx.fillStyle = isGreyedOut ? 'rgba(50, 50, 50, 0.6)' : rarityColor;
         game.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
         
         // Draw item border
-        game.ctx.strokeStyle = isDragging ? 'rgba(255, 255, 255, 0.9)' : rarityColor.replace('0.6', '0.9');
+        const borderColor = isGreyedOut ? 'rgba(100, 100, 100, 0.9)' : (isDragging ? 'rgba(255, 255, 255, 0.9)' : rarityColor.replace('0.6', '0.9'));
+        game.ctx.strokeStyle = borderColor;
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
         
         // Draw item icon/text
-        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.fillStyle = isGreyedOut ? 'rgba(150, 150, 150, 0.7)' : UI_COLORS.TEXT_WHITE;
         game.ctx.font = UI_FONTS.LABEL;
         game.ctx.textAlign = 'center';
         game.ctx.textBaseline = 'middle';
@@ -170,7 +178,7 @@ export class InventoryGrid {
         // Draw amount if > 1
         if (item.amount > 1) {
             game.ctx.font = UI_FONTS.TINY;
-            game.ctx.fillStyle = UI_COLORS.TEXT_HIGHLIGHT;
+            game.ctx.fillStyle = isGreyedOut ? 'rgba(150, 150, 150, 0.7)' : UI_COLORS.TEXT_HIGHLIGHT;
             const amountText = item.amount > 999 ? '999+' : item.amount.toFixed(0);
             game.ctx.fillText(amountText, x + this.cellSize / 2, y + this.cellSize - 8);
         }
@@ -197,7 +205,7 @@ export class InventoryGrid {
         }
     }
 
-    handleMouseDown(clickPos) {
+    handleMouseDown(clickPos, preventStashDrag = false) {
         // Check equipped modules
         const equippedIndex = this.#getSlotAtPosition(clickPos, this.equippedGrid);
         if (equippedIndex !== -1 && equippedIndex < game.player.ship.modules.length) {
@@ -222,8 +230,8 @@ export class InventoryGrid {
             return true;
         }
         
-        // Check stash (if docked)
-        if (game.player && game.player.docked) {
+        // Check stash (if docked) - but not if in salvage mode
+        if (game.player && game.player.docked && !preventStashDrag) {
             const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
             if (stashIndex !== -1 && stashIndex < game.quantumStash.length) {
                 this.draggedItem = game.quantumStash[stashIndex];
@@ -415,8 +423,12 @@ export class InventoryGrid {
             targetArray = game.quantumStash;
         }
         
+        if (!sourceArray || !targetArray) return;
+        
         // Get the items
         const sourceItem = sourceArray[from.index];
+        if (!sourceItem) return;
+        
         const targetItem = to.index < targetArray.length ? targetArray[to.index] : null;
         
         // Check if we can stack items (same name, both have stackSize)
@@ -435,28 +447,33 @@ export class InventoryGrid {
             }
         }
         
-        // Remove source item
-        sourceArray.splice(from.index, 1);
-        
-        if (targetItem) {
-            // Swap: put target item where source was
-            if (from.type === to.type) {
-                // Same array, adjust index if needed
-                const adjustedFromIndex = from.index < to.index ? from.index : from.index;
-                sourceArray.splice(adjustedFromIndex, 0, targetItem);
-                // Remove target from its position
-                const targetRemoveIndex = to.index > adjustedFromIndex ? to.index : to.index - 1;
-                targetArray.splice(targetRemoveIndex, 1);
-                targetArray.splice(to.index > adjustedFromIndex ? to.index - 1 : to.index, 0, sourceItem);
+        // Handle swap/move
+        if (from.type === to.type && sourceArray === targetArray) {
+            // Same array - simple swap or move
+            if (targetItem) {
+                // Swap items
+                sourceArray[from.index] = targetItem;
+                sourceArray[to.index] = sourceItem;
             } else {
-                // Different arrays
-                targetArray.splice(to.index, 1);
-                sourceArray.splice(from.index, 0, targetItem);
-                targetArray.splice(to.index, 0, sourceItem);
+                // Move to empty slot in same array
+                sourceArray.splice(from.index, 1);
+                // Adjust index if moving forward in the same array
+                const insertIndex = to.index > from.index ? to.index - 1 : to.index;
+                sourceArray.splice(insertIndex, 0, sourceItem);
             }
         } else {
-            // Just move to empty slot
-            targetArray.splice(to.index, 0, sourceItem);
+            // Different arrays
+            // Remove from source
+            sourceArray.splice(from.index, 1);
+            
+            if (targetItem) {
+                // Swap: remove target and put it in source location
+                targetArray.splice(to.index, 1, sourceItem);
+                sourceArray.splice(from.index, 0, targetItem);
+            } else {
+                // Just insert into target at the specified index
+                targetArray.splice(to.index, 0, sourceItem);
+            }
         }
     }
 }

@@ -12,7 +12,9 @@ export class Asteroid extends Selectable {
 
     moveAway () {
         const minDistance = 100;
-        const entities = [...game.system.asteroids, game.player, game.player.ship, game.station];
+        // Get asteroids from current instance if it exists
+        const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+        const entities = [...instanceAsteroids, game.player, game.player.ship];
         for (const entity of entities) {
             if (entity !== this) {
                 if (!entity || !entity.pos) continue;
@@ -48,8 +50,11 @@ export class Asteroid extends Selectable {
 
     draw () {
         super.draw();
+        // Get sprite index from current instance's asteroids
+        const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+        const spriteIndex = instanceAsteroids.indexOf(this);
         game.sprites.draw(SPRITE.ASTEROID, this.pos, false,
-            game.system.asteroids.indexOf(this), false, 1.5, this.rotation);
+            spriteIndex >= 0 ? spriteIndex : 0, false, 1.5, this.rotation);
     }
 
     randomOre () {

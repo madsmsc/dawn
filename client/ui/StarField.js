@@ -5,6 +5,15 @@ export class StarField {
     constructor() {
         this.layers = [];
         this.debugOutline = true; // move to static outside class? or inside?
+        this.currentSystemColor = null; // Track current system color
+        this.#createStarLayers();
+    }
+
+    #createStarLayers() {
+        // Clear existing layers
+        this.layers = [];
+        this.currentSystemColor = game.system?.color;
+        
         this.#createStarLayer(1000, 0.01, 0.4); // far, slow, dim
         this.#createStarLayer(500, 0.015, 0.5); // middle layer
         this.#createStarLayer(250, 0.02, 0.6);  // close, fast, bright
@@ -66,6 +75,19 @@ export class StarField {
 
     update(delta) {
         if (game.player.docked) return;
+        
+        // Check if system color has changed and recreate stars if needed
+        // Only regenerate if we had a previous color AND it's different from current
+        if (game.system && this.currentSystemColor && game.system.color !== this.currentSystemColor) {
+            console.log('StarField: System color changed from', this.currentSystemColor, 'to', game.system.color);
+            this.#createStarLayers();
+        }
+        // Initialize currentSystemColor if not set yet
+        else if (game.system && !this.currentSystemColor) {
+            this.currentSystemColor = game.system.color;
+            console.log('StarField: Initialized with system color', this.currentSystemColor);
+        }
+        
         this.layers.forEach((l) => {
             l.pos.addScalar(-l.speed * delta);
             if (l.pos.dist(Vec.ZERO) > game.canvas.width) {

@@ -23,6 +23,12 @@ export class Server {
             if (data.action === 'login') {
                 game.player = new Player(data.player);
                 game.player.ship = new PlayerShip(data.spaceship);
+                // Position player at starting station instance
+                if (game.system && game.system.currentInstance) {
+                    const station = game.system.currentInstance.warpable;
+                    game.player.ship.pos.x = station.pos.x + 50;
+                    game.player.ship.pos.y = station.pos.y + 50;
+                }
             }
         };
 
@@ -88,6 +94,17 @@ export class Server {
         B.warpables = [B.stations[0], gateB_A, gateB_C];
         C.warpables = [C.stations[0], gateC_A, gateC_B];
 
+        // Create instances for each warpable
+        A.createInstances();
+        B.createInstances();
+        C.createInstances();
+
+        // console.log('System A warpables:', A.warpables.map(w => w.name));
+        // console.log('System A instances:', A.instances.size);
+
+        // Set initial instance (start at first station in system A)
+        A.setCurrentInstance(A.stations[0]);
+
         // Initialize quantum stash (shared across all stations)
         game.quantumStash = [];
 
@@ -108,6 +125,16 @@ export class Server {
                         game.gameLoop.demo = true;
                         game.player = new Player(data[0].player);
                         game.player.ship = new PlayerShip(data[0].spaceship);
+                        // Position player at starting station instance
+                        if (game.system && game.system.currentInstance) {
+                            const station = game.system.currentInstance.warpable;
+                            // console.log('Positioning player at station:', station.name, 'at position:', station.pos);
+                            game.player.ship.pos.x = station.pos.x + 50;
+                            game.player.ship.pos.y = station.pos.y + 50;
+                            // console.log('Player ship position:', game.player.ship.pos);
+                        } else {
+                            console.error('No current instance set when player loaded!');
+                        }
                     })
                     .catch(error => console.log(error));
             }

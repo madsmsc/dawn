@@ -31,15 +31,16 @@ export class Button {
                 this.hideUI();
                 return;
             }
-            // Close any other open button UIs (only for UI buttons)
+            // Close any other open button UIs (only for UI buttons with dialogs)
             game.ui.buttons.forEach((b) => {
                 if (b !== this && b.onDraw && b.onDraw.toString() !== '() => { }') {
                     b.hideUI();
                 }
             });
-            this.show = true;
         }
         
+        // Toggle show state for all buttons (modules can be active simultaneously)
+        this.show = !this.show;
         this.down = true;
         this.up = false;
     }
