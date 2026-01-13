@@ -12,17 +12,14 @@ export class System {
     }
 
     createInstances() {
-        // Create an instance for each warpable
         this.warpables.forEach(warpable => {
             this.instances.set(warpable, new Instance(warpable));
         });
-        // console.log('Created', this.instances.size, 'instances for system', this.name);
     }
 
     setCurrentInstance(warpable) {
         const instance = this.instances.get(warpable);
         if (instance) {
-            // console.log('Setting current instance to:', warpable.name);
             // Mark previous instance as inactive and reset it
             if (this.currentInstance) {
                 this.currentInstance.isActive = false;
@@ -41,7 +38,6 @@ export class System {
         if (this.currentInstance) {
             this.currentInstance.update(delta);
         }
-        
         this.warpables.forEach(w => w.update(delta));
         return this;
     }
@@ -50,7 +46,6 @@ export class System {
         // Only draw warpable for current instance
         if (this.currentInstance && this.currentInstance.warpable) {
             this.currentInstance.warpable.draw();
-            
             // Show docking or warp prompt for current warpable
             const warpable = this.currentInstance.warpable;
             if (warpable.canDock && warpable.canDock()) {
@@ -59,10 +54,8 @@ export class System {
                 this.#showWarpPrompt(warpable);
             }
         }
-        
         // Don't draw asteroids/enemies if docked
         if (game.player.docked) return;
-        
         // Draw current instance content (asteroids and enemies)
         if (this.currentInstance) {
             this.currentInstance.draw();
@@ -92,7 +85,6 @@ export class System {
             game.player.docked = undefined;
             return;
         }
-        
         // Check if current warpable is a dockable station
         if (this.currentInstance && this.currentInstance.warpable.canDock) {
             const station = this.currentInstance.warpable;
@@ -101,7 +93,6 @@ export class System {
                 return;
             }
         }
-        
         // Check if current warpable is a gate that can be jumped through
         if (this.currentInstance && this.currentInstance.warpable.canJump) {
             const gate = this.currentInstance.warpable;
@@ -113,16 +104,12 @@ export class System {
 
     jumpThroughGate(gate) {
         if (!gate.targetSystem) return;
-        
-        console.log('Jumping through gate to system:', gate.targetSystem.name);
         const previousSystem = game.system;
-        game.system = gate.targetSystem;
-        
+        game.system = gate.targetSystem;        
         // Find the corresponding gate in the new system that leads back
         const returnGate = gate.targetSystem.warpables.find(w => 
             w.targetSystem === previousSystem
         );
-        
         if (returnGate) {
             game.system.setCurrentInstance(returnGate);
             game.player.ship.pos.x = returnGate.pos.x + 50;

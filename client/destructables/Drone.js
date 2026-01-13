@@ -1,7 +1,7 @@
 import { game } from '../controllers/game.js';
 import { SPRITE, MOVE } from '../../shared/Constants.js';
 import { Destructable } from './Destructable.js';
-import { Vec } from '../controllers/Vec.js';
+import { Vec } from '../util/Vec.js';
 
 export class Drone extends Destructable {
     constructor(ownerShip) {
@@ -106,16 +106,19 @@ export class Drone extends Destructable {
         // Draw a smaller version of the ship sprite
         game.sprites.draw(SPRITE.SHIP, new Vec(0, 0), false, undefined, false, 0.4);
         
-        // Draw velocity vector (smaller)
-        // game.ctx.translate(off, 0);
-        // game.ctx.lineWidth = 1;
-        // game.ctx.globalAlpha = 0.3;
-        // game.ctx.strokeStyle = 'rgb(100, 255, 100)'; // Green for friendly drones
-        // game.ctx.beginPath();
-        // game.ctx.setLineDash([]);
-        // game.ctx.moveTo(0, 0);
-        // game.ctx.lineTo(0, -this.vel * 20);
-        // game.ctx.stroke();
+        // Draw velocity vector if enabled
+        if (game.player?.settings?.showVelocityVectors) {
+            game.ctx.translate(off, 0);
+            game.ctx.lineWidth = 1;
+            game.ctx.globalAlpha = 0.3;
+            game.ctx.strokeStyle = 'rgb(100, 255, 100)'; // Green for friendly drones
+            game.ctx.beginPath();
+            game.ctx.setLineDash([]);
+            game.ctx.moveTo(0, 0);
+            game.ctx.lineTo(0, -this.vel * 20);
+            game.ctx.stroke();
+            game.ctx.globalAlpha = 1.0;
+        }
         
         game.ctx.restore();
         
@@ -138,7 +141,7 @@ export class Drone extends Destructable {
     
     die() {
         super.die();
-        // Could notify owner that drone was destroyed
+        // Drones can die but enemies don't target them currently
         console.log('Drone destroyed!');
     }
 }

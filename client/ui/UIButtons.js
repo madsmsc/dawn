@@ -1,6 +1,6 @@
 import { game } from '../controllers/game.js';
 import { SPRITE, ICON_SIZE } from '../../shared/Constants.js';
-import { Vec } from '../controllers/Vec.js';
+import { Vec } from '../util/Vec.js';
 import { Button } from './Button.js';
 import { UIHelper } from './UIHelper.js';
 

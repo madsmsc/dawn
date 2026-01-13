@@ -1,5 +1,5 @@
 import { game } from '../controllers/game.js';
-import { Vec } from '../controllers/Vec.js';
+import { Vec } from '../util/Vec.js';
 import { UIHelper } from './UIHelper.js';
 import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 
@@ -85,6 +85,42 @@ export class UIDialogs {
         let yOffset = this.dialogY;
         yOffset = UIHelper.drawSectionHeader('Menu', this.dialogWidth, yOffset, this.dialogX);
         yOffset += 20;
+        
+        // Settings section
+        game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
+        game.ctx.font = UI_FONTS.SMALL;
+        game.ctx.textAlign = 'left';
+        game.ctx.fillText('Settings', this.dialogX + 30, yOffset);
+        yOffset += 25;
+        
+        // Velocity vectors checkbox
+        const checkboxSize = 16;
+        const checkboxX = this.dialogX + 50;
+        const checkboxY = yOffset - 12;
+        const isChecked = game.player?.settings?.showVelocityVectors;
+        
+        // Store bounds for click detection
+        this.velocityVectorCheckbox = {
+            x: checkboxX,
+            y: checkboxY,
+            size: checkboxSize
+        };
+        
+        // Draw checkbox
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
+        game.ctx.lineWidth = 1;
+        game.ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
+        
+        if (isChecked) {
+            game.ctx.fillStyle = UI_COLORS.TEXT_HIGHLIGHT;
+            game.ctx.fillRect(checkboxX + 3, checkboxY + 3, checkboxSize - 6, checkboxSize - 6);
+        }
+        
+        // Draw label
+        game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
+        game.ctx.fillText('Show Velocity Vectors', checkboxX + checkboxSize + 10, yOffset);
+        yOffset += 30;
+        
         game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
         game.ctx.fillText('Exit Now', this.dialogX + 30, yOffset);
     }
@@ -154,7 +190,6 @@ export class UIDialogs {
         // Check if warp dialog is open (check show state, not down state)
         const warpButton = game.ui.buttons.find((b) => b.key === '3');
         if (!warpButton || !warpButton.show) {
-            console.log('Warp dialog not open, button show state:', warpButton?.show);
             return false;
         }
         

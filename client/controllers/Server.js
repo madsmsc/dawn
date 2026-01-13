@@ -4,7 +4,7 @@ import { PlayerShip } from '../destructables/PlayerShip.js';
 import { System } from './System.js';
 import { Station } from '../selectables/Station.js';
 import { Gate } from '../selectables/Gate.js';
-import { Vec } from './Vec.js';
+import { Vec } from '../util/Vec.js';
 import { game } from './game.js';
 
 export class Server {
@@ -98,15 +98,7 @@ export class Server {
         A.createInstances();
         B.createInstances();
         C.createInstances();
-
-        // console.log('System A warpables:', A.warpables.map(w => w.name));
-        // console.log('System A instances:', A.instances.size);
-
-        // Set initial instance (start at first station in system A)
         A.setCurrentInstance(A.stations[0]);
-
-        // Initialize quantum stash (shared across all stations)
-        game.quantumStash = [];
 
         return A;
     }
@@ -119,19 +111,16 @@ export class Server {
             // DEMO mode when no server
             if (this.loginAttempts === 5) {
                 console.log('starting DEMO mode without server')
-                fetch('client/demo.json')
+                fetch('client/static/demo.json')
                     .then(response => response.json())
                     .then(data => {
-                        game.gameLoop.demo = true;
                         game.player = new Player(data[0].player);
                         game.player.ship = new PlayerShip(data[0].spaceship);
                         // Position player at starting station instance
                         if (game.system && game.system.currentInstance) {
                             const station = game.system.currentInstance.warpable;
-                            // console.log('Positioning player at station:', station.name, 'at position:', station.pos);
                             game.player.ship.pos.x = station.pos.x + 50;
                             game.player.ship.pos.y = station.pos.y + 50;
-                            // console.log('Player ship position:', game.player.ship.pos);
                         } else {
                             console.error('No current instance set when player loaded!');
                         }

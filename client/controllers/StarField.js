@@ -1,10 +1,9 @@
-import { game } from '../controllers/game.js';
-import { Vec } from '../controllers/Vec.js';
+import { game } from './game.js';
+import { Vec } from '../util/Vec.js';
 
 export class StarField {
     constructor() {
         this.layers = [];
-        this.debugOutline = true; // move to static outside class? or inside?
         this.currentSystemColor = null; // Track current system color
         this.#createStarLayers();
     }
@@ -47,47 +46,17 @@ export class StarField {
         });
     }
 
-    #outlineColors = ['green','yellow', 'blue'];
-
-    drawOutline() {
-        let i = 0;
-        for(const layer in this.layers) {
-            if (!layer.pos) { 
-                // console.log('no pos for layer '+ layer.name);
-                continue;
-            }
-            game.ctx.lineWidth = 3;
-            game.ctx.strokeStyle = this.#outlineColors[i++];
-            game.ctx.globalAlpha = 1.0;
-            game.ctx.beginPath();
-            const x = layer.pos.x;
-            const y = layer.pos.y;
-            const w = layer.width;
-            const h = layer.height;
-            game.ctx.moveTo(x-w/2, y-h/2);
-            game.ctx.lineTo(x+w/2, y-h/2);
-            game.ctx.lineTo(x+w/2, y+h/2);
-            game.ctx.lineTo(x-w/2, y+h/2);
-            game.ctx.lineTo(x-w/2, y-h/2);
-            game.ctx.stroke();
-        }
-    }
-
     update(delta) {
-        if (game.player.docked) return;
-        
+        if (game.player.docked) return;        
         // Check if system color has changed and recreate stars if needed
         // Only regenerate if we had a previous color AND it's different from current
         if (game.system && this.currentSystemColor && game.system.color !== this.currentSystemColor) {
-            console.log('StarField: System color changed from', this.currentSystemColor, 'to', game.system.color);
             this.#createStarLayers();
         }
         // Initialize currentSystemColor if not set yet
         else if (game.system && !this.currentSystemColor) {
             this.currentSystemColor = game.system.color;
-            console.log('StarField: Initialized with system color', this.currentSystemColor);
-        }
-        
+        }        
         this.layers.forEach((l) => {
             l.pos.addScalar(-l.speed * delta);
             if (l.pos.dist(Vec.ZERO) > game.canvas.width) {
@@ -102,6 +71,5 @@ export class StarField {
         this.layers.forEach((l) => {
             game.ctx.drawImage(l, l.pos.x, l.pos.x);
         });
-        if(this.debugOutline) this.drawOutline()
     }
 }

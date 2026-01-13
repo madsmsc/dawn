@@ -44,7 +44,7 @@ export class Sprites {
         // https://game-icons.net/
         // https://icons8.com/
         // https://www.flaticon.com/
-        spriteSheet.src = 'client/icons.png';
+        spriteSheet.src = 'client/static/icons.png';
         spriteSheet.onload = () => {
             const columns = spriteSheet.width / ICON_SIZE;
             const rows = spriteSheet.height / ICON_SIZE;

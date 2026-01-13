@@ -6,23 +6,14 @@ import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
  */
 export class UIHelper {
     static drawDialog(x, y, width, height) {
-        const radius = 10;
-        game.ctx.beginPath();
-        game.ctx.moveTo(x + radius, y);
-        game.ctx.lineTo(x + width - radius, y);
-        game.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        game.ctx.lineTo(x + width, y + height - radius);
-        game.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        game.ctx.lineTo(x + radius, y + height);
-        game.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        game.ctx.lineTo(x, y + radius);
-        game.ctx.quadraticCurveTo(x, y, x + radius, y);
-        game.ctx.closePath();
+        // Black background
         game.ctx.fillStyle = UI_COLORS.BG_DARK;
-        game.ctx.fill();
-        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
-        game.ctx.lineWidth = 2;
-        game.ctx.stroke();
+        game.ctx.fillRect(x, y, width, height);
+        
+        // Single border
+        game.ctx.strokeStyle = UI_COLORS.BORDER;
+        game.ctx.lineWidth = 1;
+        game.ctx.strokeRect(x, y, width, height);
     }
 
     static drawMission(x, y, width, height, button = null) {
@@ -74,7 +65,7 @@ export class UIHelper {
     }
 
     static drawTooltip(x, y, text) {
-        const padding = 8;
+        const padding = 6;
         const fontSize = 12;
         game.ctx.font = UI_FONTS.SMALL;
         const textWidth = game.ctx.measureText(text).width;
@@ -85,9 +76,9 @@ export class UIHelper {
         game.ctx.fillStyle = UI_COLORS.BG_DARKER;
         game.ctx.fillRect(x - boxWidth / 2, y - boxHeight, boxWidth, boxHeight);
 
-        // Draw blue border
+        // Draw border
         game.ctx.strokeStyle = UI_COLORS.BORDER;
-        game.ctx.lineWidth = 2;
+        game.ctx.lineWidth = 1;
         game.ctx.strokeRect(x - boxWidth / 2, y - boxHeight, boxWidth, boxHeight);
 
         // Draw text
@@ -96,7 +87,7 @@ export class UIHelper {
     }
 
     static drawTooltipLines(x, y, lines) {
-        const padding = 8;
+        const padding = 6;
         const fontSize = 12;
         const textLines = Array.isArray(lines) ? lines : [String(lines)];
         game.ctx.font = UI_FONTS.SMALL;
@@ -113,7 +104,7 @@ export class UIHelper {
 
         // Border
         game.ctx.strokeStyle = UI_COLORS.BORDER;
-        game.ctx.lineWidth = 2;
+        game.ctx.lineWidth = 1;
         game.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
         // Text
@@ -128,32 +119,58 @@ export class UIHelper {
     }
 
     static drawSectionHeader(text, width, yOffset, x) {
-        yOffset += 20;
-        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
-        game.ctx.font = UI_FONTS.TITLE;
-        game.ctx.fillText(text, x + 20, yOffset += 20);
-        game.ctx.beginPath();
-        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
-        game.ctx.moveTo(x + 10, yOffset += 20);
-        game.ctx.lineTo(x + width - 10, yOffset);
-        game.ctx.stroke();
+        yOffset += 12;
+        game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
+        game.ctx.font = UI_FONTS.HEADER;
+        game.ctx.fillText(text, x + 10, yOffset);
         game.ctx.font = UI_FONTS.MEDIUM;
-        return yOffset + 20;
+        return yOffset + 8;
     }
 
     static drawCenteredHeader(text, width, yOffset, x) {
         const centerX = x + width / 2;
-        yOffset += 28;
-        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
-        game.ctx.font = UI_FONTS.TITLE;
+        yOffset += 15;
+        game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
+        game.ctx.font = UI_FONTS.ITEM;
         game.ctx.textAlign = 'center';
         game.ctx.fillText(text, centerX, yOffset);
-        game.ctx.beginPath();
-        game.ctx.strokeStyle = UI_COLORS.BORDER_BRIGHT;
-        game.ctx.moveTo(x + 10, yOffset + 12);
-        game.ctx.lineTo(x + width - 10, yOffset + 12);
-        game.ctx.stroke();
         game.ctx.font = UI_FONTS.MEDIUM;
-        return yOffset + 36;
+        return yOffset + 12;
+    }
+
+    static drawProgressBar(x, y, width, height, progress, fillColor, bgColor = 'rgba(0, 0, 0, 0.7)', borderColor = null) {
+        // Background
+        game.ctx.fillStyle = bgColor;
+        game.ctx.fillRect(x, y, width, height);
+
+        // Progress fill
+        game.ctx.fillStyle = fillColor;
+        game.ctx.fillRect(x, y, width * Math.max(0, Math.min(1, progress)), height);
+
+        // Border
+        if (borderColor) {
+            game.ctx.strokeStyle = borderColor;
+            game.ctx.lineWidth = 1;
+            game.ctx.strokeRect(x, y, width, height);
+        }
+    }
+
+    static drawHealthBars(x, y, shield, maxShield, hull, maxHull, width = 40, height = 4) {
+        const barX = x - width / 2;
+        const spacing = 6;
+
+        // Shield bar (blue)
+        const shieldProgress = maxShield > 0 ? shield / maxShield : 0;
+        game.ctx.fillStyle = UI_COLORS.SHIELD_BG;
+        game.ctx.fillRect(barX, y, width, height);
+        game.ctx.fillStyle = UI_COLORS.SHIELD_FILL;
+        game.ctx.fillRect(barX, y, width * shieldProgress, height);
+
+        // Hull bar (red) - below shield bar
+        const hullProgress = maxHull > 0 ? hull / maxHull : 0;
+        game.ctx.fillStyle = UI_COLORS.HULL_BG;
+        game.ctx.fillRect(barX, y + height + spacing, width, height);
+        game.ctx.fillStyle = UI_COLORS.HULL_FILL;
+        game.ctx.fillRect(barX, y + height + spacing, width * hullProgress, height);
     }
 }

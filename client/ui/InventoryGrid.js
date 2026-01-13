@@ -1,13 +1,11 @@
 import { game } from '../controllers/game.js';
 import { UIHelper } from './UIHelper.js';
-import { UI_COLORS, UI_FONTS, ORE } from '../../shared/Constants.js';
+import { UI_COLORS, UI_FONTS, ORE, RARITY } from '../../shared/Constants.js';
+import { Module } from '../modules/Module.js';
 
 // TODO: introduce new modules for increasing inventory size
-
-// TODO: split equipped modules into 4 active, 2 passive - with text indicators
-// new ships can have more passive modules, no ship has more than 4 actives
-
-// turn credit and rep into favor. and use favor to research.
+// TODO: remove rep - eventually a better system than credits should be done
+// TODO: make the text be longer for modules and probably break it.
 
 export class InventoryGrid {
     constructor() {
@@ -20,7 +18,21 @@ export class InventoryGrid {
         this.lastMousePos = null;
         
         // Grid layouts
-        this.equippedGrid = {
+        this.activeModulesGrid = {
+            cols: 4,
+            rows: 1,
+            x: 0,
+            y: 0
+        };
+        
+        this.passiveModulesGrid = {
+            cols: 2,
+            rows: 1,
+            x: 0,
+            y: 0
+        };
+        
+        this.equippedGrid = {  // Legacy - keep for compatibility
             cols: 3,
             rows: 2,
             x: 0,
@@ -42,18 +54,26 @@ export class InventoryGrid {
         };
     }
 
-    // TODO: make the text be longer for modules
-    // and probably break it.
-
     draw(dialogX, dialogWidth, yOffset) {
-        // Draw equipped modules section
-        yOffset = UIHelper.drawSectionHeader('Equipped Modules', dialogWidth, yOffset, dialogX);
-        this.equippedGrid.x = dialogX + 30;
-        this.equippedGrid.y = yOffset;
-        yOffset = this.#drawGrid(game.player.ship.modules, this.equippedGrid, 'equipped');
+        // Draw equipped modules section - split into active and passive
+        const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+        const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+        
+        // Active modules (4 slots, 2 rows x 2 cols)
+        yOffset = UIHelper.drawSectionHeader('Active Modules', dialogWidth, yOffset, dialogX);
+        this.activeModulesGrid.x = dialogX + 30;
+        this.activeModulesGrid.y = yOffset;
+        yOffset = this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
+        
+        // Passive modules (2 slots, 1 row x 2 cols)
+        yOffset += 5;
+        yOffset = UIHelper.drawSectionHeader('Passive Modules', dialogWidth, yOffset, dialogX);
+        this.passiveModulesGrid.x = dialogX + 30;
+        this.passiveModulesGrid.y = yOffset;
+        yOffset = this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
         
         // Draw inventory section
-        yOffset += 20;
+        yOffset += 10;
         yOffset = UIHelper.drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
         this.inventoryGrid.x = dialogX + 30;
         this.inventoryGrid.y = yOffset;
@@ -73,9 +93,36 @@ export class InventoryGrid {
     }
 
     drawEquipped(columnX, columnWidth, yOffset) {
-        this.equippedGrid.x = columnX;
-        this.equippedGrid.y = yOffset;
-        this.#drawGrid(game.player.ship.modules, this.equippedGrid, 'equipped');
+        const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+        const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+        
+        // Draw "Active Modules" label
+        game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
+        game.ctx.font = UI_FONTS.SMALL;
+        game.ctx.textAlign = 'left';
+        game.ctx.fillText('Active Modules', columnX, yOffset);
+        yOffset += 18;
+        
+        // Draw active modules
+        this.activeModulesGrid.x = columnX;
+        this.activeModulesGrid.y = yOffset;
+        this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
+        
+        // Draw passive modules below active
+        const activeHeight = this.activeModulesGrid.rows * (this.cellSize + this.cellPadding);
+        yOffset += activeHeight + 15;
+        
+        // Draw "Passive Modules" label
+        game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
+        game.ctx.font = UI_FONTS.SMALL;
+        game.ctx.textAlign = 'left';
+        game.ctx.fillText('Passive Modules', columnX, yOffset);
+        yOffset += 18;
+        
+        this.passiveModulesGrid.x = columnX;
+        this.passiveModulesGrid.y = yOffset;
+        this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
+        
         this.#drawHoverTooltip();
     }
 
@@ -89,7 +136,7 @@ export class InventoryGrid {
     drawStash(columnX, columnWidth, yOffset, salvageMode = false) {
         this.stashGrid.x = columnX;
         this.stashGrid.y = yOffset;
-        this.#drawGrid(game.quantumStash, this.stashGrid, 'stash', salvageMode);
+        this.#drawGrid(game.player.quantumStash, this.stashGrid, 'stash', salvageMode);
         this.#drawHoverTooltip();
     }
 
@@ -198,22 +245,52 @@ export class InventoryGrid {
 
     #getRarityColor(rarity) {
         switch(rarity) {
-            case 'SIMPLE': return 'rgba(150, 150, 150, 0.6)';
-            case 'MODIFIED': return 'rgba(100, 150, 255, 0.6)';
-            case 'COMPLEX': return 'rgba(255, 200, 50, 0.6)';
+            case RARITY.SIMPLE: return 'rgba(150, 150, 150, 0.6)';
+            case RARITY.MODIFIED: return 'rgba(100, 150, 255, 0.6)';
+            case RARITY.COMPLEX: return 'rgba(255, 200, 50, 0.6)';
             default: return 'rgba(200, 200, 200, 0.6)';
         }
     }
 
-    handleMouseDown(clickPos, preventStashDrag = false) {
-        // Check equipped modules
-        const equippedIndex = this.#getSlotAtPosition(clickPos, this.equippedGrid);
-        if (equippedIndex !== -1 && equippedIndex < game.player.ship.modules.length) {
-            this.draggedItem = game.player.ship.modules[equippedIndex];
-            this.draggedFrom = { type: 'equipped', index: equippedIndex };
+    handleMouseDown(clickPos, preventStashDrag = false, researchUI = null) {
+        // Check research slot first (if on research tab)
+        if (researchUI && this.researchSlotGrid) {
+            const researchIndex = this.#getSlotAtPosition(clickPos, this.researchSlotGrid);
+            if (researchIndex !== -1 && researchUI.researchSlot) {
+                this.draggedItem = researchUI.researchSlot;
+                this.draggedFrom = { type: 'research', index: 0, researchUI: researchUI };
+                this.dragOffset = {
+                    x: clickPos.x - this.researchSlotGrid.x,
+                    y: clickPos.y - this.researchSlotGrid.y
+                };
+                return true;
+            }
+        }
+        
+        // Check active modules
+        const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+        const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
+        if (activeIndex !== -1 && activeIndex < activeModules.length) {
+            const actualIndex = game.player.ship.modules.indexOf(activeModules[activeIndex]);
+            this.draggedItem = game.player.ship.modules[actualIndex];
+            this.draggedFrom = { type: 'active', index: actualIndex };
             this.dragOffset = {
-                x: clickPos.x - (this.equippedGrid.x + (equippedIndex % this.equippedGrid.cols) * (this.cellSize + this.cellPadding)),
-                y: clickPos.y - (this.equippedGrid.y + Math.floor(equippedIndex / this.equippedGrid.cols) * (this.cellSize + this.cellPadding))
+                x: clickPos.x - (this.activeModulesGrid.x + (activeIndex % this.activeModulesGrid.cols) * (this.cellSize + this.cellPadding)),
+                y: clickPos.y - (this.activeModulesGrid.y + Math.floor(activeIndex / this.activeModulesGrid.cols) * (this.cellSize + this.cellPadding))
+            };
+            return true;
+        }
+        
+        // Check passive modules
+        const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+        const passiveIndex = this.#getSlotAtPosition(clickPos, this.passiveModulesGrid);
+        if (passiveIndex !== -1 && passiveIndex < passiveModules.length) {
+            const actualIndex = game.player.ship.modules.indexOf(passiveModules[passiveIndex]);
+            this.draggedItem = game.player.ship.modules[actualIndex];
+            this.draggedFrom = { type: 'passive', index: actualIndex };
+            this.dragOffset = {
+                x: clickPos.x - (this.passiveModulesGrid.x + (passiveIndex % this.passiveModulesGrid.cols) * (this.cellSize + this.cellPadding)),
+                y: clickPos.y - (this.passiveModulesGrid.y + Math.floor(passiveIndex / this.passiveModulesGrid.cols) * (this.cellSize + this.cellPadding))
             };
             return true;
         }
@@ -233,8 +310,8 @@ export class InventoryGrid {
         // Check stash (if docked) - but not if in salvage mode
         if (game.player && game.player.docked && !preventStashDrag) {
             const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
-            if (stashIndex !== -1 && stashIndex < game.quantumStash.length) {
-                this.draggedItem = game.quantumStash[stashIndex];
+            if (stashIndex !== -1 && stashIndex < game.player.quantumStash.length) {
+                this.draggedItem = game.player.quantumStash[stashIndex];
                 this.draggedFrom = { type: 'stash', index: stashIndex };
                 this.dragOffset = {
                     x: clickPos.x - (this.stashGrid.x + (stashIndex % this.stashGrid.cols) * (this.cellSize + this.cellPadding)),
@@ -250,11 +327,21 @@ export class InventoryGrid {
     handleMouseMove(mousePos) {
         this.lastMousePos = mousePos;
         
+        if (!game.player || !game.player.ship) return;
+        
         if (!this.draggedItem) {
             // Update hovered slot
-            const equippedIndex = this.#getSlotAtPosition(mousePos, this.equippedGrid);
-            if (equippedIndex !== -1) {
-                this.hoveredSlot = { type: 'equipped', index: equippedIndex };
+            const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+            const activeIndex = this.#getSlotAtPosition(mousePos, this.activeModulesGrid);
+            if (activeIndex !== -1) {
+                this.hoveredSlot = { type: 'active', index: activeIndex };
+                return;
+            }
+            
+            const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+            const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
+            if (passiveIndex !== -1) {
+                this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
             
@@ -270,14 +357,29 @@ export class InventoryGrid {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
                 }
+                
+                // Check research slot
+                if (this.researchSlotGrid) {
+                    const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
+                    if (researchIndex !== -1) {
+                        this.hoveredSlot = { type: 'research', index: researchIndex };
+                        return;
+                    }
+                }
             }
             
             this.hoveredSlot = null;
         } else {
             // Update hovered slot while dragging
-            const equippedIndex = this.#getSlotAtPosition(mousePos, this.equippedGrid);
-            if (equippedIndex !== -1 && equippedIndex < this.equippedGrid.cols * this.equippedGrid.rows) {
-                this.hoveredSlot = { type: 'equipped', index: equippedIndex };
+            const activeIndex = this.#getSlotAtPosition(mousePos, this.activeModulesGrid);
+            if (activeIndex !== -1 && activeIndex < this.activeModulesGrid.cols * this.activeModulesGrid.rows) {
+                this.hoveredSlot = { type: 'active', index: activeIndex };
+                return;
+            }
+            
+            const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
+            if (passiveIndex !== -1 && passiveIndex < this.passiveModulesGrid.cols * this.passiveModulesGrid.rows) {
+                this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
             
@@ -293,6 +395,15 @@ export class InventoryGrid {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
                 }
+                
+                // Check research slot while dragging
+                if (this.researchSlotGrid) {
+                    const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
+                    if (researchIndex !== -1) {
+                        this.hoveredSlot = { type: 'research', index: researchIndex };
+                        return;
+                    }
+                }
             }
             
             this.hoveredSlot = null;
@@ -303,12 +414,17 @@ export class InventoryGrid {
         if (!this.hoveredSlot || !this.lastMousePos) return;
         const { type, index } = this.hoveredSlot;
         let sourceArray;
-        if (type === 'equipped') {
-            sourceArray = game.player.ship.modules;
+        if (type === 'active' || type === 'passive') {
+            // For active/passive, we need to get the filtered array
+            const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+            const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+            sourceArray = type === 'active' ? activeModules : passiveModules;
         } else if (type === 'inventory') {
             sourceArray = game.player.ship.inventory;
         } else if (type === 'stash') {
-            sourceArray = game.quantumStash;
+            sourceArray = game.player.quantumStash;
+        } else if (type === 'research') {
+            sourceArray = [this.researchSlot];
         }
         if (!sourceArray || index >= sourceArray.length) return;
         const item = sourceArray[index];
@@ -338,9 +454,9 @@ export class InventoryGrid {
     }
 
     #rarityLabel(rarity) {
-        if (rarity === 0 || rarity === 'SIMPLE') return 'Simple';
-        if (rarity === 1 || rarity === 'MODIFIED') return 'Modified';
-        if (rarity === 2 || rarity === 'COMPLEX') return 'Complex';
+        if (rarity === RARITY.SIMPLE) return 'Simple';
+        if (rarity === RARITY.MODIFIED) return 'Modified';
+        if (rarity === RARITY.COMPLEX) return 'Complex';
         return 'Common';
     }
 
@@ -350,23 +466,44 @@ export class InventoryGrid {
         return amount.toFixed(1);
     }
 
-    handleMouseUp(clickPos) {
+    handleMouseUp(clickPos, researchUI = null) {
         if (!this.draggedItem) return false;
         
         // Find target slot
         let targetSlot = null;
         
-        const equippedIndex = this.#getSlotAtPosition(clickPos, this.equippedGrid);
-        if (equippedIndex !== -1 && equippedIndex < this.equippedGrid.cols * this.equippedGrid.rows) {
-            targetSlot = { type: 'equipped', index: equippedIndex };
-        } else {
-            const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
-            if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
-                targetSlot = { type: 'inventory', index: inventoryIndex };
-            } else if (game.player && game.player.docked) {
-                const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
-                if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
-                    targetSlot = { type: 'stash', index: stashIndex };
+        // Check research slot first (if on research tab)
+        if (researchUI && this.researchSlotGrid) {
+            const researchIndex = this.#getSlotAtPosition(clickPos, this.researchSlotGrid);
+            if (researchIndex !== -1) {
+                // Only allow non-ore modules in research slot
+                const oreNames = Object.keys(ORE);
+                if (!oreNames.includes(this.draggedItem.name)) {
+                    targetSlot = { type: 'research', index: 0, researchUI: researchUI };
+                }
+            }
+        }
+        
+        if (!targetSlot) {
+            // Check active modules grid
+            const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
+            if (activeIndex !== -1 && activeIndex < this.activeModulesGrid.cols * this.activeModulesGrid.rows) {
+                targetSlot = { type: 'active', index: activeIndex };
+            } else {
+                // Check passive modules grid
+                const passiveIndex = this.#getSlotAtPosition(clickPos, this.passiveModulesGrid);
+                if (passiveIndex !== -1 && passiveIndex < this.passiveModulesGrid.cols * this.passiveModulesGrid.rows) {
+                    targetSlot = { type: 'passive', index: passiveIndex };
+                } else {
+                    const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
+                    if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
+                        targetSlot = { type: 'inventory', index: inventoryIndex };
+                    } else if (game.player && game.player.docked) {
+                        const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
+                        if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
+                            targetSlot = { type: 'stash', index: stashIndex };
+                        }
+                    }
                 }
             }
         }
@@ -383,47 +520,153 @@ export class InventoryGrid {
     }
 
     #getSlotAtPosition(pos, grid) {
-        if (!pos) return -1;
+        if (!pos || !grid) return -1;
         
         const relX = pos.x - grid.x;
         const relY = pos.y - grid.y;
         
         if (relX < 0 || relY < 0) return -1;
         
-        const col = Math.floor(relX / (this.cellSize + this.cellPadding));
-        const row = Math.floor(relY / (this.cellSize + this.cellPadding));
+        // Use grid's cellSize if available, otherwise use default
+        const cellSize = grid.cellSize || this.cellSize;
+        const cellPadding = this.cellPadding;
+        
+        const col = Math.floor(relX / (cellSize + cellPadding));
+        const row = Math.floor(relY / (cellSize + cellPadding));
         
         if (col >= grid.cols || row >= grid.rows) return -1;
         
         // Check if actually inside the cell (not in padding)
-        const cellX = relX % (this.cellSize + this.cellPadding);
-        const cellY = relY % (this.cellSize + this.cellPadding);
+        const cellX = relX % (cellSize + cellPadding);
+        const cellY = relY % (cellSize + cellPadding);
         
-        if (cellX >= this.cellSize || cellY >= this.cellSize) return -1;
+        if (cellX >= cellSize || cellY >= cellSize) return -1;
         
         return row * grid.cols + col;
     }
 
     #moveItem(from, to) {
+        // Handle research slot specially
+        if (from.type === 'research' || to.type === 'research') {
+            const researchUI = from.researchUI || to.researchUI;
+            if (!researchUI) return;
+            
+            if (from.type === 'research' && to.type === 'research') {
+                // Same slot, do nothing
+                return;
+            } else if (from.type === 'research') {
+                // Moving from research to another location
+                const sourceItem = researchUI.researchSlot;
+                if (!sourceItem) return;
+                
+                // Get target array
+                let targetArray;
+                if (to.type === 'active' || to.type === 'passive' || to.type === 'equipped') {
+                    targetArray = game.player.ship.modules;
+                } else if (to.type === 'inventory') {
+                    targetArray = game.player.ship.inventory;
+                } else if (to.type === 'stash') {
+                    targetArray = game.player.quantumStash;
+                }
+                
+                if (!targetArray) return;
+                
+                const targetItem = to.index < targetArray.length ? targetArray[to.index] : null;
+                
+                if (targetItem) {
+                    // Swap
+                    targetArray[to.index] = sourceItem;
+                    researchUI.researchSlot = targetItem;
+                } else {
+                    // Move to empty slot
+                    targetArray.splice(to.index, 0, sourceItem);
+                    researchUI.researchSlot = null;
+                }
+                return;
+            } else if (to.type === 'research') {
+                // Moving to research slot
+                let sourceArray;
+                if (from.type === 'active' || from.type === 'passive' || from.type === 'equipped') {
+                    sourceArray = game.player.ship.modules;
+                } else if (from.type === 'inventory') {
+                    sourceArray = game.player.ship.inventory;
+                } else if (from.type === 'stash') {
+                    sourceArray = game.player.quantumStash;
+                }
+                
+                if (!sourceArray) return;
+                
+                const sourceItem = sourceArray[from.index];
+                if (!sourceItem) return;
+                
+                const targetItem = researchUI.researchSlot;
+                
+                if (targetItem) {
+                    // Swap
+                    sourceArray[from.index] = targetItem;
+                    researchUI.researchSlot = sourceItem;
+                } else {
+                    // Move to empty research slot
+                    sourceArray.splice(from.index, 1);
+                    researchUI.researchSlot = sourceItem;
+                }
+                return;
+            }
+        }
+        
         // Get source and target arrays
         let sourceArray, targetArray;
-        if (from.type === 'equipped') {
+        let actualToIndex = to.index; // Will be adjusted for active/passive grids
+        
+        if (from.type === 'active' || from.type === 'passive' || from.type === 'equipped') {
             sourceArray = game.player.ship.modules;
         } else if (from.type === 'inventory') {
             sourceArray = game.player.ship.inventory;
         } else if (from.type === 'stash') {
-            sourceArray = game.quantumStash;
+            sourceArray = game.player.quantumStash;
         }
         
-        if (to.type === 'equipped') {
+        if (to.type === 'active' || to.type === 'passive' || to.type === 'equipped') {
             targetArray = game.player.ship.modules;
+            
+            // Convert grid index to actual modules array index
+            if (to.type === 'active') {
+                const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
+                if (to.index < activeModules.length) {
+                    actualToIndex = game.player.ship.modules.indexOf(activeModules[to.index]);
+                } else {
+                    // Dropping into empty active slot - find first empty active slot or add at end
+                    actualToIndex = game.player.ship.modules.length;
+                }
+            } else if (to.type === 'passive') {
+                const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
+                if (to.index < passiveModules.length) {
+                    actualToIndex = game.player.ship.modules.indexOf(passiveModules[to.index]);
+                } else {
+                    // Dropping into empty passive slot - add at end
+                    actualToIndex = game.player.ship.modules.length;
+                }
+            }
+            
+            // Validate module type for active/passive slots
+            const sourceItem = sourceArray[from.index];
+            if (sourceItem && to.type !== 'equipped') {
+                const isActiveModule = Module.isActive(sourceItem.name);
+                if ((to.type === 'active' && !isActiveModule) || (to.type === 'passive' && isActiveModule)) {
+                    // Invalid placement - active module in passive slot or vice versa
+                    return;
+                }
+            }
         } else if (to.type === 'inventory') {
             targetArray = game.player.ship.inventory;
         } else if (to.type === 'stash') {
-            targetArray = game.quantumStash;
+            targetArray = game.player.quantumStash;
         }
         
         if (!sourceArray || !targetArray) return;
+        
+        // Use the adjusted index
+        to.index = actualToIndex;
         
         // Get the items
         const sourceItem = sourceArray[from.index];
@@ -476,4 +719,40 @@ export class InventoryGrid {
             }
         }
     }
+    
+    // Public method for drawing items in custom slots
+    _drawItemInSlot(item, x, y, slotSize) {
+        // Draw item background with rarity color
+        const rarityColor = this.#getRarityColor(item.rarity);
+        game.ctx.fillStyle = rarityColor;
+        game.ctx.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
+        
+        // Draw item border
+        const borderColor = rarityColor.replace('0.6', '0.9');
+        game.ctx.strokeStyle = borderColor;
+        game.ctx.lineWidth = 2;
+        game.ctx.strokeRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
+        
+        // Draw item icon/text
+        game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
+        game.ctx.font = UI_FONTS.LABEL;
+        game.ctx.textAlign = 'center';
+        game.ctx.textBaseline = 'middle';
+        
+        // Draw abbreviated name
+        const abbrev = this.#getAbbreviation(item.name);
+        game.ctx.fillText(abbrev, x + slotSize / 2, y + slotSize / 2 - 5);
+        
+        // Draw amount if > 1
+        if (item.amount > 1) {
+            game.ctx.font = UI_FONTS.TINY;
+            game.ctx.fillStyle = UI_COLORS.TEXT_HIGHLIGHT;
+            const amountText = item.amount > 999 ? '999+' : item.amount.toFixed(0);
+            game.ctx.fillText(amountText, x + slotSize / 2, y + slotSize - 8);
+        }
+        
+        game.ctx.textAlign = 'left';
+        game.ctx.textBaseline = 'alphabetic';
+    }
 }
+

@@ -19,7 +19,7 @@ export class MiningMission extends Mission {
         
         // Check quantum stash if docked
         if (game.player.docked) {
-            const stashAmount = game.quantumStash
+            const stashAmount = game.player.quantumStash
                 .filter(item => item.name === this.requiredOre)
                 .reduce((sum, item) => sum + item.amount, 0);
             
@@ -51,7 +51,7 @@ export class MiningMission extends Mission {
         
         // If still need more, remove from quantum stash
         if (remaining > 0 && game.player.docked) {
-            const stashStacks = game.quantumStash.filter(m => m.name === this.requiredOre);
+            const stashStacks = game.player.quantumStash.filter(m => m.name === this.requiredOre);
             for (const stack of stashStacks) {
                 if (remaining <= 0) break;
                 
@@ -60,8 +60,8 @@ export class MiningMission extends Mission {
                 remaining -= toRemove;
                 
                 if (stack.amount <= 0) {
-                    const index = game.quantumStash.indexOf(stack);
-                    game.quantumStash.splice(index, 1);
+                    const index = game.player.quantumStash.indexOf(stack);
+                    game.player.quantumStash.splice(index, 1);
                 }
             }
         }

@@ -49,15 +49,9 @@ export class HUD {
         const barX = centerX - barWidth / 2;
         const barY = centerY - 15;
 
-        // Background
-        game.ctx.fillStyle = UI_COLORS.BG_DARKER;
-        game.ctx.fillRect(barX, barY, barWidth, barHeight);
-
-        // Bar fill (green, filling from left to right)
         const velPercentage = game.player.ship.vel / game.player.ship.maxVel;
-        const fillWidth = barWidth * velPercentage;
-        game.ctx.fillStyle = UI_COLORS.BAR_GREEN;
-        game.ctx.fillRect(barX, barY, fillWidth, barHeight);
+        UIHelper.drawProgressBar(barX, barY, barWidth, barHeight, velPercentage, 
+            UI_COLORS.BAR_GREEN, UI_COLORS.BG_DARKER);
 
         // Velocity text on bar
         UIHelper.drawTexts([game.player.ship.vel.toFixed(1)],
@@ -75,19 +69,8 @@ export class HUD {
         const barX = miningButton.pos.x;
         const barY = miningButton.pos.y - 8; // 8px above the button
         
-        // Background
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        
-        // Bar fill (blue, filling from left to right based on progress)
-        const miningFillWidth = barWidth * game.player.ship.miningProgress;
-        game.ctx.fillStyle = 'rgba(100, 150, 255, 0.9)';
-        game.ctx.fillRect(barX, barY, miningFillWidth, barHeight);
-        
-        // Border
-        game.ctx.strokeStyle = 'rgba(100, 150, 255, 1)';
-        game.ctx.lineWidth = 1;
-        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
+        UIHelper.drawProgressBar(barX, barY, barWidth, barHeight, game.player.ship.miningProgress,
+            'rgba(100, 150, 255, 0.9)', 'rgba(0, 0, 0, 0.5)', 'rgba(100, 150, 255, 1)');
     }
 
     #drawLaserCooldownBar() {
@@ -103,20 +86,8 @@ export class HUD {
         const barY = laserButton.pos.y - 8; // 8px above the button
         
         const laserCooldownPercentage = Math.min(game.player.ship.attackCount / game.player.ship.attackTime, 1);
-        
-        // Background
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        
-        // Bar fill (purple to match laser color, filling from left to right)
-        const laserFillWidth = barWidth * laserCooldownPercentage;
-        game.ctx.fillStyle = 'rgba(200, 100, 255, 0.9)';
-        game.ctx.fillRect(barX, barY, laserFillWidth, barHeight);
-        
-        // Border
-        game.ctx.strokeStyle = 'rgba(200, 100, 255, 1)';
-        game.ctx.lineWidth = 1;
-        game.ctx.strokeRect(barX, barY, barWidth, barHeight);
+        UIHelper.drawProgressBar(barX, barY, barWidth, barHeight, laserCooldownPercentage,
+            'rgba(200, 100, 255, 0.9)', 'rgba(0, 0, 0, 0.5)', 'rgba(200, 100, 255, 1)');
     }
 
     #drawHoverTooltips(centerX, centerY) {

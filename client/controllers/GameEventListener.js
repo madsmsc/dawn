@@ -1,5 +1,5 @@
 import { game } from './game.js';
-import { Vec } from './Vec.js';
+import { Vec } from '../util/Vec.js';
 
 export class GameEventListener {
     constructor() {
@@ -40,31 +40,14 @@ export class GameEventListener {
         if (game.ui.handleWarpDialogClick(screenPos)) {
             return; // Click was handled by warp dialog
         }
-        // Check if click is on station dialog (but skip stash tab since it uses mouseDown/mouseUp)
-        if (game.player.docked && game.ui.station.currentTab === 'stash') {
-            // Stash tab uses mouseDown/mouseUp events, skip click handling
-        } else if (game.ui.handleStationDialogClick(screenPos)) {
-            return; // Click was handled by station dialog
+        // Check if click is on station dialog
+        if (game.ui.handleStationDialogClick(screenPos)) {
+            return; // Click was handled by station dialog (including tab switches)
         }
         // pass click position to each button so it can react if clicked
         game.ui.buttons.forEach((b) => {
             b.click(screenPos);
         });
-
-        const clickPos = game.camera.screenToWorld(event.x, event.y);
-        // select one selectable
-        let select = undefined;
-        game.ui.selectables.forEach((selectable) => {
-            const dist = clickPos.clone().sub(selectable.pos).length();
-            if (dist < selectable.size) {
-                select = selectable;
-            }
-        });
-        // de-select all other selectables
-        if (select) {
-            game.ui.selectables.forEach((selectable) => { selectable.selected = false; });
-            select.selected = true;
-        }
     }
 
     mouseMoveListener(event) {
@@ -79,9 +62,9 @@ export class GameEventListener {
     mouseDownListener(event) {
         if (!game.player || !game.player.ship) return;
         const screenPos = new Vec(event.x, event.y);
-        // Check if mousedown is on inventory grid in station dialog
-        if (game.player.docked && game.ui.station.currentTab === 'stash') {
-            if (game.ui.handleStationDialogClick(screenPos)) {
+        // Check if mousedown is on inventory grid in station dialog (stash or research tab)
+        if (game.player.docked && (game.ui.station.currentTab === 'stash' || game.ui.station.currentTab === 'research')) {
+            if (game.ui.handleStationDialogMouseDown(screenPos)) {
                 return; // Mousedown was handled by station dialog
             }
         }
@@ -94,8 +77,8 @@ export class GameEventListener {
     mouseUpListener(event) {
         if (!game.player || !game.player.ship) return;
         const screenPos = new Vec(event.x, event.y);
-        // Check if mouseup is on inventory grid in station dialog
-        if (game.player.docked && game.ui.station.currentTab === 'stash') {
+        // Check if mouseup is on inventory grid in station dialog (stash or research tab)
+        if (game.player.docked && (game.ui.station.currentTab === 'stash' || game.ui.station.currentTab === 'research')) {
             if (game.ui.handleStationDialogMouseUp(screenPos)) {
                 return; // Mouseup was handled by station dialog
             }

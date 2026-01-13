@@ -2,10 +2,10 @@ import { game } from './game.js';
 import { GameEventListener } from './GameEventListener.js';
 import { UI } from '../ui/UI.js';
 import { Server } from './Server.js';
-import { StarField } from '../ui/StarField.js';
+import { StarField } from './StarField.js';
 import { Camera } from './Camera.js';
 import { MissionManager } from '../missions/MissionManager.js';
-import { Sprites } from '../ui/Sprites.js';
+import { Sprites } from '../util/Sprites.js';
 
 export class GameLoop {
     constructor() {
@@ -48,7 +48,6 @@ export class GameLoop {
         game.canvas.height = window.innerHeight;
         game.ctx = game.canvas.getContext('2d');
         game.sprites = new Sprites();
-        game.gameLoop = this;
         game.ui = new UI();
         game.server = new Server();
         game.camera = new Camera();

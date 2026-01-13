@@ -1,5 +1,5 @@
 import { game } from './game.js';
-import { Vec } from './Vec.js';
+import { Vec } from '../util/Vec.js';
 
 export class Player {
     constructor(obj) {
@@ -8,6 +8,9 @@ export class Player {
         this.rep = 0;
         this.docked = undefined; // Station
         this.ship = undefined;
+        this.settings = {
+            showVelocityVectors: false
+        };
         Object.assign(this, obj);
     }
 

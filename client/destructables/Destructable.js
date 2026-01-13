@@ -1,8 +1,8 @@
 import { Selectable } from "../selectables/Selectable.js";
-import { Vec } from "../controllers/Vec.js"
+import { Vec } from "../util/Vec.js"
 import { MOVE } from "../../shared/Constants.js"
 import { game } from "../controllers/game.js";
-import { Particle } from "../ui/Particle.js";
+import { Particle } from "../util/Particle.js";
 
 export class Destructable extends Selectable {
     constructor() {
@@ -52,16 +52,19 @@ export class Destructable extends Selectable {
         // draw ship
         game.sprites.draw(sprite, new Vec(0, 0), false, undefined, false, 1);
 
-        // draw vector
-        // game.ctx.translate(off, 0);
-        // game.ctx.lineWidth = 3;
-        // game.ctx.globalAlpha = 0.3;
-        // game.ctx.strokeStyle = 'rgb(40, 40, 255)';
-        // game.ctx.beginPath();
-        // game.ctx.setLineDash([]);
-        // game.ctx.moveTo(0, 0);
-        // game.ctx.lineTo(0, -this.vel * 30);
-        // game.ctx.stroke();
+        // Draw velocity vector if enabled
+        if (game.player?.settings?.showVelocityVectors) {
+            game.ctx.translate(off, 0);
+            game.ctx.lineWidth = 3;
+            game.ctx.globalAlpha = 0.3;
+            game.ctx.strokeStyle = this.isPlayer ? 'rgb(100, 255, 100)' : 'rgb(40, 40, 255)';
+            game.ctx.beginPath();
+            game.ctx.setLineDash([]);
+            game.ctx.moveTo(0, 0);
+            game.ctx.lineTo(0, -this.vel * 30);
+            game.ctx.stroke();
+            game.ctx.globalAlpha = 1.0;
+        }
 
         game.ctx.restore();
 
@@ -81,23 +84,17 @@ export class Destructable extends Selectable {
             }
         }
 
-        // Draw engine trail particles
-        this.#trailParticles.forEach((particle, i) => {
-            if (particle.alpha <= 0) {
-                this.#trailParticles.splice(i, 1);
-            } else {
-                particle.update();
-            }
+        // Update engine trail particles
+        this.#trailParticles = this.#trailParticles.filter(p => {
+            p.update();
+            return p.alpha > 0;
         });
 
-        // Draw death explosion particles
-        if (this.#particles.length > 0) {
-            this.#particles.forEach((particle, i) => {
-                if (particle.alpha <= 0) {
-                    this.#particles.splice(i, 1);
-                } else particle.update()
-            })
-        }
+        // Update death explosion particles
+        this.#particles = this.#particles.filter(p => {
+            p.update();
+            return p.alpha > 0;
+        });
     }
 
     damage(dam) {
@@ -157,11 +154,11 @@ export class Destructable extends Selectable {
     }
 
     die() {
-        for (let i = 0; i <= 50; i++) {
-            let dx = (Math.random() - 0.5) * (Math.random() * 6);
-            let dy = (Math.random() - 0.5) * (Math.random() * 6);
-            let radius = Math.random() * 3;
-            let particle = new Particle(this.pos.x, this.pos.y, radius, dx, dy, this.pos);
+        for (let i = 0; i < 50; i++) {
+            const dx = (Math.random() - 0.5) * (Math.random() * 6);
+            const dy = (Math.random() - 0.5) * (Math.random() * 6);
+            const radius = Math.random() * 3;
+            const particle = new Particle(this.pos.x, this.pos.y, radius, dx, dy, this.pos);
             this.#particles.push(particle);
         }
         // overridden and called in the children.

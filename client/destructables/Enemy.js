@@ -2,6 +2,7 @@ import { game } from '../controllers/game.js';
 import { SPRITE, MOVE, MODULE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { Destructable } from './Destructable.js';
 import { Module } from '../modules/Module.js';
+import { UIHelper } from '../ui/UIHelper.js';
 
 export class Enemy extends Destructable {
     constructor() {
@@ -9,6 +10,10 @@ export class Enemy extends Destructable {
 
         this.bounty = 25;
         this.rep = 5;
+        
+        // Randomly select ship sprite from SHIP_1 to SHIP_7
+        const shipSprites = [SPRITE.SHIP_1, SPRITE.SHIP_2, SPRITE.SHIP_3, SPRITE.SHIP_4, SPRITE.SHIP_5, SPRITE.SHIP_6, SPRITE.SHIP_7];
+        this.shipSprite = shipSprites[Math.floor(Math.random() * shipSprites.length)];
     }
 
     static orbiting () {
@@ -53,28 +58,11 @@ export class Enemy extends Destructable {
     }
 
     draw () {
-        super.draw(SPRITE.SHIP);
+        super.draw(this.shipSprite);
 
         // Health bars above enemy
-        const barWidth = 40;
-        const barHeight = 4;
-        const barSpacing = 6;
-        const barX = this.pos.x - barWidth / 2;
-        const barY = this.pos.y - 50;
-
-        // Shield bar (blue)
-        const shieldPercentage = (this.shield / this.maxShield) * 100;
-        game.ctx.fillStyle = UI_COLORS.SHIELD_BG;
-        game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        game.ctx.fillStyle = UI_COLORS.SHIELD_FILL;
-        game.ctx.fillRect(barX, barY, (barWidth * shieldPercentage) / 100, barHeight);
-
-        // Hull bar (red) - below shield bar
-        const hullPercentage = (this.hull / this.maxHull) * 100;
-        game.ctx.fillStyle = UI_COLORS.HULL_BG;
-        game.ctx.fillRect(barX, barY + barHeight + barSpacing, barWidth, barHeight);
-        game.ctx.fillStyle = UI_COLORS.HULL_FILL;
-        game.ctx.fillRect(barX, barY + barHeight + barSpacing, (barWidth * hullPercentage) / 100, barHeight);
+        UIHelper.drawHealthBars(this.pos.x, this.pos.y - 50, 
+            this.shield, this.maxShield, this.hull, this.maxHull);
 
         // Enemy type label
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
@@ -102,7 +90,10 @@ export class Enemy extends Destructable {
     shoot () { 
         if (this.attackCount < this.attackTime) return;
         this.attackCount = 0;
-        this.shooting = true; 
+        this.shooting = true;
+        const audio = new Audio('client/static/laser7.wav');
+        audio.volume = 0.3;
+        audio.play();
         const dam = Math.random() * this.dam; // TODO: too random 
         game.player.ship.damage(dam); 
     }

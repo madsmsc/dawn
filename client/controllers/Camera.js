@@ -1,5 +1,5 @@
 import { game } from './game.js';
-import { Vec } from './Vec.js';
+import { Vec } from '../util/Vec.js';
 
 export class Camera {
     constructor() {

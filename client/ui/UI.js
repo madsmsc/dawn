@@ -3,7 +3,7 @@ import { UIHelper } from './UIHelper.js';
 import { UIButtons } from './UIButtons.js';
 import { UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { UIDialogs } from './UIDialogs.js';
-import { UIStation } from './UIStation.js';
+import { UIStation } from './station/UIStation.js';
 import { HUD } from './HUD.js';
 import { InventoryGrid } from './InventoryGrid.js';
 import { MessageQueue } from './MessageQueue.js';
@@ -133,6 +133,10 @@ export class UI {
 
     handleStationDialogClick(clickPos) {
         return this.station.handleStationDialogClick(clickPos);
+    }
+    
+    handleStationDialogMouseDown(clickPos) {
+        return this.station.handleStationDialogMouseDown(clickPos);
     }
     
     handleStationDialogMouseUp(clickPos) {

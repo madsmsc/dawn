@@ -17,9 +17,7 @@ export class Research {
         module.apply(this);
     }
 
-    // TODO: add dialog to station that allows research
     static availableResearch() {
-        // big boy station: all research available at this station
         return [
             new Research('Transmute', 'tra', 100, [RARITY.SIMPLE],
                 'turn simple module into modified, allowing 1 prefix and 1 suffix.'),
@@ -35,7 +33,6 @@ export class Research {
                 'turn any module into simple, allowing no prefixes or suffixes.'),
             new Research('Exalt', 'exa', 500, [RARITY.COMPLEX],
                 'add a missing prefix or suffix to a complex item.')
-                // TODO: add annuls
         ];
     }
 }

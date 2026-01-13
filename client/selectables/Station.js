@@ -1,7 +1,7 @@
 import { SPRITE, ORE, AFFIX, ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { Selectable } from './Selectable.js';
 import { game } from '../controllers/game.js';
-import { Vec } from '../controllers/Vec.js';
+import { Vec } from '../util/Vec.js';
 import { Research } from '../modules/Research.js';
 
 export class Station extends Selectable {

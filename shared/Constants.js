@@ -1,4 +1,4 @@
-export const ICON_SIZE = 40;
+export const ICON_SIZE = 32;
 
 export const STACK_SIZES = {
     MODULE: 1,
@@ -48,6 +48,8 @@ export const AFFIX = {
 }
 
 // TODO: try generating these with pixellab
+// TODO: generate a sprite with 3 small drones in b&w as the drone button
+// TODO: make a mining laser icon - did I already make one? needs to be 32x32
 export const SPRITE = {
     // icons
     MINE: 6,
@@ -62,7 +64,15 @@ export const SPRITE = {
     // models
     ASTEROID: 9,
     SPACESHIP: 10,
-    STATION: 11
+    STATION: 11,
+    // ships
+    SHIP_1: 12,
+    SHIP_2: 13,
+    SHIP_3: 14,
+    SHIP_4: 15,
+    SHIP_5: 16,
+    SHIP_6: 17,
+    SHIP_7: 18
 };
 
 export const COLOR = {
@@ -73,36 +83,36 @@ export const COLOR = {
 
 export const UI_COLORS = {
     // Text colors
-    TEXT_PRIMARY: 'rgba(200, 220, 255, 0.9)',
-    TEXT_SECONDARY: 'rgba(150, 170, 200, 0.8)',
-    TEXT_LIGHT: 'rgba(200, 200, 200, 0.8)',
-    TEXT_DISABLED: 'rgba(150, 150, 150, 0.6)',
+    TEXT_PRIMARY: 'rgba(220, 220, 220, 0.95)',
+    TEXT_SECONDARY: 'rgba(160, 160, 160, 0.9)',
+    TEXT_LIGHT: 'rgba(180, 180, 180, 0.85)',
+    TEXT_DISABLED: 'rgba(100, 100, 100, 0.6)',
     TEXT_WHITE: 'white',
     TEXT_REWARD: 'rgba(100, 255, 100, 0.9)',
     TEXT_HIGHLIGHT: 'rgba(255, 255, 100, 0.9)',
     TEXT_COST: 'rgba(255, 200, 100, 0.9)',
     // Backgrounds
-    BG_DARK: 'rgba(0, 0, 0, 0.5)',
-    BG_DARKER: 'rgba(0, 0, 0, 0.8)',
-    BG_PANEL: 'rgba(50, 50, 100, 0.3)',
-    BG_GRID: 'rgba(20, 20, 40, 0.6)',
+    BG_DARK: 'rgba(0, 0, 0, 0.92)',
+    BG_DARKER: 'rgba(0, 0, 0, 0.95)',
+    BG_PANEL: 'rgba(20, 20, 20, 0.5)',
+    BG_GRID: 'rgba(10, 10, 10, 0.7)',
     // Borders
-    BORDER: 'rgba(100, 100, 150, 0.5)',
-    BORDER_BRIGHT: 'rgba(100, 100, 255, 0.5)',
-    BORDER_DARK: 'rgba(0, 0, 0, 0.8)',
+    BORDER: 'rgba(60, 60, 60, 0.8)',
+    BORDER_BRIGHT: 'rgba(100, 100, 100, 0.8)',
+    BORDER_DARK: 'rgba(0, 0, 0, 0.9)',
     // Interactive states
-    HOVER: 'rgba(100, 150, 255, 0.3)',
-    HOVER_BORDER: 'rgba(150, 200, 255, 0.8)',
+    HOVER: 'rgba(80, 80, 80, 0.4)',
+    HOVER_BORDER: 'rgba(150, 150, 150, 0.9)',
     // Health/Status
-    SHIELD_BG: 'rgba(30, 60, 120, 0.7)',
+    SHIELD_BG: 'rgba(30, 30, 40, 0.7)',
     SHIELD_FILL: 'rgba(100, 150, 255, 0.8)',
-    HULL_BG: 'rgba(120, 30, 30, 0.7)',
+    HULL_BG: 'rgba(40, 30, 30, 0.7)',
     HULL_FILL: 'rgba(255, 100, 100, 0.8)',
     BAR_GREEN: 'rgba(30, 150, 30, 0.8)',
     BAR_YELLOW: 'rgba(200, 200, 50, 0.8)',
     // Buttons
     BUTTON_ENABLED_BORDER: 'rgba(50, 200, 50, 1)',
-    BUTTON_DISABLED: 'rgba(100, 100, 100, 0.5)'
+    BUTTON_DISABLED: 'rgba(60, 60, 60, 0.5)'
 };
 
 export const UI_FONTS = {

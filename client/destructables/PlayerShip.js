@@ -1,6 +1,6 @@
 import { game } from '../controllers/game.js';
-import { SPRITE } from '../../shared/Constants.js';
-import { Vec } from '../controllers/Vec.js';
+import { SPRITE, RARITY } from '../../shared/Constants.js';
+import { Vec } from '../util/Vec.js';
 import { Module } from '../modules/Module.js';
 import { Destructable } from './Destructable.js';
 import { Drone } from './Drone.js';
@@ -13,6 +13,27 @@ export class PlayerShip extends Destructable {
         // convert to vectors
         this.pos = new Vec(obj.pos.x, obj.pos.y);
         this.target = new Vec(obj.target.x, obj.target.y);
+
+        // Convert modules to Module instances
+        if (this.modules) {
+            this.modules = this.modules.map(m => {
+                const module = new Module(m.name, m.sprite, m.amount, m.unit, m.rarity);
+                // Copy any other properties like prefixes/suffixes
+                if (m.prefixes) module.prefixes = m.prefixes;
+                if (m.suffixes) module.suffixes = m.suffixes;
+                return module;
+            });
+        }
+
+        // Convert inventory to Module instances
+        if (this.inventory) {
+            this.inventory = this.inventory.map(m => {
+                const module = new Module(m.name, m.sprite, m.amount, m.unit, m.rarity);
+                if (m.prefixes) module.prefixes = m.prefixes;
+                if (m.suffixes) module.suffixes = m.suffixes;
+                return module;
+            });
+        }
 
         this.miningRange = 22; // TODO: should be a function of the mining module equipped
         this.dam = 4; // override dam, 2x the enemy
@@ -53,7 +74,10 @@ export class PlayerShip extends Destructable {
             if (fireButton?.show) {
                 this.attackCount = 0;
                 this.target = aliveEnemies[0].pos.clone();
-                this.shooting = true; 
+                this.shooting = true;
+                const audio = new Audio('client/static/laser1.wav');
+                audio.volume = 0.3;
+                audio.play();
                 aliveEnemies[0].damage(this.dam);
             }
         } else if (fireButton?.show && aliveEnemies.length === 0) {
