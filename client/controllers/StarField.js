@@ -13,26 +13,28 @@ export class StarField {
         this.layers = [];
         this.currentSystemColor = game.system?.color;
 
-        this.#createStarLayer(1000, 0.01, 0.4); // far, slow, dim
-        this.#createStarLayer(500, 0.015, 0.5); // middle layer
-        this.#createStarLayer(250, 0.02, 0.6);  // close, fast, bright
+        this.#createStarLayer(400, 4, 0.4); // far, slow, dim
+        this.#createStarLayer(200, 6, 0.5);  // middle layer
+        this.#createStarLayer(100, 8, 0.6);  // close, fast, bright
     }
 
     #createStarLayer(count, speed, brightness) {
         const stars = [];
         const canvas = document.createElement('canvas');
-        canvas.width = game.canvas.width * 2;
-        canvas.height = game.canvas.height * 2;
-        canvas.pos = Vec.ZERO.clone();
-        canvas.dir = new Vec(Math.random(), Math.random()).normalize().scale(speed);
-        this.layers.push(canvas);
+        canvas.width = game.canvas.width * 4;
+        canvas.height = game.canvas.height * 4;
+        this.layers.push({
+            canvas: canvas,
+            pos: new Vec(-game.canvas.width, -game.canvas.height),
+            dir: new Vec(-1, -1).normalize().scale(speed)
+        });
         const ctx = canvas.getContext("2d");
 
         // Add scattered stars
         for (let i = 0; i < count; i++) {
             stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
+                x: Math.random() * game.canvas.width * 4,
+                y: Math.random() * game.canvas.height * 4,
                 size: Math.random() * 2 + 1,
                 brightness,
                 clustered: false,
@@ -43,8 +45,8 @@ export class StarField {
         // Add star clusters / galaxies
         const clusterCount = 5; // per layer
         for (let i = 0; i < clusterCount; i++) {
-            const cx = Math.random() * canvas.width;
-            const cy = Math.random() * canvas.height;
+            const cx = Math.random() * game.canvas.width;
+            const cy = Math.random() * game.canvas.height;
             const clusterRadius = 100 + Math.random() * 150;
 
             const starsPerCluster = Math.floor(count / clusterCount);
@@ -121,10 +123,12 @@ export class StarField {
         else if (game.system && !this.currentSystemColor) {
             this.currentSystemColor = game.system.color;
         }
-        this.layers.forEach((l) => {
-            l.pos.add(-l.dir).scale(dt);
-            if (l.pos.dist(Vec.ZERO) > game.canvas.width) {
-                l.pos.setV(Vec.ZERO)
+        this.layers.forEach((layer) => {
+            layer.pos.x += layer.dir.x * dt;
+            layer.pos.y += layer.dir.y * dt;
+
+            if (layer.pos.x <= -game.canvas.width || layer.pos.y <= -game.canvas.height) {
+                layer.pos.setV(Vec.ZERO);
             }
         });
         return this;
@@ -132,8 +136,8 @@ export class StarField {
 
     draw() {
         if (game.player.docked) return;
-        this.layers.forEach((l) => {
-            game.ctx.drawImage(l, l.pos.x, l.pos.x);
+        this.layers.forEach(layer => {
+            game.ctx.drawImage(layer.canvas, layer.pos.x, layer.pos.y);
         });
     }
 }

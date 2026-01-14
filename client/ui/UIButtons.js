@@ -23,24 +23,28 @@ export class UIButtons {
         const off = ICON_SIZE + 10;
         const border = 2;
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
-        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SPACESHIP, () => 
-            !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
-        this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS, () => 
+        this.buttons.push(new Button('p', i2vec(i++), SPRITE.QUESTION, () =>
             true, ['Menu', 'Open game menu (P)']));
+        this.buttons.push(new Button('o', i2vec(i++), SPRITE.SHEET, () =>
+            true, ['Overview', 'Open galaxy map (O)']));
+        this.buttons.push(new Button('i', i2vec(i++), SPRITE.EXCLAMATION, () =>
+            !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
+
+
         i = -5;
-        this.buttons.push(new Button('4', i2vec(i++), SPRITE.DRONES, () => 
+        this.buttons.push(new Button('4', i2vec(i++), SPRITE.DRONES, () =>
             !game.player.docked && this.#hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
-        this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => 
+        this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () =>
             !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
-        this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => 
+        this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () =>
             !game.player.docked && this.#hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
-        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => 
+        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () =>
             !game.player.docked && this.#hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
 
         this.buttons.find((b) => b.key === 'i').onDraw = () => game.ui.dialogs.drawInfoDialog();
         this.buttons.find((b) => b.key === 'p').onDraw = () => game.ui.dialogs.drawMenuDialog();
         this.buttons.find((b) => b.key === '3').onDraw = () => game.ui.dialogs.drawWarpDialog();
-        
+
         // TODO: not all the tooltip args here makes sense - some buttons aren't rendered.
         // do a full gameplay check of all tooltips in the UI 
 
@@ -79,23 +83,23 @@ export class UIButtons {
     #drawDroneProgressBar() {
         const droneButton = this.buttons.find((b) => b.key === '4');
         if (!droneButton || !droneButton.pos || !droneButton.show) return;
-        
+
         // Only show progress bar when drones are deployed
         if (game.player.ship.drones.length === 0) return;
-        
+
         const barWidth = 40; // ICON_SIZE
         const barHeight = 4;
         const barX = droneButton.pos.x;
         const barY = droneButton.pos.y - 8; // 8px above the button
-        
+
         // Background
         game.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        
+
         // Full progress bar (always 100% while drones are active)
         game.ctx.fillStyle = 'rgba(100, 150, 255, 0.9)';
         game.ctx.fillRect(barX, barY, barWidth, barHeight);
-        
+
         // Border
         game.ctx.strokeStyle = 'rgba(100, 150, 255, 1)';
         game.ctx.lineWidth = 1;

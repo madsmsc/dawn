@@ -37,18 +37,12 @@ export class Sprites {
         game.ctx.globalAlpha = 1;
     }
 
-    // TODO: replace icons, and remove links/references
     #loadSprites() {
         const spriteSheet = new Image();
-        // icons from:
-        // https://game-icons.net/
-        // https://icons8.com/
-        // https://www.flaticon.com/
         spriteSheet.src = 'client/static/icons.png';
         spriteSheet.onload = () => {
             const columns = spriteSheet.width / ICON_SIZE;
             const rows = spriteSheet.height / ICON_SIZE;
-
             // Create a temporary canvas to extract sprites
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');

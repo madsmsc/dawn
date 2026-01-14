@@ -1,7 +1,5 @@
 export const ICON_SIZE = 32;
 
-export const FRAME_BUDGET = 1000 / 60;
-
 export const STACK_SIZES = {
     MODULE: 1,
     ORE: 200
@@ -50,26 +48,26 @@ export const AFFIX = {
 }
 
 export const SPRITE = {
-    DRONES: 0,
+    X0: 0,
     MINE: 1,
-    X1: 2,
+    DRONES: 2,
     FIRE: 3,
-    X2: 4,
-    X3: 5,
-    X4: 6,
-    SETTINGS: 7,
+    STATION: 4,
+    SHEET: 5,
+    QUESTION: 6,
+    EXCLAMATION: 7,
     WARP: 8,
     ASTEROID: 9,
     SPACESHIP: 10,
-    STATION: 11,
-    // ships
+    CROSS: 11,
     SHIP_1: 12,
     SHIP_2: 13,
     SHIP_3: 14,
     SHIP_4: 15,
     SHIP_5: 16,
     SHIP_6: 17,
-    SHIP_7: 18
+    SHIP_7: 18,
+    DRONE: 19
 };
 
 export const COLOR = {

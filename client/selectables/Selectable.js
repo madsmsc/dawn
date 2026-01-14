@@ -2,6 +2,7 @@ import { Vec } from '../util/Vec.js';
 import { game } from '../controllers/game.js';
 import { ICON_SIZE } from '../../shared/Constants.js';
 
+// TODO: figure out to move or kill this since nothing is selectable
 export class Selectable {
     constructor() {
         game.ui.selectables.push(this);

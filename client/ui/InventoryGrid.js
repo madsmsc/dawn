@@ -227,7 +227,7 @@ export class InventoryGrid {
     }
 
     #getAbbreviation(name) {
-        const len = Math.min(5, name.length());
+        const len = Math.min(5, name.length);
         return name.substring(0, len).toUpperCase();
     }
 

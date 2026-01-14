@@ -8,5 +8,6 @@ export const game = {
     player: undefined,
     starField: undefined,
     camera: undefined,
-    missionManager: undefined
+    missionManager: undefined,
+    sounds: undefined
 };

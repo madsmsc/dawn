@@ -6,7 +6,7 @@ import { StarField } from './StarField.js';
 import { Camera } from './Camera.js';
 import { MissionManager } from '../missions/MissionManager.js';
 import { Sprites } from '../util/Sprites.js';
-import { FRAME_BUDGET } from '../../shared/Constants.js';
+import { Sounds } from '../util/Sounds.js';
 
 export class GameLoop {
     constructor() {
@@ -41,6 +41,7 @@ export class GameLoop {
 
         if (time % 1000 < this.lastTime % 1000) { // new second
             const workTime = performance.now() - frameStart;
+            const FRAME_BUDGET = 1000 / 60; // TODO: change hardcoded 60 to actual fps
             const spareTime = FRAME_BUDGET - workTime;
             const sparePerc = Math.floor((spareTime) / FRAME_BUDGET * 100)
             game.ui.spareTime = `spare ms: ${Math.floor(spareTime)} (${sparePerc}%)`;
@@ -56,6 +57,8 @@ export class GameLoop {
         game.canvas.width = window.innerWidth;
         game.canvas.height = window.innerHeight;
         game.ctx = game.canvas.getContext('2d');
+
+        game.sounds = new Sounds();
         game.sprites = new Sprites();
         game.ui = new UI();
         game.server = new Server();
@@ -74,13 +77,7 @@ export class GameLoop {
         }, 3000);
 
         // start background music
-        const bgAudio = new Audio('../static/background.mp3');
-        bgAudio.loop = true;
-        bgAudio.volume = 0.2;
-        bgAudio.play().catch(err => {
-            // browsers sometimes block autoplay. may need user interaction before playing
-            console.warn('Background music failed to play: ', err);
-        });
+        game.sounds.background();
 
         // start game loop
         this.gameLoop = this.gameLoop.bind(this);

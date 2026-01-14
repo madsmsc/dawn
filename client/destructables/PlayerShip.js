@@ -1,5 +1,5 @@
 import { game } from '../controllers/game.js';
-import { SPRITE, RARITY } from '../../shared/Constants.js';
+import { SPRITE } from '../../shared/Constants.js';
 import { Vec } from '../util/Vec.js';
 import { Module } from '../modules/Module.js';
 import { Destructable } from './Destructable.js';
@@ -82,9 +82,7 @@ export class PlayerShip extends Destructable {
             });
             this.target = closestEnemyPos.clone();
             this.shooting = true;
-            const audio = new Audio('client/static/laser1.wav');
-            audio.volume = 0.1;
-            audio.play();
+            game.sounds.laser1();
             aliveEnemies[0].damage(this.dam);
         } else if (aliveEnemies.length === 0) {
             // No alive enemies left - toggle off weapon

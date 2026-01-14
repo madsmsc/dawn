@@ -103,7 +103,7 @@ export class Drone extends Destructable {
         game.ctx.translate(-off, -off);
         
         // Draw a smaller version of the ship sprite
-        game.sprites.draw(SPRITE.SHIP, new Vec(0, 0), false, undefined, false, 0.4);
+        game.sprites.draw(SPRITE.DRONE, new Vec(0, 0), false, undefined, false, 0.8);
         
         // Draw velocity vector if enabled
         if (game.player?.settings?.showVelocityVectors) {

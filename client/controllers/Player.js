@@ -28,6 +28,7 @@ export class Player {
         const moveVec = new Vec(dx, dy);
 
         ship.velVec = ship.velVec || new Vec(0, 0);
+        // TODO: remove all this shit again and go back to S and higher valuies in demo.json
         const dt = delta / 1000; // ms to s for physics
 
         // Input handling
