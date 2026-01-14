@@ -23,21 +23,26 @@ export class UIButtons {
         const off = ICON_SIZE + 10;
         const border = 2;
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
-        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SHIP, () => !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
-        this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS, () => true, ['Menu', 'Open game menu (P)']));
+        this.buttons.push(new Button('i', i2vec(i++), SPRITE.SPACESHIP, () => 
+            !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
+        this.buttons.push(new Button('p', i2vec(i++), SPRITE.SETTINGS, () => 
+            true, ['Menu', 'Open game menu (P)']));
         i = -5;
-        this.buttons.push(new Button('4', i2vec(i++), SPRITE.SHIP, () => !game.player.docked && this.#hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
-        this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
-        this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => !game.player.docked && this.#hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
-        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => !game.player.docked && this.#hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
+        this.buttons.push(new Button('4', i2vec(i++), SPRITE.DRONES, () => 
+            !game.player.docked && this.#hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
+        this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () => 
+            !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
+        this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () => 
+            !game.player.docked && this.#hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
+        this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () => 
+            !game.player.docked && this.#hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
 
         this.buttons.find((b) => b.key === 'i').onDraw = () => game.ui.dialogs.drawInfoDialog();
         this.buttons.find((b) => b.key === 'p').onDraw = () => game.ui.dialogs.drawMenuDialog();
         this.buttons.find((b) => b.key === '3').onDraw = () => game.ui.dialogs.drawWarpDialog();
         
-        // Buttons 1, 2, 4 are toggle-only (no dialogs) - don't set onDraw so they can be active simultaneously
-        
         // TODO: not all the tooltip args here makes sense - some buttons aren't rendered.
+        // do a full gameplay check of all tooltips in the UI 
 
         this.buttons.push(new Button('e', undefined, undefined, () => true, ['Dock/Undock']));
         const eButton = this.buttons.find((b) => b.key === 'e');

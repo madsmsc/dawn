@@ -37,7 +37,7 @@ export class Sprites {
         game.ctx.globalAlpha = 1;
     }
 
-    // TODO: when replacing icons, the links/references can be removed.
+    // TODO: replace icons, and remove links/references
     #loadSprites() {
         const spriteSheet = new Image();
         // icons from:
@@ -65,14 +65,14 @@ export class Sprites {
                 // Draw the portion of the sprite sheet we want
                 tempCtx.drawImage(
                     spriteSheet,
-                    col * ICON_SIZE,    // source x
-                    row * ICON_SIZE,   // source y
-                    ICON_SIZE,          // source width
-                    ICON_SIZE,         // source height
-                    0,                          // dest x
-                    0,                          // dest y
-                    ICON_SIZE,          // dest width
-                    ICON_SIZE          // dest height
+                    col * ICON_SIZE, // source x
+                    row * ICON_SIZE, // source y
+                    ICON_SIZE,       // source width
+                    ICON_SIZE,       // source height
+                    0,               // dest x
+                    0,               // dest y
+                    ICON_SIZE,       // dest width
+                    ICON_SIZE        // dest height
                 );
                 // Convert to an image and store
                 const sprite = new Image();

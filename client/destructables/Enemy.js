@@ -9,7 +9,6 @@ export class Enemy extends Destructable {
         super();
 
         this.bounty = 25;
-        this.rep = 5;
         
         // Randomly select ship sprite from SHIP_1 to SHIP_7
         const shipSprites = [SPRITE.SHIP_1, SPRITE.SHIP_2, SPRITE.SHIP_3, SPRITE.SHIP_4, SPRITE.SHIP_5, SPRITE.SHIP_6, SPRITE.SHIP_7];
@@ -94,7 +93,7 @@ export class Enemy extends Destructable {
         const audio = new Audio('client/static/laser7.wav');
         audio.volume = 0.1;
         audio.play();
-        const dam = Math.random() * this.dam; // TODO: too random 
+        const dam = this.dam / 2 + Math.random() * this.dam / 2;
         game.player.ship.damage(dam); 
     }
 
@@ -113,6 +112,5 @@ export class Enemy extends Destructable {
             game.ui.messages.addMessage(`Received: ${moduleTierName}`);
         }
         game.player.credits = this.bounty;
-        game.player.rep = this.rep;
     }
 }

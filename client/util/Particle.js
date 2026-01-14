@@ -24,10 +24,11 @@ export class Particle {
         game.ctx.restore();
     }
 
-    update() {
+    update(delta) {
+        const dt = delta / 1000; // ms to s for physics
         this.draw();
         this.alpha -= this.fadeSpeed;
-        this.x += this.dx;
-        this.y += this.dy;
+        this.x += this.dx * dt;
+        this.y += this.dy * dt;
     }
 }

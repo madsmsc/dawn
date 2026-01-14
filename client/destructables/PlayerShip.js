@@ -34,8 +34,8 @@ export class PlayerShip extends Destructable {
                 return module;
             });
         }
-
-        this.miningRange = 22; // TODO: should be a function of the mining module equipped
+        // TODO: should be a function of the mining module equipped
+        this.miningRange = 22; 
         this.dam = 4; // override dam, 2x the enemy
 
         // mark as player-controlled so AI movement is skipped in Destructable.move
@@ -57,11 +57,9 @@ export class PlayerShip extends Destructable {
         // Player ship does not perform AI movement in Destructable.move (isPlayer === true)
         super.update(delta);
         this.attackCount += delta;
-
-        this.updateDrones(delta);
         this.updateFire();
+        this.updateDrones(delta);
         this.updateMining(delta);
-
         return this;
     }
 
@@ -69,18 +67,26 @@ export class PlayerShip extends Destructable {
         const fireButton = game.ui.buttons.find(b => b.key === '1');
         const instanceEnemies = game.system.currentInstance ? game.system.currentInstance.enemies : [];
         const aliveEnemies = instanceEnemies.filter(e => !e.isDead);
-
+        if (fireButton && !fireButton.show) { return }
         if (aliveEnemies.length > 0 && this.attackCount > this.attackTime) {
-            if (fireButton?.show) {
-                this.attackCount = 0;
-                this.target = aliveEnemies[0].pos.clone();
-                this.shooting = true;
-                const audio = new Audio('client/static/laser1.wav');
-                audio.volume = 0.1;
-                audio.play();
-                aliveEnemies[0].damage(this.dam);
-            }
-        } else if (fireButton?.show && aliveEnemies.length === 0) {
+            this.attackCount = 0;
+            // shoot at closest enemy
+            let closestEnemyPos = null;
+            let closestDist = Infinity;
+            aliveEnemies.forEach(e => {
+                const dist = this.pos.clone().sub(e.pos).length();
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestEnemyPos = e.pos;
+                }
+            });
+            this.target = closestEnemyPos.clone();
+            this.shooting = true;
+            const audio = new Audio('client/static/laser1.wav');
+            audio.volume = 0.1;
+            audio.play();
+            aliveEnemies[0].damage(this.dam);
+        } else if (aliveEnemies.length === 0) {
             // No alive enemies left - toggle off weapon
             fireButton.show = false;
         }
@@ -88,61 +94,62 @@ export class PlayerShip extends Destructable {
 
     updateMining(delta) {
         const mineButton = game.ui.buttons.find(b => b.key === '2');
-        if (mineButton?.show) this.mine();
-        if (this.miningTarget) {
-            const dist = this.pos.clone().sub(this.miningTarget.pos).length();
-            const range = this.miningRange + this.miningTarget.size;
+        if (mineButton?.show) { this.findMiningTarget(); }
+        if (!this.miningTarget) { return; }
+        const dist = this.pos.clone().sub(this.miningTarget.pos).length();
+        const range = this.miningRange + this.miningTarget.size;
 
-            if (dist > range) {
-                // Out of range - cancel mining
-                this.miningTarget = null;
-                this.miningProgress = 0;
-            } else {
-                // Continue mining
-                this.miningProgress += delta / this.miningDuration;
+        if (dist > range) {
+            // Out of range - cancel mining
+            this.miningTarget = null;
+            this.miningProgress = 0;
+            return;
+        }
 
-                if (this.miningProgress >= 1) {
-                    // Mining complete - harvest the ore
-                    const ores = this.miningTarget.mine();
-                    const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
-                    const asteroidIndex = instanceAsteroids.indexOf(this.miningTarget);
-                    if (asteroidIndex !== -1) {
-                        instanceAsteroids.splice(asteroidIndex, 1);
-                    }
+        // Continue mining
+        const dt = delta / 1000; // ms to s for physics
+        this.miningProgress += dt / this.miningDuration;
 
-                    // Toggle off mining button since asteroid is gone
-                    const mineButton = game.ui.buttons.find(b => b.key === '2');
-                    if (mineButton) mineButton.show = false;
-
-                    ores.forEach(ore => {
-                        let remaining = ore.amount;
-
-                        // Try to add to existing stacks first
-                        const existingStacks = this.inventory.filter(m => m.name === ore.type);
-                        for (const stack of existingStacks) {
-                            if (remaining <= 0) break;
-                            const spaceInStack = stack.stackSize - stack.amount;
-                            const toAdd = Math.min(remaining, spaceInStack);
-                            stack.amount += toAdd;
-                            remaining -= toAdd;
-                        }
-
-                        // Add remaining ore as new stacks
-                        while (remaining > 0) {
-                            const amountForStack = Math.min(remaining, new Module(ore.type, SPRITE.MINE, 0, 'kg').stackSize);
-                            const m = new Module(ore.type, SPRITE.MINE, amountForStack, 'kg');
-                            this.inventory.push(m);
-                            remaining -= amountForStack;
-                        }
-
-                        // Show message about mined ore
-                        game.ui.messages.addMessage(`Mined: ${ore.amount.toFixed(0)} kg ${ore.type}`);
-                    });
-
-                    this.miningTarget = null;
-                    this.miningProgress = 0;
-                }
+        if (this.miningProgress >= 1) {
+            // Mining complete - harvest the ore
+            const ores = this.miningTarget.mine();
+            const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+            const asteroidIndex = instanceAsteroids.indexOf(this.miningTarget);
+            if (asteroidIndex !== -1) {
+                instanceAsteroids.splice(asteroidIndex, 1);
             }
+
+            // Toggle off mining button since asteroid is gone
+            const mineButton = game.ui.buttons.find(b => b.key === '2');
+            if (mineButton) mineButton.show = false;
+
+            ores.forEach(ore => {
+                let remaining = ore.amount;
+
+                // Try to add to existing stacks first
+                const existingStacks = this.inventory.filter(m => m.name === ore.type);
+                for (const stack of existingStacks) {
+                    if (remaining <= 0) break;
+                    const spaceInStack = stack.stackSize - stack.amount;
+                    const toAdd = Math.min(remaining, spaceInStack);
+                    stack.amount += toAdd;
+                    remaining -= toAdd;
+                }
+
+                // Add remaining ore as new stacks
+                while (remaining > 0) {
+                    const amountForStack = Math.min(remaining, new Module(ore.type, SPRITE.MINE, 0, 'kg').stackSize);
+                    const m = new Module(ore.type, SPRITE.MINE, amountForStack, 'kg');
+                    this.inventory.push(m);
+                    remaining -= amountForStack;
+                }
+
+                // Show message about mined ore
+                game.ui.messages.addMessage(`Mined: ${ore.amount.toFixed(0)} kg ${ore.type}`);
+            });
+
+            this.miningTarget = null;
+            this.miningProgress = 0;
         }
     }
 
@@ -168,7 +175,7 @@ export class PlayerShip extends Destructable {
         });
     }
 
-    mine() {
+    findMiningTarget() {
         // If already mining, continue current operation
         if (this.miningTarget) return;
 

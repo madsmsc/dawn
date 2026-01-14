@@ -15,14 +15,6 @@
   - you get the warp drive are are told to warp to the drone hive
     and kill it, as a reward you get the drone link (renamed from drones)
   - from there, your pilot is granted access to use system gates
-- add colored "blotches" as galaxies/nebulae - 32x32 or 200x200 pngs?
-  - will need to redraw when flying to new systems because of the colors
-  - also just for immersion, so backdrop changes.
-- find out how to do performance meassurements.
-  - some breakdown of which methods use resources.
-  - need some way to meassure if the "improvements" I make
-  - actually help or not.
-- space station background - how?
 - aoe weapon, long cast time
 - ambience: music, lasers, particle trails, background planets with rings, etc.
 - shoot mercenaries to increase fighter reputation
@@ -44,5 +36,5 @@
   - #3 it doesn't seem like there's any way out of this alive. oo many ships are warping in and our warp drive is down. let's go down fighting. after all, a good fight is what it's all about. 
   - #4 welcome back pilot. you have awoken in another clone. here's how a station works. you have been given a new frigate and a choice between weapons. a few more fighting missions follow explaining more mechanics and dropping some cool loot.
   - #5 finally some crafting mission(s).
-- ships are completely lost on death but rep, credits, and components/loot outside the lost ship are kept.
-- no xp or levels. but rep could potentially be used as a level mechanic where some thing are unlocked. this may come later.
+- ships are completely lost on death but credits, and components/loot outside the lost ship are kept.
+- no xp or levels

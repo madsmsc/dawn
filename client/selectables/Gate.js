@@ -74,7 +74,7 @@ export class Gate extends Selectable {
                 this.cancelActivation();
                 return this;
             }
-            
+            const dt = delta / 1000; // ms to s for physics
             this.activationTime += delta;
             
             // Spawn particles around the gate
@@ -95,7 +95,7 @@ export class Gate extends Selectable {
             
             // Update and remove dead particles
             this.particles = this.particles.filter(p => {
-                p.update();
+                p.update(delta);
                 return p.alpha > 0;
             });
             
@@ -112,7 +112,6 @@ export class Gate extends Selectable {
             this.activating = true;
             this.activationTime = 0;
             this.onComplete = onComplete; // Callback when activation finishes
-            console.log(`Activating gate: ${this.name}`);
         }
     }
     
@@ -120,7 +119,6 @@ export class Gate extends Selectable {
         this.activating = false;
         this.activationTime = 0;
         this.particles = [];
-        console.log(`Gate activation complete: ${this.name}`);
         
         // Execute jump callback if provided
         if (this.onComplete) {
@@ -134,7 +132,6 @@ export class Gate extends Selectable {
         this.activationTime = 0;
         this.particles = [];
         this.onComplete = null;
-        console.log(`Gate activation cancelled: ${this.name} (player moved out of range)`);
     }
 
     canJump() {

@@ -24,6 +24,7 @@ export class MessageQueue {
     update(delta) {
         // Update all messages and remove expired ones
         this.messages = this.messages.filter(msg => !msg.update(delta));
+        return this;
     }
 
     draw() {

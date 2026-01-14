@@ -4,7 +4,6 @@ import { UI_COLORS, UI_FONTS, ORE, RARITY } from '../../shared/Constants.js';
 import { Module } from '../modules/Module.js';
 
 // TODO: introduce new modules for increasing inventory size
-// TODO: remove rep - eventually a better system than credits should be done
 // TODO: make the text be longer for modules and probably break it.
 
 export class InventoryGrid {
@@ -32,13 +31,6 @@ export class InventoryGrid {
             y: 0
         };
         
-        this.equippedGrid = {  // Legacy - keep for compatibility
-            cols: 3,
-            rows: 2,
-            x: 0,
-            y: 0
-        };
-        
         this.inventoryGrid = {
             cols: 5,
             rows: 4,
@@ -55,7 +47,7 @@ export class InventoryGrid {
     }
 
     draw(dialogX, dialogWidth, yOffset) {
-        // Draw equipped modules section - split into active and passive
+        // TODO: isActive should just check its object (this) - not be a static method
         const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
         const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
         
@@ -235,12 +227,8 @@ export class InventoryGrid {
     }
 
     #getAbbreviation(name) {
-        // Create 2-3 letter abbreviation from name
-        const words = name.split(' ');
-        if (words.length > 1) {
-            return words.map(w => w[0]).join('').substring(0, 3).toUpperCase();
-        }
-        return name.substring(0, 3).toUpperCase();
+        const len = Math.min(5, name.length());
+        return name.substring(0, len).toUpperCase();
     }
 
     #getRarityColor(rarity) {

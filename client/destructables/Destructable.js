@@ -22,13 +22,13 @@ export class Destructable extends Selectable {
         this.maxVel = 1;
         this.target = Vec.ZERO;
         this.moveMode = MOVE.APPROACH;
+        // TODO: should depend on the ship type and weapons/modules
         this.modules = []; // "equipped" modules
         this.inventory = []; // unequipped modules and ore
-        this.orbitRadius = 120; // TODO: should depend on the ship type and weapons/modules
-        // TODO: all this should be function of equipped modules
-        this.scanRange = 10000; // TODO: should depend on ship type and modules
-        this.attackRange = 150; // should depend on ship type and modules ...
-        this.dam = 2; // ...
+        this.orbitRadius = 120; 
+        this.scanRange = 10000; 
+        this.attackRange = 150; 
+        this.dam = 2; 
         this.attackTime = 1000;
         this.attackCount = 0;
     }
@@ -115,8 +115,8 @@ export class Destructable extends Selectable {
     #updateEngineTrails(delta) {
         // Only emit trails when ship is moving
         if (this.vel < 0.1) return;
-
-        this.trailSpawnTimer += delta;
+        const dt = delta / 1000; // ms to s for physics
+        this.trailSpawnTimer += dt;
 
         if (this.trailSpawnTimer >= this.trailSpawnInterval) {
             this.trailSpawnTimer = 0;
@@ -167,9 +167,10 @@ export class Destructable extends Selectable {
     move(delta) {
         // AI movement - player is controlled in player class
         if (this.isPlayer) return;
+        const dt = delta / 1000; // ms to s for physics
 
         // AI velocity accumulation so approach/orbit actually move
-        this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
+        this.vel = Math.min(this.vel + this.acceleration * dt, this.maxVel);
 
         if (this.moveMode === MOVE.APPROACH) {
             const len = this.target.clone().sub(this.pos);

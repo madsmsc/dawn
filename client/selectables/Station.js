@@ -29,7 +29,7 @@ export class Station extends Selectable {
         };
     }
 
-    update(delta) {
+    update() {
         // Stations are stationary; no movement or state updates needed
         return this;
     }

@@ -58,7 +58,6 @@ export class Vec {
     }
 
     toString() {
-        console.log('toString ' + this.x + ', ' + this.y);
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     }
 

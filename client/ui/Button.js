@@ -23,7 +23,7 @@ export class Button {
 
     keyDown() {
         if (!this.isEnabled()) return;
-        
+        // TODO: I hate this - copilot mess - rewrite this...
         // Only toggle/close other UIs if this button has a UI dialog
         if (this.onDraw && this.onDraw.toString() !== '() => { }') {
             // If this button's UI is already shown, toggle it off
@@ -38,7 +38,7 @@ export class Button {
                 }
             });
         }
-        
+
         // Toggle show state for all buttons (modules can be active simultaneously)
         this.show = !this.show;
         this.down = true;
@@ -70,10 +70,9 @@ export class Button {
     }
 
     draw() {
-        if (this.isEnabled() && (this.show || this.down)) {
-            this.onDraw();
-        }
-        if (this.isEnabled() && this.icon && this.pos) {
+        if (!this.enabled) { return; }
+        if (this.show || this.down) { this.onDraw(); }
+        if (this.icon && this.pos) {
             game.sprites.draw(this.icon, this.pos, this.show || this.down, this.key);
         }
     }

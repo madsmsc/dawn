@@ -71,7 +71,16 @@ export class GameLoop {
         setInterval(() => {
             if (!game.player || game.player.docked) return;
             game.missionManager.generateNewMissions();
-        }, 30); // TODO: make greater - low for testing...
+        }, 3000);
+
+        // start background music
+        const bgAudio = new Audio('../static/background.mp3');
+        bgAudio.loop = true;
+        bgAudio.volume = 0.2;
+        bgAudio.play().catch(err => {
+            // browsers sometimes block autoplay. may need user interaction before playing
+            console.warn('Background music failed to play: ', err);
+        });
 
         // start game loop
         this.gameLoop = this.gameLoop.bind(this);

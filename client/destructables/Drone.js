@@ -45,7 +45,6 @@ export class Drone extends Destructable {
     
     update(delta) {
         super.update(delta);
-        
         if (this.isDead) return this;
         
         this.attackCount += delta;
@@ -87,7 +86,7 @@ export class Drone extends Destructable {
             this.currentTarget = null;
             this.target = this.ownerShip.pos.clone();
             this.moveMode = MOVE.ORBIT;
-            this.orbitRadius = 40;
+            this.orbitRadius = 40 +  Math.random() * 50;
         }
         
         return this;
@@ -142,6 +141,5 @@ export class Drone extends Destructable {
     die() {
         super.die();
         // Drones can die but enemies don't target them currently
-        console.log('Drone destroyed!');
     }
 }

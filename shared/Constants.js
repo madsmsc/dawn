@@ -49,21 +49,16 @@ export const AFFIX = {
     }
 }
 
-// TODO: try generating these with pixellab
-// TODO: generate a sprite with 3 small drones in b&w as the drone button
-// TODO: make a mining laser icon - did I already make one? needs to be 32x32
 export const SPRITE = {
-    // icons
-    MINE: 6,
-    PILOT: 1,
-    SHIP: 2,
+    DRONES: 0,
+    MINE: 1,
+    X1: 2,
     FIRE: 3,
-    FLY_TO: 4,
-    ORBIT: 5,
-    APPROACH: 6,
+    X2: 4,
+    X3: 5,
+    X4: 6,
     SETTINGS: 7,
     WARP: 8,
-    // models
     ASTEROID: 9,
     SPACESHIP: 10,
     STATION: 11,
