@@ -76,7 +76,7 @@ export class PlayerShip extends Destructable {
                 this.target = aliveEnemies[0].pos.clone();
                 this.shooting = true;
                 const audio = new Audio('client/static/laser1.wav');
-                audio.volume = 0.3;
+                audio.volume = 0.1;
                 audio.play();
                 aliveEnemies[0].damage(this.dam);
             }

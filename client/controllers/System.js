@@ -50,7 +50,7 @@ export class System {
             const warpable = this.currentInstance.warpable;
             if (warpable.canDock && warpable.canDock()) {
                 this.#showDockingPrompt(warpable);
-            } else if (warpable.targetSystem) {
+            } else if (warpable.targetSystem && warpable.canJump && warpable.canJump()) {
                 this.#showWarpPrompt(warpable);
             }
         }
@@ -96,8 +96,8 @@ export class System {
         // Check if current warpable is a gate that can be jumped through
         if (this.currentInstance && this.currentInstance.warpable.canJump) {
             const gate = this.currentInstance.warpable;
-            if (gate.canJump()) {
-                this.jumpThroughGate(gate);
+            if (gate.canJump() && !gate.activating) {
+                gate.activate((completedGate) => this.jumpThroughGate(completedGate));
             }
         }
     }

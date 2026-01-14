@@ -92,7 +92,7 @@ export class Enemy extends Destructable {
         this.attackCount = 0;
         this.shooting = true;
         const audio = new Audio('client/static/laser7.wav');
-        audio.volume = 0.3;
+        audio.volume = 0.1;
         audio.play();
         const dam = Math.random() * this.dam; // TODO: too random 
         game.player.ship.damage(dam); 

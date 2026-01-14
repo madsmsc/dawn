@@ -9,7 +9,13 @@
 
 # TODOs
 
-- add colored "blotches" as galaxies/nebulae
+- when not in demo mode, make small intro
+  - you start with only the weapon and kill a single enemy
+  - you get the mining laser and are asked to complete a mining mission
+  - you get the warp drive are are told to warp to the drone hive
+    and kill it, as a reward you get the drone link (renamed from drones)
+  - from there, your pilot is granted access to use system gates
+- add colored "blotches" as galaxies/nebulae - 32x32 or 200x200 pngs?
   - will need to redraw when flying to new systems because of the colors
   - also just for immersion, so backdrop changes.
 - find out how to do performance meassurements.

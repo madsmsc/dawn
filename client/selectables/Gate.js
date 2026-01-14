@@ -69,6 +69,12 @@ export class Gate extends Selectable {
 
     update(delta) {
         if (this.activating) {
+            // Check if player moved out of range - abort if so
+            if (!this.canJump()) {
+                this.cancelActivation();
+                return this;
+            }
+            
             this.activationTime += delta;
             
             // Spawn particles around the gate
@@ -101,10 +107,11 @@ export class Gate extends Selectable {
         return this;
     }
     
-    activate() {
+    activate(onComplete) {
         if (!this.activating && this.canJump()) {
             this.activating = true;
             this.activationTime = 0;
+            this.onComplete = onComplete; // Callback when activation finishes
             console.log(`Activating gate: ${this.name}`);
         }
     }
@@ -114,7 +121,20 @@ export class Gate extends Selectable {
         this.activationTime = 0;
         this.particles = [];
         console.log(`Gate activation complete: ${this.name}`);
-        // TODO: Implement actual gate jump to targetSystem
+        
+        // Execute jump callback if provided
+        if (this.onComplete) {
+            this.onComplete(this);
+            this.onComplete = null;
+        }
+    }
+
+    cancelActivation() {
+        this.activating = false;
+        this.activationTime = 0;
+        this.particles = [];
+        this.onComplete = null;
+        console.log(`Gate activation cancelled: ${this.name} (player moved out of range)`);
     }
 
     canJump() {
