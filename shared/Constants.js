@@ -1,5 +1,7 @@
 export const ICON_SIZE = 32;
 
+export const FRAME_BUDGET = 1000 / 60;
+
 export const STACK_SIZES = {
     MODULE: 1,
     ORE: 200

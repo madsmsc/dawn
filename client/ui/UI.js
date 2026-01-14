@@ -17,27 +17,27 @@ export class UI {
         this.fpsCount = 0;
         this.fpsTime = 0;
         this.fpsDisplay = 0;
-        
+
         // Dialog and HUD dimensions
         this.dialogWidth = 500;
         this.dialogHeight = 400;
         this.dialogX = game.canvas.width / 2 - this.dialogWidth / 2;
         this.dialogY = game.canvas.height / 2 - this.dialogHeight / 2;
-        
+
         // Last mouse position for hover effects
         this.lastMousePos = null;
-        
+
         // Shared inventory grid for all UI components
         this.inventoryGrid = new InventoryGrid();
-        
+
         // Message queue for on-screen notifications
         this.messages = new MessageQueue();
-        
+
         // Create specialized UI managers
         const uiButtons = new UIButtons();
         this.uiButtons = uiButtons;
         this.buttons = uiButtons.buttons;
-        
+
         this.dialogs = new UIDialogs(this.dialogWidth, this.dialogHeight, this.dialogX, this.dialogY, this.inventoryGrid);
         this.station = new UIStation(this.inventoryGrid);
         this.hud = new HUD();
@@ -49,11 +49,9 @@ export class UI {
         if (this.fpsTime >= 1000) {
             this.fpsDisplay = this.fpsCount;
             this.fpsCount = 0;
-            this.fpsTime = 0;
+            this.fpsTime -= 1000;
         }
-        if (this.showStationUI()) {
-            game.missionManager.update(delta);
-        }
+        this.messages.update(delta);
         return this;
     }
 
@@ -63,9 +61,9 @@ export class UI {
         // Reset dialog states each frame
         this.dialogs.openInfoDialog = false;
         this.dialogs.openMenuDialog = false;
-        if (this.showLoginUI()) { 
-            this.#loginUI(); 
-        } else if (this.showStationUI()) { 
+        if (this.showLoginUI()) {
+            this.#loginUI();
+        } else if (this.showStationUI()) {
             this.station.draw();
             this.#drawButtons(); // Draw buttons so their callbacks execute (e.g., E to undock)
         } else {
@@ -116,12 +114,12 @@ export class UI {
         game.ctx.fillText('Station', 10, yOffset += 30);
         game.ctx.font = UI_FONTS.SMALL;
         game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
-        
+
         if (game.player.docked) return;
-        
+
         // Draw HUD health circles and velocity bar
         this.hud.draw();
-        
+
         // Draw on-screen messages
         this.messages.draw();
     }
@@ -134,19 +132,19 @@ export class UI {
     handleStationDialogClick(clickPos) {
         return this.station.handleStationDialogClick(clickPos);
     }
-    
+
     handleStationDialogMouseDown(clickPos) {
         return this.station.handleStationDialogMouseDown(clickPos);
     }
-    
+
     handleStationDialogMouseUp(clickPos) {
         return this.station.handleStationDialogMouseUp(clickPos);
     }
-    
+
     handleInfoDialogMouseDown(clickPos) {
         return this.dialogs.handleInfoDialogMouseDown(clickPos);
     }
-    
+
     handleInfoDialogMouseUp(clickPos) {
         return this.dialogs.handleInfoDialogMouseUp(clickPos);
     }
@@ -160,10 +158,5 @@ export class UI {
         if (game.player && game.player.docked) {
             this.station.setMousePos(mousePos);
         }
-    }
-    
-    update(delta) {
-        this.messages.update(delta);
-        return this;
     }
 }

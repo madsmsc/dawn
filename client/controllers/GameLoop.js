@@ -6,37 +6,46 @@ import { StarField } from './StarField.js';
 import { Camera } from './Camera.js';
 import { MissionManager } from '../missions/MissionManager.js';
 import { Sprites } from '../util/Sprites.js';
+import { FRAME_BUDGET } from '../../shared/Constants.js';
 
 export class GameLoop {
     constructor() {
-        this.lastDelta = 0;
+        this.lastTime = 0;
     }
 
-    gameLoop(delta) {
+    gameLoop(time) {
+        const frameStart = performance.now();
+        const delta = time - this.lastTime;
         game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
-        // timings
-        const newDelta = delta - this.lastDelta;
-        this.lastDelta = delta;
-        // UI
+
+        // pure UI - no game
         if (game.ui.showStationUI()
             || game.ui.showLoginUI()
             || game.player.dead) {
-            game.ui.update(newDelta).draw();
+            game.ui.update(delta).draw();
             return requestAnimationFrame(this.gameLoop);
         }
         // background
-        game.starField.update(newDelta).draw();
+        game.starField.update(delta).draw();
         // start camera transformation
         game.camera.update();
         game.camera.apply();
         // update game objects
-        game.system.update(newDelta).draw();
-        game.player.update(newDelta).draw();
+        game.system.update(delta).draw();
+        game.player.update(delta).draw();
         // stop transformation
         game.camera.restore();
         // UI
-        game.missionManager.update(newDelta).draw();
-        game.ui.update(newDelta).draw();
+        game.missionManager.update(delta).draw();
+        game.ui.update(delta).draw();
+
+        if (time % 1000 < this.lastTime % 1000) { // new second
+            const workTime = performance.now() - frameStart;
+            const spareTime = FRAME_BUDGET - workTime;
+            const sparePerc = Math.floor((spareTime) / FRAME_BUDGET * 100)
+            game.ui.spareTime = `spare ms: ${Math.floor(spareTime)} (${sparePerc}%)`;
+        }
+        this.lastTime = time;
         // next frame
         requestAnimationFrame(this.gameLoop);
     }

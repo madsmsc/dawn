@@ -9,7 +9,7 @@ export class UIHelper {
         // Black background
         game.ctx.fillStyle = UI_COLORS.BG_DARK;
         game.ctx.fillRect(x, y, width, height);
-        
+
         // Single border
         game.ctx.strokeStyle = UI_COLORS.BORDER;
         game.ctx.lineWidth = 1;
@@ -61,7 +61,7 @@ export class UIHelper {
     static drawFps() {
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
         game.ctx.font = UI_FONTS.MEDIUM;
-        game.ctx.fillText(`FPS: ${game.ui.fpsDisplay}`, game.canvas.width - 60, 20);
+        game.ctx.fillText(`fps: ${game.ui.fpsDisplay}, ${game.ui.spareTime}`, game.canvas.width - 200, 20);
     }
 
     static drawTooltip(x, y, text) {

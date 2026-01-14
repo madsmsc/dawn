@@ -15,8 +15,6 @@ export class Player {
     }
 
     update(delta) {
-        // this.ship?.damage(1); // testing damage
-
         // Apply player WASD input to the player's ship directly (directional movement)
         if (!this.ship || this.docked) return this;
         const bW = game.ui.buttons.find(b => b.key === 'w');
@@ -32,6 +30,7 @@ export class Player {
 
         ship.velVec = ship.velVec || new Vec(0, 0);
 
+        // TODO: any state updates, like changing ship.velVec must use delta to be independant of frame rate!
         if (moveVec.x !== 0 || moveVec.y !== 0) {
             // Smoothly interpolate toward desired direction (hybrid physics/arcade)
             const dir = moveVec.clone().normalize();

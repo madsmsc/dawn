@@ -5,6 +5,8 @@ import { Enemy } from '../destructables/Enemy.js';
  * Instance represents a location in space with its own enemies and asteroids
  * Each warpable (station, gate) has its own instance
  */
+
+// TODO: should warpable instead just have all this, instead of instance being an explicit class?
 export class Instance {
     constructor(warpable, maxAsteroids = 5, maxEnemies = 4) {
         this.warpable = warpable; // The station or gate this instance is centered around
