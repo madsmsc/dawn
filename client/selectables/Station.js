@@ -1,9 +1,9 @@
-import { SPRITE, ORE, AFFIX, ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
+import { SPRITE, ORE, ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 import { Selectable } from './Selectable.js';
 import { game } from '../controllers/game.js';
 import { Vec } from '../util/Vec.js';
-import { Research } from '../modules/Research.js';
 
+// TODO: can buy more quantum storage for credits
 export class Station extends Selectable {
     constructor(name, pos) {
         super();

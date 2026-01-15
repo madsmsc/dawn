@@ -19,17 +19,19 @@ export class UIButtons {
         this.buttons.push(new Button('a', undefined, undefined, () => !game.player.docked, ['Turn left']));
         this.buttons.push(new Button('s', undefined, undefined, () => !game.player.docked, ['Move backward']));
         this.buttons.push(new Button('d', undefined, undefined, () => !game.player.docked, ['Turn right']));
-        let i = 3;
+
         const off = ICON_SIZE + 10;
         const border = 2;
         const i2vec = (i) => new Vec(game.canvas.width / 2 - off * i, game.canvas.height - off - border);
+
+        // TODO: all these buttons appear to render in station - add to enable/disable method
+        let i = 3;
         this.buttons.push(new Button('p', i2vec(i++), SPRITE.QUESTION, () =>
             true, ['Menu', 'Open game menu (P)']));
         this.buttons.push(new Button('o', i2vec(i++), SPRITE.SHEET, () =>
             true, ['Overview', 'Open galaxy map (O)']));
         this.buttons.push(new Button('i', i2vec(i++), SPRITE.EXCLAMATION, () =>
             !game.player.docked, ['Ship / Inventory', 'Toggle info dialog (I)']));
-
 
         i = -5;
         this.buttons.push(new Button('4', i2vec(i++), SPRITE.DRONES, () =>

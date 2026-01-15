@@ -25,10 +25,9 @@ export class Particle {
     }
 
     update(delta) {
-        const dt = delta / 1000; // ms to s for physics
         this.draw();
         this.alpha -= this.fadeSpeed;
-        this.x += this.dx * dt;
-        this.y += this.dy * dt;
+        this.x += this.dx * delta;
+        this.y += this.dy * delta;
     }
 }

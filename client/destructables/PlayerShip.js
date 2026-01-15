@@ -105,8 +105,7 @@ export class PlayerShip extends Destructable {
         }
 
         // Continue mining
-        const dt = delta / 1000; // ms to s for physics
-        this.miningProgress += dt / this.miningDuration;
+        this.miningProgress += delta / this.miningDuration;
 
         if (this.miningProgress >= 1) {
             // Mining complete - harvest the ore

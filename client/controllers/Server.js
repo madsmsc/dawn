@@ -77,9 +77,9 @@ export class Server {
         };
 
         // create systems
-        const A = new System(randomSystemName(), COLOR.RED, [randomStation()], []);
-        const B = new System(randomSystemName(), COLOR.GREEN, [randomStation()], []);
-        const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()], []);
+        const A = new System(randomSystemName(), COLOR.RED, [randomStation()]);
+        const B = new System(randomSystemName(), COLOR.GREEN, [randomStation()]);
+        const C = new System(randomSystemName(), COLOR.BLUE, [randomStation()]);
 
         // create gates connecting systems
         const gateA_B = new Gate('Gate to ' + B.name, new Vec(400, 250), B);
@@ -114,8 +114,9 @@ export class Server {
                 fetch('client/static/demo.json')
                     .then(response => response.json())
                     .then(data => {
-                        game.player = new Player(data[0].player);
-                        game.player.ship = new PlayerShip(data[0].spaceship);
+                        const user = data.users[0];
+                        game.player = new Player(user.player);
+                        game.player.ship = new PlayerShip(user.spaceship);
                         // Position player at starting station instance
                         if (game.system && game.system.currentInstance) {
                             const station = game.system.currentInstance.warpable;

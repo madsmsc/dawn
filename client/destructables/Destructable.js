@@ -115,8 +115,7 @@ export class Destructable extends Selectable {
     #updateEngineTrails(delta) {
         // Only emit trails when ship is moving
         if (this.vel < 0.1) return;
-        const dt = delta / 1000; // ms to s for physics
-        this.trailSpawnTimer += dt;
+        this.trailSpawnTimer += delta;
 
         if (this.trailSpawnTimer >= this.trailSpawnInterval) {
             this.trailSpawnTimer = 0;
@@ -167,10 +166,9 @@ export class Destructable extends Selectable {
     move(delta) {
         // AI movement - player is controlled in player class
         if (this.isPlayer) return;
-        const dt = delta / 1000; // ms to s for physics
 
         // AI velocity accumulation so approach/orbit actually move
-        this.vel = Math.min(this.vel + this.acceleration * dt, this.maxVel);
+        this.vel = Math.min(this.vel + this.acceleration * delta, this.maxVel);
 
         if (this.moveMode === MOVE.APPROACH) {
             const len = this.target.clone().sub(this.pos);

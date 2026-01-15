@@ -79,6 +79,7 @@ export class UIDialogs {
         });
     }
 
+    // TODO: this doens't work - fix checkbox
     drawMenuDialog() {
         this.openMenuDialog = true;
         UIHelper.drawDialog(this.dialogX, this.dialogY, this.dialogWidth, this.dialogHeight);

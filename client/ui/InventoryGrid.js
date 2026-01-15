@@ -4,7 +4,6 @@ import { UI_COLORS, UI_FONTS, ORE, RARITY } from '../../shared/Constants.js';
 import { Module } from '../modules/Module.js';
 
 // TODO: introduce new modules for increasing inventory size
-// TODO: make the text be longer for modules and probably break it.
 
 export class InventoryGrid {
     constructor() {
@@ -15,7 +14,7 @@ export class InventoryGrid {
         this.dragOffset = { x: 0, y: 0 };
         this.hoveredSlot = null;
         this.lastMousePos = null;
-        
+
         // Grid layouts
         this.activeModulesGrid = {
             cols: 4,
@@ -23,21 +22,21 @@ export class InventoryGrid {
             x: 0,
             y: 0
         };
-        
+
         this.passiveModulesGrid = {
             cols: 2,
             rows: 1,
             x: 0,
             y: 0
         };
-        
+
         this.inventoryGrid = {
             cols: 5,
             rows: 4,
             x: 0,
             y: 0
         };
-        
+
         this.stashGrid = {
             cols: 5,
             rows: 4,
@@ -50,27 +49,27 @@ export class InventoryGrid {
         // TODO: isActive should just check its object (this) - not be a static method
         const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
         const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
-        
+
         // Active modules (4 slots, 2 rows x 2 cols)
         yOffset = UIHelper.drawSectionHeader('Active Modules', dialogWidth, yOffset, dialogX);
         this.activeModulesGrid.x = dialogX + 30;
         this.activeModulesGrid.y = yOffset;
         yOffset = this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
-        
+
         // Passive modules (2 slots, 1 row x 2 cols)
         yOffset += 5;
         yOffset = UIHelper.drawSectionHeader('Passive Modules', dialogWidth, yOffset, dialogX);
         this.passiveModulesGrid.x = dialogX + 30;
         this.passiveModulesGrid.y = yOffset;
         yOffset = this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
-        
+
         // Draw inventory section
         yOffset += 10;
         yOffset = UIHelper.drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
         this.inventoryGrid.x = dialogX + 30;
         this.inventoryGrid.y = yOffset;
         yOffset = this.#drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
-        
+
         // Draw dragged item on top
         if (this.draggedItem) {
             this.#drawItem(
@@ -80,41 +79,41 @@ export class InventoryGrid {
                 true
             );
         }
-        
+
         return yOffset;
     }
 
     drawEquipped(columnX, columnWidth, yOffset) {
         const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
         const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
-        
+
         // Draw "Active Modules" label
         game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
         game.ctx.font = UI_FONTS.SMALL;
         game.ctx.textAlign = 'left';
         game.ctx.fillText('Active Modules', columnX, yOffset);
         yOffset += 18;
-        
+
         // Draw active modules
         this.activeModulesGrid.x = columnX;
         this.activeModulesGrid.y = yOffset;
         this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
-        
+
         // Draw passive modules below active
         const activeHeight = this.activeModulesGrid.rows * (this.cellSize + this.cellPadding);
         yOffset += activeHeight + 15;
-        
+
         // Draw "Passive Modules" label
         game.ctx.fillStyle = UI_COLORS.TEXT_SECONDARY;
         game.ctx.font = UI_FONTS.SMALL;
         game.ctx.textAlign = 'left';
         game.ctx.fillText('Passive Modules', columnX, yOffset);
         yOffset += 18;
-        
+
         this.passiveModulesGrid.x = columnX;
         this.passiveModulesGrid.y = yOffset;
         this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
-        
+
         this.#drawHoverTooltip();
     }
 
@@ -146,23 +145,23 @@ export class InventoryGrid {
     #drawGrid(items, grid, gridType, salvageMode = false) {
         const totalWidth = grid.cols * (this.cellSize + this.cellPadding);
         const totalHeight = grid.rows * (this.cellSize + this.cellPadding);
-        
+
         // Draw grid background
         game.ctx.fillStyle = UI_COLORS.BG_GRID;
         game.ctx.fillRect(grid.x, grid.y, totalWidth, totalHeight);
-        
+
         // Draw grid cells
         for (let row = 0; row < grid.rows; row++) {
             for (let col = 0; col < grid.cols; col++) {
                 const index = row * grid.cols + col;
                 const x = grid.x + col * (this.cellSize + this.cellPadding);
                 const y = grid.y + row * (this.cellSize + this.cellPadding);
-                
+
                 // Check if hovered
-                const isHovered = this.hoveredSlot && 
-                                 this.hoveredSlot.type === gridType && 
-                                 this.hoveredSlot.index === index;
-                
+                const isHovered = this.hoveredSlot &&
+                    this.hoveredSlot.type === gridType &&
+                    this.hoveredSlot.index === index;
+
                 // Draw cell background
                 if (isHovered && this.draggedItem) {
                     game.ctx.fillStyle = UI_COLORS.HOVER;
@@ -170,12 +169,12 @@ export class InventoryGrid {
                     game.ctx.fillStyle = UI_COLORS.BG_GRID;
                 }
                 game.ctx.fillRect(x, y, this.cellSize, this.cellSize);
-                
+
                 // Draw cell border
                 game.ctx.strokeStyle = isHovered ? UI_COLORS.HOVER_BORDER : UI_COLORS.BORDER;
                 game.ctx.lineWidth = 1;
                 game.ctx.strokeRect(x, y, this.cellSize, this.cellSize);
-                
+
                 // Draw item if present
                 if (index < items.length) {
                     const item = items[index];
@@ -188,8 +187,22 @@ export class InventoryGrid {
                 }
             }
         }
-        
         return grid.y + totalHeight + this.cellPadding;
+    }
+
+    // TODO: extracted these methods - there's probably a lot more refactoring to do here.
+    // find something, search for it in the file, many hits means candidate for extracting.
+    #getAbbreviation(name) {
+        const len = Math.min(5, name.length);
+        return name.substring(0, len).toUpperCase();
+    }
+
+    #drawItemName(name, size, x, y) {
+        game.ctx.font = UI_FONTS.TINY;
+        game.ctx.textAlign = 'center';
+        game.ctx.textBaseline = 'middle';
+        const abbrev = this.#getAbbreviation(name);
+        game.ctx.fillText(abbrev, x + size / 2, y + size / 2 - 5);
     }
 
     #drawItem(item, x, y, isDragging, isGreyedOut = false) {
@@ -197,23 +210,18 @@ export class InventoryGrid {
         const rarityColor = this.#getRarityColor(item.rarity);
         game.ctx.fillStyle = isGreyedOut ? 'rgba(50, 50, 50, 0.6)' : rarityColor;
         game.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
-        
+
         // Draw item border
-        const borderColor = isGreyedOut ? 'rgba(100, 100, 100, 0.9)' : (isDragging ? 'rgba(255, 255, 255, 0.9)' : rarityColor.replace('0.6', '0.9'));
+        const borderColor = isGreyedOut ? 'rgba(100, 100, 100, 0.9)'
+            : (isDragging ? 'rgba(255, 255, 255, 0.9)' : rarityColor.replace('0.6', '0.9'));
         game.ctx.strokeStyle = borderColor;
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
-        
+
         // Draw item icon/text
         game.ctx.fillStyle = isGreyedOut ? 'rgba(150, 150, 150, 0.7)' : UI_COLORS.TEXT_WHITE;
-        game.ctx.font = UI_FONTS.LABEL;
-        game.ctx.textAlign = 'center';
-        game.ctx.textBaseline = 'middle';
-        
-        // Draw abbreviated name
-        const abbrev = this.#getAbbreviation(item.name);
-        game.ctx.fillText(abbrev, x + this.cellSize / 2, y + this.cellSize / 2 - 5);
-        
+        this.#drawItemName(item.name, this.cellSize, x, y)
+
         // Draw amount if > 1
         if (item.amount > 1) {
             game.ctx.font = UI_FONTS.TINY;
@@ -221,18 +229,13 @@ export class InventoryGrid {
             const amountText = item.amount > 999 ? '999+' : item.amount.toFixed(0);
             game.ctx.fillText(amountText, x + this.cellSize / 2, y + this.cellSize - 8);
         }
-        
+
         game.ctx.textAlign = 'left';
         game.ctx.textBaseline = 'alphabetic';
     }
 
-    #getAbbreviation(name) {
-        const len = Math.min(5, name.length);
-        return name.substring(0, len).toUpperCase();
-    }
-
     #getRarityColor(rarity) {
-        switch(rarity) {
+        switch (rarity) {
             case RARITY.SIMPLE: return 'rgba(150, 150, 150, 0.6)';
             case RARITY.MODIFIED: return 'rgba(100, 150, 255, 0.6)';
             case RARITY.COMPLEX: return 'rgba(255, 200, 50, 0.6)';
@@ -254,7 +257,7 @@ export class InventoryGrid {
                 return true;
             }
         }
-        
+
         // Check active modules
         const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
         const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
@@ -268,7 +271,7 @@ export class InventoryGrid {
             };
             return true;
         }
-        
+
         // Check passive modules
         const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
         const passiveIndex = this.#getSlotAtPosition(clickPos, this.passiveModulesGrid);
@@ -282,7 +285,7 @@ export class InventoryGrid {
             };
             return true;
         }
-        
+
         // Check inventory
         const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
         if (inventoryIndex !== -1 && inventoryIndex < game.player.ship.inventory.length) {
@@ -294,7 +297,7 @@ export class InventoryGrid {
             };
             return true;
         }
-        
+
         // Check stash (if docked) - but not if in salvage mode
         if (game.player && game.player.docked && !preventStashDrag) {
             const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
@@ -308,15 +311,15 @@ export class InventoryGrid {
                 return true;
             }
         }
-        
+
         return false;
     }
 
     handleMouseMove(mousePos) {
         this.lastMousePos = mousePos;
-        
+
         if (!game.player || !game.player.ship) return;
-        
+
         if (!this.draggedItem) {
             // Update hovered slot
             const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
@@ -325,27 +328,27 @@ export class InventoryGrid {
                 this.hoveredSlot = { type: 'active', index: activeIndex };
                 return;
             }
-            
+
             const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
             const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
             if (passiveIndex !== -1) {
                 this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
-            
+
             const inventoryIndex = this.#getSlotAtPosition(mousePos, this.inventoryGrid);
             if (inventoryIndex !== -1) {
                 this.hoveredSlot = { type: 'inventory', index: inventoryIndex };
                 return;
             }
-            
+
             if (game.player && game.player.docked) {
                 const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
                 }
-                
+
                 // Check research slot
                 if (this.researchSlotGrid) {
                     const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
@@ -355,7 +358,7 @@ export class InventoryGrid {
                     }
                 }
             }
-            
+
             this.hoveredSlot = null;
         } else {
             // Update hovered slot while dragging
@@ -364,26 +367,26 @@ export class InventoryGrid {
                 this.hoveredSlot = { type: 'active', index: activeIndex };
                 return;
             }
-            
+
             const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
             if (passiveIndex !== -1 && passiveIndex < this.passiveModulesGrid.cols * this.passiveModulesGrid.rows) {
                 this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
-            
+
             const inventoryIndex = this.#getSlotAtPosition(mousePos, this.inventoryGrid);
             if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
                 this.hoveredSlot = { type: 'inventory', index: inventoryIndex };
                 return;
             }
-            
+
             if (game.player && game.player.docked) {
                 const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
                 }
-                
+
                 // Check research slot while dragging
                 if (this.researchSlotGrid) {
                     const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
@@ -393,7 +396,7 @@ export class InventoryGrid {
                     }
                 }
             }
-            
+
             this.hoveredSlot = null;
         }
     }
@@ -456,10 +459,10 @@ export class InventoryGrid {
 
     handleMouseUp(clickPos, researchUI = null) {
         if (!this.draggedItem) return false;
-        
+
         // Find target slot
         let targetSlot = null;
-        
+
         // Check research slot first (if on research tab)
         if (researchUI && this.researchSlotGrid) {
             const researchIndex = this.#getSlotAtPosition(clickPos, this.researchSlotGrid);
@@ -471,7 +474,7 @@ export class InventoryGrid {
                 }
             }
         }
-        
+
         if (!targetSlot) {
             // Check active modules grid
             const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
@@ -495,12 +498,12 @@ export class InventoryGrid {
                 }
             }
         }
-        
+
         // Perform the move/swap
         if (targetSlot) {
             this.#moveItem(this.draggedFrom, targetSlot);
         }
-        
+
         this.draggedItem = null;
         this.draggedFrom = null;
         this.hoveredSlot = null;
@@ -509,27 +512,27 @@ export class InventoryGrid {
 
     #getSlotAtPosition(pos, grid) {
         if (!pos || !grid) return -1;
-        
+
         const relX = pos.x - grid.x;
         const relY = pos.y - grid.y;
-        
+
         if (relX < 0 || relY < 0) return -1;
-        
+
         // Use grid's cellSize if available, otherwise use default
         const cellSize = grid.cellSize || this.cellSize;
         const cellPadding = this.cellPadding;
-        
+
         const col = Math.floor(relX / (cellSize + cellPadding));
         const row = Math.floor(relY / (cellSize + cellPadding));
-        
+
         if (col >= grid.cols || row >= grid.rows) return -1;
-        
+
         // Check if actually inside the cell (not in padding)
         const cellX = relX % (cellSize + cellPadding);
         const cellY = relY % (cellSize + cellPadding);
-        
+
         if (cellX >= cellSize || cellY >= cellSize) return -1;
-        
+
         return row * grid.cols + col;
     }
 
@@ -538,7 +541,7 @@ export class InventoryGrid {
         if (from.type === 'research' || to.type === 'research') {
             const researchUI = from.researchUI || to.researchUI;
             if (!researchUI) return;
-            
+
             if (from.type === 'research' && to.type === 'research') {
                 // Same slot, do nothing
                 return;
@@ -546,7 +549,7 @@ export class InventoryGrid {
                 // Moving from research to another location
                 const sourceItem = researchUI.researchSlot;
                 if (!sourceItem) return;
-                
+
                 // Get target array
                 let targetArray;
                 if (to.type === 'active' || to.type === 'passive' || to.type === 'equipped') {
@@ -556,11 +559,11 @@ export class InventoryGrid {
                 } else if (to.type === 'stash') {
                     targetArray = game.player.quantumStash;
                 }
-                
+
                 if (!targetArray) return;
-                
+
                 const targetItem = to.index < targetArray.length ? targetArray[to.index] : null;
-                
+
                 if (targetItem) {
                     // Swap
                     targetArray[to.index] = sourceItem;
@@ -581,14 +584,14 @@ export class InventoryGrid {
                 } else if (from.type === 'stash') {
                     sourceArray = game.player.quantumStash;
                 }
-                
+
                 if (!sourceArray) return;
-                
+
                 const sourceItem = sourceArray[from.index];
                 if (!sourceItem) return;
-                
+
                 const targetItem = researchUI.researchSlot;
-                
+
                 if (targetItem) {
                     // Swap
                     sourceArray[from.index] = targetItem;
@@ -601,11 +604,11 @@ export class InventoryGrid {
                 return;
             }
         }
-        
+
         // Get source and target arrays
         let sourceArray, targetArray;
         let actualToIndex = to.index; // Will be adjusted for active/passive grids
-        
+
         if (from.type === 'active' || from.type === 'passive' || from.type === 'equipped') {
             sourceArray = game.player.ship.modules;
         } else if (from.type === 'inventory') {
@@ -613,10 +616,10 @@ export class InventoryGrid {
         } else if (from.type === 'stash') {
             sourceArray = game.player.quantumStash;
         }
-        
+
         if (to.type === 'active' || to.type === 'passive' || to.type === 'equipped') {
             targetArray = game.player.ship.modules;
-            
+
             // Convert grid index to actual modules array index
             if (to.type === 'active') {
                 const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
@@ -635,7 +638,7 @@ export class InventoryGrid {
                     actualToIndex = game.player.ship.modules.length;
                 }
             }
-            
+
             // Validate module type for active/passive slots
             const sourceItem = sourceArray[from.index];
             if (sourceItem && to.type !== 'equipped') {
@@ -650,18 +653,18 @@ export class InventoryGrid {
         } else if (to.type === 'stash') {
             targetArray = game.player.quantumStash;
         }
-        
+
         if (!sourceArray || !targetArray) return;
-        
+
         // Use the adjusted index
         to.index = actualToIndex;
-        
+
         // Get the items
         const sourceItem = sourceArray[from.index];
         if (!sourceItem) return;
-        
+
         const targetItem = to.index < targetArray.length ? targetArray[to.index] : null;
-        
+
         // Check if we can stack items (same name, both have stackSize)
         if (targetItem && sourceItem.name === targetItem.name && sourceItem.stackSize && targetItem.stackSize) {
             const spaceInTarget = sourceItem.stackSize - targetItem.amount;
@@ -669,7 +672,7 @@ export class InventoryGrid {
                 const amountToMove = Math.min(sourceItem.amount, spaceInTarget);
                 targetItem.amount += amountToMove;
                 sourceItem.amount -= amountToMove;
-                
+
                 // Remove source item if depleted
                 if (sourceItem.amount <= 0) {
                     sourceArray.splice(from.index, 1);
@@ -677,7 +680,7 @@ export class InventoryGrid {
                 return;
             }
         }
-        
+
         // Handle swap/move
         if (from.type === to.type && sourceArray === targetArray) {
             // Same array - simple swap or move
@@ -696,7 +699,7 @@ export class InventoryGrid {
             // Different arrays
             // Remove from source
             sourceArray.splice(from.index, 1);
-            
+
             if (targetItem) {
                 // Swap: remove target and put it in source location
                 targetArray.splice(to.index, 1, sourceItem);
@@ -707,30 +710,24 @@ export class InventoryGrid {
             }
         }
     }
-    
+
     // Public method for drawing items in custom slots
     _drawItemInSlot(item, x, y, slotSize) {
         // Draw item background with rarity color
         const rarityColor = this.#getRarityColor(item.rarity);
         game.ctx.fillStyle = rarityColor;
         game.ctx.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
-        
+
         // Draw item border
         const borderColor = rarityColor.replace('0.6', '0.9');
         game.ctx.strokeStyle = borderColor;
         game.ctx.lineWidth = 2;
         game.ctx.strokeRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
-        
+
         // Draw item icon/text
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
-        game.ctx.font = UI_FONTS.LABEL;
-        game.ctx.textAlign = 'center';
-        game.ctx.textBaseline = 'middle';
-        
-        // Draw abbreviated name
-        const abbrev = this.#getAbbreviation(item.name);
-        game.ctx.fillText(abbrev, x + slotSize / 2, y + slotSize / 2 - 5);
-        
+        this.#drawItemName(item.name, slotSize, x, y);
+
         // Draw amount if > 1
         if (item.amount > 1) {
             game.ctx.font = UI_FONTS.TINY;
@@ -738,7 +735,7 @@ export class InventoryGrid {
             const amountText = item.amount > 999 ? '999+' : item.amount.toFixed(0);
             game.ctx.fillText(amountText, x + slotSize / 2, y + slotSize - 8);
         }
-        
+
         game.ctx.textAlign = 'left';
         game.ctx.textBaseline = 'alphabetic';
     }

@@ -1,60 +1,206 @@
-[{
-    "user": "demo",
-    "pass": "pass",
-    "player": {
-      "name": "Bob",
-      "credits": 0,
-      "docked": false,
-      "quantumStash": [],
-      "settings": {
-        "showVelocityVectors": false
-      }
-    },
-    "spaceship": {  
-      "type": "frigate",
-      "shield": 80,
-      "maxShield": 80,
-      "hull": 50,
-      "maxHull": 50,
-      "size": 15,
-      "acceleration": 20,
-      "vel": 0,
-      "maxVel": 100,
-      "pos": { "x": 500.5, "y": 382 }, 
-      "target": { "x": 500.5, "y": 382 }, 
-      "miningRange": 50, 
-      "mode": 0, 
-      "modules": [
-        { 
-          "name": "laser weapon",
-          "sprite": 3, 
-          "amount": 1, 
-          "unit": "module",
-          "rarity": 0
-        }, 
-        { 
-          "name": "mining laser", 
-          "sprite": 0, 
-          "amount": 1, 
-          "unit": "module",
-          "rarity": 0
-        }, 
-        { 
-          "name": "warp drive", 
-          "sprite": 8, 
-          "amount": 1, 
-          "unit": "module",
-          "rarity": 0
-        },
-        { 
-          "name": "drones", 
-          "sprite": 2, 
-          "amount": 1, 
-          "unit": "module",
-          "rarity": 0
+{
+  "users": [
+    {
+      "user": "demo",
+      "pass": "pass",
+      "player": {
+        "name": "Bob",
+        "credits": 0,
+        "docked": false,
+        "quantumStash": [],
+        "settings": {
+          "showVelocityVectors": false
         }
-      ],
-      "inventory": []
+      },
+      "spaceship": {
+        "type": "frigate",
+        "shield": 80,
+        "maxShield": 80,
+        "hull": 50,
+        "maxHull": 50,
+        "size": 15,
+        "acceleration": 0.00005,
+        "vel": 0,
+        "maxVel": 10,
+        "pos": {
+          "x": 500.5,
+          "y": 382
+        },
+        "target": {
+          "x": 500.5,
+          "y": 382
+        },
+        "miningRange": 100,
+        "mode": 0,
+        "modules": [
+          {
+            "name": "laser weapon",
+            "sprite": 3,
+            "amount": 1,
+            "unit": "module",
+            "rarity": 0
+          },
+          {
+            "name": "mining laser",
+            "sprite": 0,
+            "amount": 1,
+            "unit": "module",
+            "rarity": 0
+          },
+          {
+            "name": "warp drive",
+            "sprite": 8,
+            "amount": 1,
+            "unit": "module",
+            "rarity": 0
+          },
+          {
+            "name": "drones",
+            "sprite": 2,
+            "amount": 1,
+            "unit": "module",
+            "rarity": 0
+          }
+        ],
+        "inventory": []
+      }
     }
-  }
-]
+  ],
+  "systems": [
+    {
+      "id": "sys.A",
+      "name": "Alpha",
+      "color": "255,0,0",
+      "instances": [
+        {
+          "id": "inst.A.station",
+          "warpable": {
+            "id": "station.A",
+            "type": "station",
+            "name": "Alpha Station",
+            "pos": {
+              "x": 300,
+              "y": 250
+            }
+          }
+        },
+        {
+          "id": "inst.A.gate.B",
+          "warpable": {
+            "id": "gate.A.B",
+            "type": "gate",
+            "name": "Gate to Beta",
+            "pos": {
+              "x": 400,
+              "y": 250
+            },
+            "targetWarpable": "gate.B.A"
+          }
+        },
+        {
+          "id": "inst.A.gate.C",
+          "warpable": {
+            "id": "gate.A.C",
+            "type": "gate",
+            "name": "Gate to Gamma",
+            "pos": {
+              "x": 600,
+              "y": 200
+            },
+            "targetWarpable": "gate.C.A"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sys.B",
+      "name": "Beta",
+      "color": "0,255,0",
+      "instances": [
+        {
+          "id": "inst.B.station",
+          "warpable": {
+            "id": "station.B",
+            "type": "station",
+            "name": "Beta Station",
+            "pos": {
+              "x": 250,
+              "y": 250
+            }
+          }
+        },
+        {
+          "id": "inst.B.gate.A",
+          "warpable": {
+            "id": "gate.B.A",
+            "type": "gate",
+            "name": "Gate to Alpha",
+            "pos": {
+              "x": 200,
+              "y": 250
+            },
+            "targetWarpable": "gate.A.B"
+          }
+        },
+        {
+          "id": "inst.B.gate.C",
+          "warpable": {
+            "id": "gate.B.C",
+            "type": "gate",
+            "name": "Gate to Gamma",
+            "pos": {
+              "x": 500,
+              "y": 300
+            },
+            "targetWarpable": "gate.C.B"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sys.C",
+      "name": "Gamma",
+      "color": "0,0,255",
+      "instances": [
+        {
+          "id": "inst.C.station",
+          "warpable": {
+            "id": "station.C",
+            "type": "station",
+            "name": "Gamma Station",
+            "pos": {
+              "x": 350,
+              "y": 200
+            }
+          }
+        },
+        {
+          "id": "inst.C.gate.A",
+          "warpable": {
+            "id": "gate.C.A",
+            "type": "gate",
+            "name": "Gate to Alpha",
+            "pos": {
+              "x": 300,
+              "y": 150
+            },
+            "targetWarpable": "gate.A.C"
+          }
+        },
+        {
+          "id": "inst.C.gate.B",
+          "warpable": {
+            "id": "gate.C.B",
+            "type": "gate",
+            "name": "Gate to Beta",
+            "pos": {
+              "x": 350,
+              "y": 400
+            },
+            "targetWarpable": "gate.B.C"
+          }
+        }
+      ]
+    }
+  ]
+}

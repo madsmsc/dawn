@@ -2,11 +2,24 @@ import { game } from './game.js';
 import { Instance } from './Instance.js';
 
 export class System {
-    constructor(name, color, stations, warpables = []) {
+    constructor(name, color, stations) {
         this.name = name;
         this.color = color;
+        // TODO: instead of this structure, i just want a list of instances
+        //   each instance should reference a warpable
+        //   the idea being that a system is a collection of instances of space
+        //   and each instance of space has once warpable.
+        // also, when jumping from a gate to another system, you should land
+        //   at the gate that brings you back. 
+        // the idea behind this is that you're jumping from gate to gate,
+        //   not to arbitrary positions in space.
+        // this replaces the three below fields with a single new instances list.
+        // current instance / system should probably be on the player
+        //   so their position i kept when logging out - many people will use same system.
+        // the callers/accessors using System.stations should just call a getStations method
+        //   which iterates over the instances and returns the stations. 
         this.stations = stations;
-        this.warpables = warpables; // stations, planets, sun, gates - all things you can warp to
+        this.warpables = []; // stations, planets, sun, gates - all things you can warp to
         this.instances = new Map(); // Map of warpable -> Instance
         this.currentInstance = null; // Currently active instance
     }

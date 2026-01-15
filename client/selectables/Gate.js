@@ -2,7 +2,7 @@ import { game } from '../controllers/game.js';
 import { Selectable } from './Selectable.js';
 import { Particle } from '../util/Particle.js';
 import { UIHelper } from '../ui/UIHelper.js';
-import { ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
+import { ICON_SIZE, UI_FONTS } from '../../shared/Constants.js';
 
 export class Gate extends Selectable {
     constructor(name, pos, targetSystem = null) {
@@ -74,7 +74,6 @@ export class Gate extends Selectable {
                 this.cancelActivation();
                 return this;
             }
-            const dt = delta / 1000; // ms to s for physics
             this.activationTime += delta;
             
             // Spawn particles around the gate

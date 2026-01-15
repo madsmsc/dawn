@@ -9,32 +9,19 @@
 
 # TODOs
 
-- when not in demo mode, make small intro
-  - you start with only the weapon and kill a single enemy
-  - you get the mining laser and are asked to complete a mining mission
-  - you get the warp drive are are told to warp to the drone hive
-    and kill it, as a reward you get the drone link (renamed from drones)
-  - from there, your pilot is granted access to use system gates
+- when not in demo mode, enter into intro space with intro missions:
+  - the player needs to be introduced to warping at some point - are the missions instanced?
+  - #1 given a frigate and 1 laser weapon: "we're under attack. please help. take out this frigate by flying to them, and firing your guns." (intros weapons)
+  - #2 given a passive module boosting range: "our buddies need help too. kill three frigates. these frigates are equipped with short range weapons. stay out of range of their weapons while staying just in range of yours. kite as necessary and take them down." (intros passive modules and range/kiting)
+  - #3 given nothing, but promised reward of new ship: "it doesn't seem like there's any way out of this alive. oo many ships are warping in and our warp drive is down. let's go down fighting. after all, a good fight is what it's all about." (intros death)
+  - #4 given new ship with weapons: "welcome back pilot. you have awoken in another clone. here's how a station works. you have been given a replacement frigate." (intros clones)
+  - #5 given mining laser: "all ships and modules are made from refined ore. let's get you started on mining." (intros mining)
+  - #6 promised drone control: "we are having some trouble with rogue drones harassing our miners. please go deal with the drone hub" (intros drones)
+  - #7 a few crafting missions.
+  - #8 "contratulations on finishing our new pilot course and receiving your pilot certification. you are now authorized for all jump gates, which allow you access to other systems."
 - aoe weapon, long cast time
-- ambience: music, lasers, particle trails, background planets with rings, etc.
-- shoot mercenaries to increase fighter reputation
-- mine asteroids to increase miner reputation
-- run missions to increase specific reputations
-- increase reputation to earn better ship licenses, allowing you to fly bigger and better ships.
-- most activities reward your with credits and/or reputation, and credits rule the galaxy.
-- trade credits for new modules, ships, and even reputation by bribing the right people.
-- crafting system ("research facility") like PoE but using credits when docked in stations
-- 3 ways to play/progress: kill stuff, missions, and mining.
-- all stations share "folding vault" containing all your items.
-- make small indicators for where stations and asteroids are in your current instance.
-- make some way of handling instances.
-- no gates. space is small instances that you can warp between. usually at planets, moons, or structures in space.
-- make all buttons clickable.
-- first MISSIONS...
-  - #1 given a frigate. we're under attack. please help. take out this frigate by locking them up, flying to them, and firing your guns.
-  - #2 our buddies need help too. kill three frigates. these frigates are equipped with short range weapons. stay out of range of their weapons while staying just in range of yours. kite as necessary and take them down.
-  - #3 it doesn't seem like there's any way out of this alive. oo many ships are warping in and our warp drive is down. let's go down fighting. after all, a good fight is what it's all about. 
-  - #4 welcome back pilot. you have awoken in another clone. here's how a station works. you have been given a new frigate and a choice between weapons. a few more fighting missions follow explaining more mechanics and dropping some cool loot.
-  - #5 finally some crafting mission(s).
-- ships are completely lost on death but credits, and components/loot outside the lost ship are kept.
+- make bigger and better ships
+- make small indicators for where stations and asteroids are in your current instance
+- ships are completely lost on death, but credits and quantum stash are kept
+  - fix respawning at station - which station? clones?
 - no xp or levels
