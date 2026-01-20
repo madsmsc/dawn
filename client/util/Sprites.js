@@ -4,7 +4,7 @@ import { ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
 export class Sprites {
     constructor() {
         this.sprites = [];
-        this.#loadSprites();
+        this.loadSprites();
     }
 
     draw(spriteIndex, pos, selected = false, text = undefined,
@@ -37,7 +37,7 @@ export class Sprites {
         game.ctx.globalAlpha = 1;
     }
 
-    #loadSprites() {
+    loadSprites() {
         const spriteSheet = new Image();
         spriteSheet.src = 'client/static/icons.png';
         spriteSheet.onload = () => {
@@ -48,11 +48,11 @@ export class Sprites {
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = ICON_SIZE;
             tempCanvas.height = ICON_SIZE;
-            this.#extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas);
+            this.extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas);
         };
     }
 
-    #extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas) {
+    extractSprite(columns, rows, tempCtx, spriteSheet, tempCanvas) {
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < columns; col++) {
                 tempCtx.clearRect(0, 0, ICON_SIZE, ICON_SIZE);

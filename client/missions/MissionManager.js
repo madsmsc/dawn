@@ -10,21 +10,23 @@ export class MissionManager {
         this.completeButtonBounds = []; // Track clickable complete buttons
     }
 
-    generateNewMissions () {
-        game.system.stations
+    generateNewMissions() {
+        game.system.instances
+            .map(i => i.warpable)
+            .filter(w => w.type == 'station')
             .filter(station => station.missionsAtStation().length < 3) // max 3 missions per station
             .filter(station => Math.random() < 0.3) // 30% chance per station
             .forEach(station => {
-            const ores = Object.keys(ORE);
-            const ore = ores[Math.floor(Math.random() * ores.length)];
-            const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
-            const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
-            const mission = new MiningMission(station, ore, amount, reward);
-            this.availableMissions.push(mission);
-        });
+                const ores = Object.keys(ORE);
+                const ore = ores[Math.floor(Math.random() * ores.length)];
+                const amount = Math.floor(Math.random() * 10) + 5;  // 5-15 units
+                const reward = amount * (ore === 'Gold' ? 100 : ore === 'Copper' ? 50 : 25);
+                const mission = new MiningMission(station, ore, amount, reward);
+                this.availableMissions.push(mission);
+            });
     }
 
-    update (delta) {
+    update(delta) {
         this.activeMissions.forEach(mission => {
             if (mission.completed) {
                 const index = this.activeMissions.indexOf(mission);
@@ -35,7 +37,7 @@ export class MissionManager {
         return this;
     }
 
-    draw (x = 10, y = 110, width = 300) {
+    draw(x = 10, y = 110, width = 300) {
         game.ctx.save();
         game.ctx.textAlign = 'start';
 
@@ -54,16 +56,16 @@ export class MissionManager {
                 game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
                 game.ctx.font = UI_FONTS.SMALL;
                 game.ctx.fillText(mission.description, x, yOffset += 20);
-                
+
                 // Show reward with (complete) indicator if mission can be completed
                 const canComplete = mission.canComplete ? mission.canComplete() : false;
                 game.ctx.fillText(`Reward: ${mission.reward} credits`, x, yOffset += 20);
-                
+
                 if (canComplete) {
                     game.ctx.fillStyle = UI_COLORS.TEXT_REWARD;
                     game.ctx.fillText(' (complete)', x + game.ctx.measureText(`Reward: ${mission.reward} credits`).width, yOffset);
                 }
-                
+
                 yOffset += 20
             });
         }

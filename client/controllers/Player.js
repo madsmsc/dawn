@@ -3,13 +3,6 @@ import { Vec } from '../util/Vec.js';
 
 export class Player {
     constructor(obj) {
-        this.name = '';
-        this.credits = 0;
-        this.docked = undefined; // Station
-        this.ship = undefined;
-        this.settings = {
-            showVelocityVectors: false
-        };
         Object.assign(this, obj);
     }
 

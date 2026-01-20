@@ -19,9 +19,7 @@ export class GameLoop {
         game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
 
         // pure UI - no game
-        if (game.ui.showStationUI()
-            || game.ui.showLoginUI()
-            || game.player.dead) {
+        if (game.ui.showStationUI() || game.ui.showLoginUI() || game.player.dead) {
             game.ui.update(delta).draw();
             return requestAnimationFrame(this.gameLoop);
         }
@@ -64,18 +62,19 @@ export class GameLoop {
         game.server = new Server();
         game.camera = new Camera();
         game.missionManager = new MissionManager();
-        game.system = game.server.loadSystem();
         game.starField = new StarField();
 
         // register event listeners
         new GameEventListener().register();
 
+        // TODO: move to missionManager?
         // generate missions
         setInterval(() => {
             if (!game.player || game.player.docked) return;
             game.missionManager.generateNewMissions();
         }, 3000);
 
+        // TODO: move this to system and have different music for different systems?
         // start background music
         game.sounds.background();
 

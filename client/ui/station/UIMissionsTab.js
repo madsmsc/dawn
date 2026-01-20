@@ -16,7 +16,7 @@ export class UIMissionsTab {
         y = UIHelper.drawCenteredHeader('Mission Board', dialogWidth, y, dialogX);
 
         // Info text
-        this.#drawText('Take on missions to earn credits and reputation', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        this.drawText('Take on missions to earn credits and reputation', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 25;
 
         // Draw available mission
@@ -63,19 +63,19 @@ export class UIMissionsTab {
 
             // Mission details (to the right of button)
             const textX = missionBoxX + buttonWidth + 25;
-            this.#drawText(mission.description, textX, y + 18, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL, 'left');
-            this.#drawText(`Reward: ${mission.reward} credits`, textX, y + 33, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL, 'left');
+            this.drawText(mission.description, textX, y + 18, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL, 'left');
+            this.drawText(`Reward: ${mission.reward} credits`, textX, y + 33, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL, 'left');
 
             y += missionBoxHeight + 8;
         } else {
-            this.#drawText('No new missions available', centerX, y, UI_COLORS.TEXT_DISABLED, UI_FONTS.SMALL);
+            this.drawText('No new missions available', centerX, y, UI_COLORS.TEXT_DISABLED, UI_FONTS.SMALL);
             y += 30;
         }
 
         // Draw active missions
         if (game.missionManager.activeMissions.length > 0) {
             y += 10;
-            this.#drawText('Active Missions:', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+            this.drawText('Active Missions:', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
             y += 20;
 
             this.missionCompleteButtons = [];
@@ -117,8 +117,8 @@ export class UIMissionsTab {
 
                 // Mission details (to the right of button)
                 const textX = missionBoxX + buttonWidth + 25;
-                this.#drawText(mission.description, textX, y + 18, UI_COLORS.TEXT_HIGHLIGHT, UI_FONTS.SMALL, 'left');
-                this.#drawText(`Reward: ${mission.reward} credits`, textX, y + 33, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL, 'left');
+                this.drawText(mission.description, textX, y + 18, UI_COLORS.TEXT_HIGHLIGHT, UI_FONTS.SMALL, 'left');
+                this.drawText(`Reward: ${mission.reward} credits`, textX, y + 33, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL, 'left');
 
                 y += missionBoxHeight + 8;
             });
@@ -162,7 +162,7 @@ export class UIMissionsTab {
         return false;
     }
 
-    #drawText(text, x, y, color, font, align = 'center') {
+    drawText(text, x, y, color, font, align = 'center') {
         game.ctx.fillStyle = color;
         game.ctx.font = font;
         game.ctx.textAlign = align;

@@ -4,21 +4,19 @@ import { Vec } from '../util/Vec.js';
 export class StarField {
     constructor() {
         this.layers = [];
-        this.currentSystemColor = null; // Track current system color
-        this.#createStarLayers();
+        this.currentSystemColor = null;
     }
 
-    #createStarLayers() {
-        // Clear existing layers
-        this.layers = [];
+    createStarLayers() {
+        this.layers = []; // clear existing layers
         this.currentSystemColor = game.system?.color;
 
-        this.#createStarLayer(400, 0.01, 0.4); // far, slow, dim
-        this.#createStarLayer(200, 0.015, 0.5);  // middle layer
-        this.#createStarLayer(100, 0.02, 0.6);  // close, fast, bright
+        this.createStarLayer(400, 0.01, 0.4); // far, slow, dim
+        this.createStarLayer(200, 0.015, 0.5);  // middle layer
+        this.createStarLayer(100, 0.02, 0.6);  // close, fast, bright
     }
 
-    #createStarLayer(count, speed, brightness) {
+    createStarLayer(count, speed, brightness) {
         const stars = [];
         const canvas = document.createElement('canvas');
         canvas.width = game.canvas.width * 4;
@@ -113,10 +111,11 @@ export class StarField {
     update(delta) {
         if (game.player.docked) return;
 
-        // Check if system color has changed and recreate stars if needed
-        // Only regenerate if we had a previous color AND it's different from current
-        if (game.system && this.currentSystemColor && game.system.color !== this.currentSystemColor) {
-            this.#createStarLayers();
+        // check if system color has changed and recreate stars if needed
+        // regenerate if we had a previous color AND it's different from current
+        if (game.system && this.currentSystemColor
+            && game.system.color !== this.currentSystemColor) {
+            this.createStarLayers();
         }
         // Initialize currentSystemColor if not set yet
         else if (game.system && !this.currentSystemColor) {
@@ -126,7 +125,8 @@ export class StarField {
             layer.pos.x += layer.dir.x * delta;
             layer.pos.y += layer.dir.y * delta;
 
-            if (layer.pos.x <= -game.canvas.width || layer.pos.y <= -game.canvas.height) {
+            if (layer.pos.x <= -game.canvas.width
+                || layer.pos.y <= -game.canvas.height) {
                 layer.pos.setV(Vec.ZERO);
             }
         });
@@ -134,7 +134,13 @@ export class StarField {
     };
 
     draw() {
-        if (game.player.docked) return;
+        if (this.layers.length == 0) {
+            // console.log('starfield: creating layers');
+            this.createStarLayers();
+        }
+        if (game.player.docked) {
+            return;
+        }
         this.layers.forEach(layer => {
             game.ctx.drawImage(layer.canvas, layer.pos.x, layer.pos.y);
         });

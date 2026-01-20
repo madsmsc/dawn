@@ -13,7 +13,6 @@ import { MessageQueue } from './MessageQueue.js';
  */
 export class UI {
     constructor() {
-        this.selectables = [];
         this.fpsCount = 0;
         this.fpsTime = 0;
         this.fpsDisplay = 0;
@@ -57,18 +56,18 @@ export class UI {
 
     draw() {
         UIHelper.drawFps();
-        this.#demoText();
+        this.demoText();
         // Reset dialog states each frame
         this.dialogs.openInfoDialog = false;
         this.dialogs.openMenuDialog = false;
         if (this.showLoginUI()) {
-            this.#loginUI();
+            this.loginUI();
         } else if (this.showStationUI()) {
             this.station.draw();
-            this.#drawButtons(); // Draw buttons so their callbacks execute (e.g., E to undock)
+            this.drawButtons(); // Draw buttons so their callbacks execute (e.g., E to undock)
         } else {
-            this.#drawButtons();
-            this.#drawHUD();
+            this.drawButtons();
+            this.drawHUD();
         }
     }
 
@@ -80,7 +79,7 @@ export class UI {
         return game.player && game.player.docked;
     }
 
-    #loginUI() {
+    loginUI() {
         const text = (s) => { game.ctx.fillText(s, game.canvas.width / 2, yOffset += 30) };
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
         game.ctx.font = UI_FONTS.LARGE;
@@ -88,7 +87,7 @@ export class UI {
         text('Logging in...');
     }
 
-    #demoText() {
+    demoText() {
         if (!game.server || !game.server.isConnected) {
             game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
             game.ctx.font = UI_FONTS.SMALL;
@@ -98,22 +97,19 @@ export class UI {
         }
     }
 
-    #drawButtons() {
+    drawButtons() {
         this.uiButtons.draw();
     }
 
-    #drawHUD() {
+    drawHUD() {
         // System and station info
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
         game.ctx.font = UI_FONTS.HEADER;
-        let yOffset = 80;
+        let yOffset = 20;
         game.ctx.fillText('System', 10, yOffset);
         game.ctx.font = UI_FONTS.SMALL;
         game.ctx.fillText(game.system.name, 20, yOffset += 20);
         game.ctx.font = UI_FONTS.HEADER;
-        game.ctx.fillText('Station', 10, yOffset += 30);
-        game.ctx.font = UI_FONTS.SMALL;
-        game.ctx.fillText(game.system.stations[0].name, 20, yOffset += 20);
 
         if (game.player.docked) return;
 

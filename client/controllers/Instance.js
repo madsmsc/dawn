@@ -1,12 +1,10 @@
-import { Asteroid } from '../selectables/Asteroid.js';
-import { Enemy } from '../destructables/Enemy.js';
+import { Asteroid } from '../actors/Asteroid.js';
+import { Enemy } from '../actors/Enemy.js';
 
 /**
  * Instance represents a location in space with its own enemies and asteroids
  * Each warpable (station, gate) has its own instance
  */
-
-// TODO: should warpable instead just have all this, instead of instance being an explicit class?
 export class Instance {
     constructor(warpable, maxAsteroids = 5, maxEnemies = 4) {
         this.warpable = warpable; // The station or gate this instance is centered around
@@ -14,9 +12,7 @@ export class Instance {
         this.maxEnemies = maxEnemies;
         this.asteroids = [];
         this.enemies = [];
-        this.isActive = false; // Track if player is currently at this instance
-        this.initialSpawnComplete = false; // Track if initial spawn is done
-        
+        this.initialSpawnComplete = false; // Track if initial spawn is done        
         // Initialize enemies
         for (let i = 0; i < maxEnemies; i++) {
             this.enemies.push(Enemy.scanning());
@@ -31,19 +27,19 @@ export class Instance {
                 this.enemies[0].pos = this.asteroids[0].pos.clone();
                 this.enemies[0].target = this.asteroids[0].pos.clone();
             }
-            
+
             // Mark initial spawn as complete when we reach max
             if (this.asteroids.length >= this.maxAsteroids) {
                 this.initialSpawnComplete = true;
             }
         }
-        
+
         this.asteroids.forEach(a => a.update(delta));
         this.enemies.forEach(e => e.update(delta));
-        
+
         // Remove dead enemies after update (only remove, don't respawn while active)
         this.enemies = this.enemies.filter(e => !e.isDead);
-        
+
         return this;
     }
 

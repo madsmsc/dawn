@@ -14,27 +14,27 @@ export class HUD {
         const centerX = game.canvas.width / 2;
         const centerY = game.canvas.height - 9;
         
-        this.#drawHealthCircles(centerX, centerY);
-        this.#drawVelocityBar(centerX, centerY);
-        this.#drawMiningProgressBar();
-        this.#drawLaserCooldownBar();
-        this.#drawHoverTooltips(centerX, centerY);
+        this.drawHealthCircles(centerX, centerY);
+        this.drawVelocityBar(centerX, centerY);
+        this.drawMiningProgressBar();
+        this.drawLaserCooldownBar();
+        this.drawHoverTooltips(centerX, centerY);
         
         // Reset line width to prevent leaking state
         game.ctx.lineWidth = 1;
     }
 
-    #drawHealthCircles(centerX, centerY) {
+    drawHealthCircles(centerX, centerY) {
         const shieldRadius = 70;
         const hullRadius = 50;
         const shieldPercentage = (game.player.ship.shield / game.player.ship.maxShield) * 100;
         const hullPercentage = (game.player.ship.hull / game.player.ship.maxHull) * 100;
 
         // Draw shield circle
-        this.#drawHealthCircle(shieldRadius, shieldPercentage, UI_COLORS.SHIELD_BG, centerY);
+        this.drawHealthCircle(shieldRadius, shieldPercentage, UI_COLORS.SHIELD_FILL, centerY);
 
         // Draw hull circle
-        this.#drawHealthCircle(hullRadius, hullPercentage, UI_COLORS.HULL_BG, centerY);
+        this.drawHealthCircle(hullRadius, hullPercentage, UI_COLORS.HULL_FILL, centerY);
 
         // Draw percentages
         UIHelper.drawTexts([`${shieldPercentage.toFixed(0)}%`],
@@ -43,7 +43,7 @@ export class HUD {
             { x: centerX - 12, y: centerY - 45 }, 15);
     }
 
-    #drawVelocityBar(centerX, centerY) {
+    drawVelocityBar(centerX, centerY) {
         const barWidth = 60;
         const barHeight = 20;
         const barX = centerX - barWidth / 2;
@@ -58,7 +58,7 @@ export class HUD {
             { x: barX + barWidth / 2 - 8, y: barY + 15 }, 12);
     }
 
-    #drawMiningProgressBar() {
+    drawMiningProgressBar() {
         if (!game.player.ship.miningTarget || game.player.ship.miningProgress === 0) return;
 
         const miningButton = game.ui?.buttons?.find((b) => b.key === '2');
@@ -69,11 +69,12 @@ export class HUD {
         const barX = miningButton.pos.x;
         const barY = miningButton.pos.y - 8; // 8px above the button
         
+        // TODO move all these colors to constants.js
         UIHelper.drawProgressBar(barX, barY, barWidth, barHeight, game.player.ship.miningProgress,
             'rgba(100, 150, 255, 0.9)', 'rgba(0, 0, 0, 0.5)', 'rgba(100, 150, 255, 1)');
     }
 
-    #drawLaserCooldownBar() {
+    drawLaserCooldownBar() {
         // Only show when weapon is cooling down (not ready)
         if (game.player.ship.attackCount >= game.player.ship.attackTime) return;
         
@@ -90,7 +91,7 @@ export class HUD {
             'rgba(200, 100, 255, 0.9)', 'rgba(0, 0, 0, 0.5)', 'rgba(200, 100, 255, 1)');
     }
 
-    #drawHoverTooltips(centerX, centerY) {
+    drawHoverTooltips(centerX, centerY) {
         if (!this.lastMousePos) return;
 
         const velBarWidth = 60;
@@ -138,18 +139,18 @@ export class HUD {
         }
     }
 
-    #drawHealthCircle(radius, percentage, color, centerY) {
+    drawHealthCircle(radius, percentage, color, centerY) {
         const centerX = game.canvas.width / 2;
 
         // Background semi-circle (top half, hollow, fat stroke)
-        game.ctx.strokeStyle = color;
+        game.ctx.strokeStyle = UI_COLORS.SHIELD_BG;
         game.ctx.lineWidth = 8;
         game.ctx.beginPath();
         game.ctx.arc(centerX, centerY, radius, 0, Math.PI, true);
         game.ctx.stroke();
 
         // Progress arc (left side shrinks moving right as damage taken, right side fixed at 0)
-        game.ctx.strokeStyle = color.replace('0.6', '1');
+        game.ctx.strokeStyle = color;
         game.ctx.lineWidth = 12;
         game.ctx.beginPath();
         game.ctx.arc(centerX, centerY, radius, -(Math.PI * percentage / 100), 0, false);

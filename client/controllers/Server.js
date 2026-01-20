@@ -1,14 +1,15 @@
-import { COLOR } from '../../shared/Constants.js';
 import { Player } from './Player.js';
-import { PlayerShip } from '../destructables/PlayerShip.js';
+import { PlayerShip } from '../actors/PlayerShip.js';
 import { System } from './System.js';
-import { Station } from '../selectables/Station.js';
-import { Gate } from '../selectables/Gate.js';
-import { Vec } from '../util/Vec.js';
+import { Station } from '../actors/Station.js';
+import { Gate } from '../actors/Gate.js';
 import { game } from './game.js';
+import { Instance } from './Instance.js';
+import { Vec } from '../util/Vec.js';
 
 export class Server {
     constructor() {
+        this.db = undefined;
         this.loginAttempts = 4; // TODO: set to 4 for testing - set to 0 for production
         this.loggingIn = false;
         this.ws = new WebSocket('ws://localhost:8080');
@@ -40,6 +41,7 @@ export class Server {
         this.startLoginRetry(); // periodic login retries; fallback to demo handled in login()
     }
 
+    /* used for procedurally creating new systems beyond the intro systems...  
     loadSystem() {
         // TODO: move this to server - along with a lot of other logic
         const namePrefix = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta',
@@ -102,6 +104,32 @@ export class Server {
 
         return A;
     }
+    */
+
+    loadSystem(gateId) {
+        this.db.systems.forEach(s => {
+            const warpableIds = s.instances.map(i => i.warpable.id);
+            if (warpableIds.includes(gateId)) {
+                console.log("found gate " + gateId + " in system " + s.id);
+                return this.deserializeSystem(s);
+            }
+        });
+        console.log('could not load system with gateId=' + gateId);
+        return null;
+    }
+
+    deserializeSystem(system) {
+        let instances = [];
+        system.instances.forEach(instance => {
+            let warpable;
+            const type = instance.warpable.type;
+            if (type === 'station') warpable = new Station(instance.warpable);
+            if (type === 'gate') warpable = new Gate(instance.warpable);
+            warpable.pos = new Vec(instance.warpable.pos.x, instance.warpable.pos.y);
+            instances.push(new Instance(warpable));
+        });
+        return new System(system.name, system.color, instances);
+    }
 
     login(user, pass) {
         if (this.loginAttempts > 5) return;
@@ -114,17 +142,12 @@ export class Server {
                 fetch('client/static/demo.json')
                     .then(response => response.json())
                     .then(data => {
-                        const user = data.users[0];
+                        this.db = data;
+                        const user = this.db.users[0];
                         game.player = new Player(user.player);
                         game.player.ship = new PlayerShip(user.spaceship);
-                        // Position player at starting station instance
-                        if (game.system && game.system.currentInstance) {
-                            const station = game.system.currentInstance.warpable;
-                            game.player.ship.pos.x = station.pos.x + 50;
-                            game.player.ship.pos.y = station.pos.y + 50;
-                        } else {
-                            console.error('No current instance set when player loaded!');
-                        }
+                        const system = this.db.systems.filter(s => s.id == user.player.system)[0];
+                        game.system = this.deserializeSystem(system);
                     })
                     .catch(error => console.log(error));
             }

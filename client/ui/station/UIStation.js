@@ -24,7 +24,7 @@ export class UIStation {
         this.backgroundImage.src = `client/static/${randomBg}`;
     }
 
-    #drawItemBox(x, y, width, height, text, bgColor, borderColor, textColor, font) {
+    drawItemBox(x, y, width, height, text, bgColor, borderColor, textColor, font) {
         game.ctx.fillStyle = bgColor;
         game.ctx.fillRect(x, y, width, height);
         game.ctx.strokeStyle = borderColor;
@@ -38,7 +38,7 @@ export class UIStation {
         }
     }
 
-    #drawText(text, x, y, color, font, align = 'center') {
+    drawText(text, x, y, color, font, align = 'center') {
         game.ctx.fillStyle = color;
         game.ctx.font = font;
         game.ctx.textAlign = align;
@@ -90,7 +90,7 @@ export class UIStation {
         UIHelper.drawDialog(dialogX, dialogY, dialogWidth, dialogHeight);
 
         // Draw tabs
-        this.#drawTabs(dialogX, dialogY, dialogWidth);
+        this.drawTabs(dialogX, dialogY, dialogWidth);
 
         // Draw content based on current tab
         let yOffset = dialogY + 50;
@@ -109,7 +109,7 @@ export class UIStation {
         game.ctx.restore();
     }
 
-    #drawTabs(dialogX, dialogY, dialogWidth) {
+    drawTabs(dialogX, dialogY, dialogWidth) {
         const tabs = [
             { key: 'station', label: 'Station' },
             { key: 'missions', label: 'Missions' },

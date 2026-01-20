@@ -1,39 +1,43 @@
 import { game } from '../controllers/game.js';
 import { UI_FONTS } from '../../shared/Constants.js';
-import { Message } from './Message.js';
 
 export class MessageQueue {
     constructor() {
         this.messages = [];
-        this.maxMessages = 5;
+        this.maxMessages = 20;
         this.messageSpacing = 25;
         this.startX = 20; // Left margin
         this.startY = null; // Will be calculated based on canvas height
+        this.speed = 0.0001;
     }
 
-    addMessage(text, duration = 6000) {
-        const message = new Message(text, duration);
-        this.messages.unshift(message); // Add to front (top)
-
-        // Remove oldest if we exceed max
+    addMessage(text) {
+        this.messages.push({ text, alpha: 1.0 });
         if (this.messages.length > this.maxMessages) {
-            this.messages.pop();
+            let oldestMsg = undefined;
+            this.messages.forEach(m => {
+                if (!oldestMsg || m.alpha < oldestMsg.alpha) oldestMsg = m;
+            });
+            const index = this.messages.indexOf(oldestMsg);
+            if (index > -1) {
+                // console.log('max messages. removing ' + oldestMsg.text);
+                this.messages.splice(index, 1);
+            } else {
+                // console.log('max messages. could not find message to remove');
+            }
         }
     }
 
     update(delta) {
-        // Update all messages and remove expired ones
-        this.messages = this.messages.filter(msg => !msg.update(delta));
+        this.messages.forEach(msg => { msg.alpha -= delta * this.speed; });
+        this.messages = this.messages.filter(msg => msg.alpha > 0);
         return this;
     }
 
     draw() {
         if (this.messages.length === 0) return;
-
         game.ctx.save();
-
-        // Calculate start position from bottom of screen
-        const bottomY = game.canvas.height - 80; // 80px from bottom
+        const bottomY = game.canvas.height - 80;
 
         // Draw messages from oldest (bottom) to newest (top)
         for (let i = this.messages.length - 1; i >= 0; i--) {
@@ -41,7 +45,7 @@ export class MessageQueue {
             const index = this.messages.length - 1 - i;
 
             // Calculate position - messages stack upward
-            const targetY = bottomY - (index * this.messageSpacing);
+            const targetY = bottomY - (i * this.messageSpacing);
 
             // Draw message background
             game.ctx.font = UI_FONTS.SMALL;

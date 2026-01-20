@@ -54,25 +54,25 @@ export class InventoryGrid {
         yOffset = UIHelper.drawSectionHeader('Active Modules', dialogWidth, yOffset, dialogX);
         this.activeModulesGrid.x = dialogX + 30;
         this.activeModulesGrid.y = yOffset;
-        yOffset = this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
+        yOffset = this.drawGrid(activeModules, this.activeModulesGrid, 'active');
 
         // Passive modules (2 slots, 1 row x 2 cols)
         yOffset += 5;
         yOffset = UIHelper.drawSectionHeader('Passive Modules', dialogWidth, yOffset, dialogX);
         this.passiveModulesGrid.x = dialogX + 30;
         this.passiveModulesGrid.y = yOffset;
-        yOffset = this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
+        yOffset = this.drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
 
         // Draw inventory section
         yOffset += 10;
         yOffset = UIHelper.drawSectionHeader('Inventory', dialogWidth, yOffset, dialogX);
         this.inventoryGrid.x = dialogX + 30;
         this.inventoryGrid.y = yOffset;
-        yOffset = this.#drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
+        yOffset = this.drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
 
         // Draw dragged item on top
         if (this.draggedItem) {
-            this.#drawItem(
+            this.drawItem(
                 this.draggedItem,
                 this.lastMousePos.x - this.dragOffset.x,
                 this.lastMousePos.y - this.dragOffset.y,
@@ -97,7 +97,7 @@ export class InventoryGrid {
         // Draw active modules
         this.activeModulesGrid.x = columnX;
         this.activeModulesGrid.y = yOffset;
-        this.#drawGrid(activeModules, this.activeModulesGrid, 'active');
+        this.drawGrid(activeModules, this.activeModulesGrid, 'active');
 
         // Draw passive modules below active
         const activeHeight = this.activeModulesGrid.rows * (this.cellSize + this.cellPadding);
@@ -112,28 +112,28 @@ export class InventoryGrid {
 
         this.passiveModulesGrid.x = columnX;
         this.passiveModulesGrid.y = yOffset;
-        this.#drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
+        this.drawGrid(passiveModules, this.passiveModulesGrid, 'passive');
 
-        this.#drawHoverTooltip();
+        this.drawHoverTooltip();
     }
 
     drawInventoryOnly(columnX, columnWidth, yOffset) {
         this.inventoryGrid.x = columnX;
         this.inventoryGrid.y = yOffset;
-        this.#drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
-        this.#drawHoverTooltip();
+        this.drawGrid(game.player.ship.inventory, this.inventoryGrid, 'inventory');
+        this.drawHoverTooltip();
     }
 
     drawStash(columnX, columnWidth, yOffset, salvageMode = false) {
         this.stashGrid.x = columnX;
         this.stashGrid.y = yOffset;
-        this.#drawGrid(game.player.quantumStash, this.stashGrid, 'stash', salvageMode);
-        this.#drawHoverTooltip();
+        this.drawGrid(game.player.quantumStash, this.stashGrid, 'stash', salvageMode);
+        this.drawHoverTooltip();
     }
 
     drawDraggedItem() {
         if (this.draggedItem && this.lastMousePos) {
-            this.#drawItem(
+            this.drawItem(
                 this.draggedItem,
                 this.lastMousePos.x - this.dragOffset.x,
                 this.lastMousePos.y - this.dragOffset.y,
@@ -142,7 +142,7 @@ export class InventoryGrid {
         }
     }
 
-    #drawGrid(items, grid, gridType, salvageMode = false) {
+    drawGrid(items, grid, gridType, salvageMode = false) {
         const totalWidth = grid.cols * (this.cellSize + this.cellPadding);
         const totalHeight = grid.rows * (this.cellSize + this.cellPadding);
 
@@ -182,7 +182,7 @@ export class InventoryGrid {
                     if (this.draggedItem !== item) {
                         // Check if item should be greyed out in salvage mode
                         const isGreyedOut = salvageMode && Object.keys(ORE).includes(item.name);
-                        this.#drawItem(item, x, y, false, isGreyedOut);
+                        this.drawItem(item, x, y, false, isGreyedOut);
                     }
                 }
             }
@@ -192,22 +192,22 @@ export class InventoryGrid {
 
     // TODO: extracted these methods - there's probably a lot more refactoring to do here.
     // find something, search for it in the file, many hits means candidate for extracting.
-    #getAbbreviation(name) {
+    getAbbreviation(name) {
         const len = Math.min(5, name.length);
         return name.substring(0, len).toUpperCase();
     }
 
-    #drawItemName(name, size, x, y) {
+    drawItemName(name, size, x, y) {
         game.ctx.font = UI_FONTS.TINY;
         game.ctx.textAlign = 'center';
         game.ctx.textBaseline = 'middle';
-        const abbrev = this.#getAbbreviation(name);
+        const abbrev = this.getAbbreviation(name);
         game.ctx.fillText(abbrev, x + size / 2, y + size / 2 - 5);
     }
 
-    #drawItem(item, x, y, isDragging, isGreyedOut = false) {
+    drawItem(item, x, y, isDragging, isGreyedOut = false) {
         // Draw item background with rarity color
-        const rarityColor = this.#getRarityColor(item.rarity);
+        const rarityColor = this.getRarityColor(item.rarity);
         game.ctx.fillStyle = isGreyedOut ? 'rgba(50, 50, 50, 0.6)' : rarityColor;
         game.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
 
@@ -220,7 +220,7 @@ export class InventoryGrid {
 
         // Draw item icon/text
         game.ctx.fillStyle = isGreyedOut ? 'rgba(150, 150, 150, 0.7)' : UI_COLORS.TEXT_WHITE;
-        this.#drawItemName(item.name, this.cellSize, x, y)
+        this.drawItemName(item.name, this.cellSize, x, y)
 
         // Draw amount if > 1
         if (item.amount > 1) {
@@ -234,7 +234,7 @@ export class InventoryGrid {
         game.ctx.textBaseline = 'alphabetic';
     }
 
-    #getRarityColor(rarity) {
+    getRarityColor(rarity) {
         switch (rarity) {
             case RARITY.SIMPLE: return 'rgba(150, 150, 150, 0.6)';
             case RARITY.MODIFIED: return 'rgba(100, 150, 255, 0.6)';
@@ -246,7 +246,7 @@ export class InventoryGrid {
     handleMouseDown(clickPos, preventStashDrag = false, researchUI = null) {
         // Check research slot first (if on research tab)
         if (researchUI && this.researchSlotGrid) {
-            const researchIndex = this.#getSlotAtPosition(clickPos, this.researchSlotGrid);
+            const researchIndex = this.getSlotAtPosition(clickPos, this.researchSlotGrid);
             if (researchIndex !== -1 && researchUI.researchSlot) {
                 this.draggedItem = researchUI.researchSlot;
                 this.draggedFrom = { type: 'research', index: 0, researchUI: researchUI };
@@ -260,7 +260,7 @@ export class InventoryGrid {
 
         // Check active modules
         const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
-        const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
+        const activeIndex = this.getSlotAtPosition(clickPos, this.activeModulesGrid);
         if (activeIndex !== -1 && activeIndex < activeModules.length) {
             const actualIndex = game.player.ship.modules.indexOf(activeModules[activeIndex]);
             this.draggedItem = game.player.ship.modules[actualIndex];
@@ -274,7 +274,7 @@ export class InventoryGrid {
 
         // Check passive modules
         const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
-        const passiveIndex = this.#getSlotAtPosition(clickPos, this.passiveModulesGrid);
+        const passiveIndex = this.getSlotAtPosition(clickPos, this.passiveModulesGrid);
         if (passiveIndex !== -1 && passiveIndex < passiveModules.length) {
             const actualIndex = game.player.ship.modules.indexOf(passiveModules[passiveIndex]);
             this.draggedItem = game.player.ship.modules[actualIndex];
@@ -287,7 +287,7 @@ export class InventoryGrid {
         }
 
         // Check inventory
-        const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
+        const inventoryIndex = this.getSlotAtPosition(clickPos, this.inventoryGrid);
         if (inventoryIndex !== -1 && inventoryIndex < game.player.ship.inventory.length) {
             this.draggedItem = game.player.ship.inventory[inventoryIndex];
             this.draggedFrom = { type: 'inventory', index: inventoryIndex };
@@ -300,7 +300,7 @@ export class InventoryGrid {
 
         // Check stash (if docked) - but not if in salvage mode
         if (game.player && game.player.docked && !preventStashDrag) {
-            const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
+            const stashIndex = this.getSlotAtPosition(clickPos, this.stashGrid);
             if (stashIndex !== -1 && stashIndex < game.player.quantumStash.length) {
                 this.draggedItem = game.player.quantumStash[stashIndex];
                 this.draggedFrom = { type: 'stash', index: stashIndex };
@@ -323,27 +323,27 @@ export class InventoryGrid {
         if (!this.draggedItem) {
             // Update hovered slot
             const activeModules = game.player.ship.modules.filter(m => Module.isActive(m.name));
-            const activeIndex = this.#getSlotAtPosition(mousePos, this.activeModulesGrid);
+            const activeIndex = this.getSlotAtPosition(mousePos, this.activeModulesGrid);
             if (activeIndex !== -1) {
                 this.hoveredSlot = { type: 'active', index: activeIndex };
                 return;
             }
 
             const passiveModules = game.player.ship.modules.filter(m => !Module.isActive(m.name));
-            const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
+            const passiveIndex = this.getSlotAtPosition(mousePos, this.passiveModulesGrid);
             if (passiveIndex !== -1) {
                 this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
 
-            const inventoryIndex = this.#getSlotAtPosition(mousePos, this.inventoryGrid);
+            const inventoryIndex = this.getSlotAtPosition(mousePos, this.inventoryGrid);
             if (inventoryIndex !== -1) {
                 this.hoveredSlot = { type: 'inventory', index: inventoryIndex };
                 return;
             }
 
             if (game.player && game.player.docked) {
-                const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
+                const stashIndex = this.getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
@@ -351,7 +351,7 @@ export class InventoryGrid {
 
                 // Check research slot
                 if (this.researchSlotGrid) {
-                    const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
+                    const researchIndex = this.getSlotAtPosition(mousePos, this.researchSlotGrid);
                     if (researchIndex !== -1) {
                         this.hoveredSlot = { type: 'research', index: researchIndex };
                         return;
@@ -362,26 +362,26 @@ export class InventoryGrid {
             this.hoveredSlot = null;
         } else {
             // Update hovered slot while dragging
-            const activeIndex = this.#getSlotAtPosition(mousePos, this.activeModulesGrid);
+            const activeIndex = this.getSlotAtPosition(mousePos, this.activeModulesGrid);
             if (activeIndex !== -1 && activeIndex < this.activeModulesGrid.cols * this.activeModulesGrid.rows) {
                 this.hoveredSlot = { type: 'active', index: activeIndex };
                 return;
             }
 
-            const passiveIndex = this.#getSlotAtPosition(mousePos, this.passiveModulesGrid);
+            const passiveIndex = this.getSlotAtPosition(mousePos, this.passiveModulesGrid);
             if (passiveIndex !== -1 && passiveIndex < this.passiveModulesGrid.cols * this.passiveModulesGrid.rows) {
                 this.hoveredSlot = { type: 'passive', index: passiveIndex };
                 return;
             }
 
-            const inventoryIndex = this.#getSlotAtPosition(mousePos, this.inventoryGrid);
+            const inventoryIndex = this.getSlotAtPosition(mousePos, this.inventoryGrid);
             if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
                 this.hoveredSlot = { type: 'inventory', index: inventoryIndex };
                 return;
             }
 
             if (game.player && game.player.docked) {
-                const stashIndex = this.#getSlotAtPosition(mousePos, this.stashGrid);
+                const stashIndex = this.getSlotAtPosition(mousePos, this.stashGrid);
                 if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
                     this.hoveredSlot = { type: 'stash', index: stashIndex };
                     return;
@@ -389,7 +389,7 @@ export class InventoryGrid {
 
                 // Check research slot while dragging
                 if (this.researchSlotGrid) {
-                    const researchIndex = this.#getSlotAtPosition(mousePos, this.researchSlotGrid);
+                    const researchIndex = this.getSlotAtPosition(mousePos, this.researchSlotGrid);
                     if (researchIndex !== -1) {
                         this.hoveredSlot = { type: 'research', index: researchIndex };
                         return;
@@ -401,7 +401,7 @@ export class InventoryGrid {
         }
     }
 
-    #drawHoverTooltip() {
+    drawHoverTooltip() {
         if (!this.hoveredSlot || !this.lastMousePos) return;
         const { type, index } = this.hoveredSlot;
         let sourceArray;
@@ -420,13 +420,13 @@ export class InventoryGrid {
         if (!sourceArray || index >= sourceArray.length) return;
         const item = sourceArray[index];
         if (!item) return;
-        const lines = this.#buildTooltipLines(item);
+        const lines = this.buildTooltipLines(item);
         UIHelper.drawTooltipLines(this.lastMousePos.x + 16, this.lastMousePos.y - 12, lines);
     }
 
-    #buildTooltipLines(item) {
-        const rarityLabel = this.#rarityLabel(item.rarity);
-        const amountText = item.amount > 1 ? `${this.#formatAmount(item.amount)} ${item.unit}` : `${item.unit || ''}`.trim();
+    buildTooltipLines(item) {
+        const rarityLabel = this.rarityLabel(item.rarity);
+        const amountText = item.amount > 1 ? `${this.formatAmount(item.amount)} ${item.unit}` : `${item.unit || ''}`.trim();
         const lines = [
             `${rarityLabel} ${item.name}`.trim(),
             amountText || '1 unit'
@@ -444,14 +444,14 @@ export class InventoryGrid {
         return lines;
     }
 
-    #rarityLabel(rarity) {
+    rarityLabel(rarity) {
         if (rarity === RARITY.SIMPLE) return 'Simple';
         if (rarity === RARITY.MODIFIED) return 'Modified';
         if (rarity === RARITY.COMPLEX) return 'Complex';
         return 'Common';
     }
 
-    #formatAmount(amount) {
+    formatAmount(amount) {
         if (amount >= 1000) return `${Math.floor(amount)}+`;
         if (Number.isInteger(amount)) return amount.toString();
         return amount.toFixed(1);
@@ -465,7 +465,7 @@ export class InventoryGrid {
 
         // Check research slot first (if on research tab)
         if (researchUI && this.researchSlotGrid) {
-            const researchIndex = this.#getSlotAtPosition(clickPos, this.researchSlotGrid);
+            const researchIndex = this.getSlotAtPosition(clickPos, this.researchSlotGrid);
             if (researchIndex !== -1) {
                 // Only allow non-ore modules in research slot
                 const oreNames = Object.keys(ORE);
@@ -477,20 +477,20 @@ export class InventoryGrid {
 
         if (!targetSlot) {
             // Check active modules grid
-            const activeIndex = this.#getSlotAtPosition(clickPos, this.activeModulesGrid);
+            const activeIndex = this.getSlotAtPosition(clickPos, this.activeModulesGrid);
             if (activeIndex !== -1 && activeIndex < this.activeModulesGrid.cols * this.activeModulesGrid.rows) {
                 targetSlot = { type: 'active', index: activeIndex };
             } else {
                 // Check passive modules grid
-                const passiveIndex = this.#getSlotAtPosition(clickPos, this.passiveModulesGrid);
+                const passiveIndex = this.getSlotAtPosition(clickPos, this.passiveModulesGrid);
                 if (passiveIndex !== -1 && passiveIndex < this.passiveModulesGrid.cols * this.passiveModulesGrid.rows) {
                     targetSlot = { type: 'passive', index: passiveIndex };
                 } else {
-                    const inventoryIndex = this.#getSlotAtPosition(clickPos, this.inventoryGrid);
+                    const inventoryIndex = this.getSlotAtPosition(clickPos, this.inventoryGrid);
                     if (inventoryIndex !== -1 && inventoryIndex < this.inventoryGrid.cols * this.inventoryGrid.rows) {
                         targetSlot = { type: 'inventory', index: inventoryIndex };
                     } else if (game.player && game.player.docked) {
-                        const stashIndex = this.#getSlotAtPosition(clickPos, this.stashGrid);
+                        const stashIndex = this.getSlotAtPosition(clickPos, this.stashGrid);
                         if (stashIndex !== -1 && stashIndex < this.stashGrid.cols * this.stashGrid.rows) {
                             targetSlot = { type: 'stash', index: stashIndex };
                         }
@@ -501,7 +501,7 @@ export class InventoryGrid {
 
         // Perform the move/swap
         if (targetSlot) {
-            this.#moveItem(this.draggedFrom, targetSlot);
+            this.moveItem(this.draggedFrom, targetSlot);
         }
 
         this.draggedItem = null;
@@ -510,7 +510,7 @@ export class InventoryGrid {
         return true;
     }
 
-    #getSlotAtPosition(pos, grid) {
+    getSlotAtPosition(pos, grid) {
         if (!pos || !grid) return -1;
 
         const relX = pos.x - grid.x;
@@ -536,7 +536,7 @@ export class InventoryGrid {
         return row * grid.cols + col;
     }
 
-    #moveItem(from, to) {
+    moveItem(from, to) {
         // Handle research slot specially
         if (from.type === 'research' || to.type === 'research') {
             const researchUI = from.researchUI || to.researchUI;
@@ -714,7 +714,7 @@ export class InventoryGrid {
     // Public method for drawing items in custom slots
     _drawItemInSlot(item, x, y, slotSize) {
         // Draw item background with rarity color
-        const rarityColor = this.#getRarityColor(item.rarity);
+        const rarityColor = this.getRarityColor(item.rarity);
         game.ctx.fillStyle = rarityColor;
         game.ctx.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
 
@@ -726,7 +726,7 @@ export class InventoryGrid {
 
         // Draw item icon/text
         game.ctx.fillStyle = UI_COLORS.TEXT_WHITE;
-        this.#drawItemName(item.name, slotSize, x, y);
+        this.drawItemName(item.name, slotSize, x, y);
 
         // Draw amount if > 1
         if (item.amount > 1) {

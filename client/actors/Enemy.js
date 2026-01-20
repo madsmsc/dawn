@@ -3,7 +3,9 @@ import { SPRITE, MOVE, MODULE, UI_COLORS, UI_FONTS } from '../../shared/Constant
 import { Destructable } from './Destructable.js';
 import { Module } from '../modules/Module.js';
 import { UIHelper } from '../ui/UIHelper.js';
+import { Vec } from '../util/Vec.js';
 
+// TODO: put enemy into the instance state on server-side
 export class Enemy extends Destructable {
     constructor() {
         super();
@@ -15,22 +17,9 @@ export class Enemy extends Destructable {
         this.shipSprite = shipSprites[Math.floor(Math.random() * shipSprites.length)];
     }
 
-    static orbiting () {
-        const e = new Enemy();
-        e.hull = 10;
-        e.maxHull = 10;
-        e.shield = 10;
-        e.maxShield = 10;
-
-        e.target = e.pos;
-        e.moveMode = MOVE.ORBIT;
-        e.orbitRadius = 100 + Math.random() * 40; // Random orbit 100-140
-        e.scanRange = 0;
-        return e;
-    }
-
     static scanning () {
         const e = new Enemy();
+        e.pos = new Vec(Math.random() * 200, Math.random() * 200);
         e.hull = 10;
         e.maxHull = 10;
         e.shield = 10;

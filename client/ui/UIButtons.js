@@ -11,10 +11,10 @@ export class UIButtons {
     constructor() {
         this.buttons = [];
         this.lastMousePos = null;
-        this.#loadButtons();
+        this.loadButtons();
     }
 
-    #loadButtons() {
+    loadButtons() {
         this.buttons.push(new Button('w', undefined, undefined, () => !game.player.docked, ['Move forward']));
         this.buttons.push(new Button('a', undefined, undefined, () => !game.player.docked, ['Turn left']));
         this.buttons.push(new Button('s', undefined, undefined, () => !game.player.docked, ['Move backward']));
@@ -35,13 +35,13 @@ export class UIButtons {
 
         i = -5;
         this.buttons.push(new Button('4', i2vec(i++), SPRITE.DRONES, () =>
-            !game.player.docked && this.#hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
+            !game.player.docked && this.hasModule('drones'), ['Drones', 'Deploy/recall combat drones (4)']));
         this.buttons.push(new Button('3', i2vec(i++), SPRITE.WARP, () =>
-            !game.player.docked && this.#hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
+            !game.player.docked && this.hasModule('warp drive'), ['Warp Drive', 'Open warp targets (3)']));
         this.buttons.push(new Button('2', i2vec(i++), SPRITE.MINE, () =>
-            !game.player.docked && this.#hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
+            !game.player.docked && this.hasModule('mining laser'), ['Mining Laser', 'Start/stop mining (2)']));
         this.buttons.push(new Button('1', i2vec(i++), SPRITE.FIRE, () =>
-            !game.player.docked && this.#hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
+            !game.player.docked && this.hasModule('laser weapon'), ['Weapons', 'Fire primary weapons (1)']));
 
         this.buttons.find((b) => b.key === 'i').onDraw = () => game.ui.dialogs.drawInfoDialog();
         this.buttons.find((b) => b.key === 'p').onDraw = () => game.ui.dialogs.drawMenuDialog();
@@ -59,30 +59,30 @@ export class UIButtons {
         };
     }
 
-    #hasModule(moduleName) {
+    hasModule(moduleName) {
         return game.player.ship.modules.some(m => m.name === moduleName);
     }
 
     draw() {
         this.buttons.forEach((b) => { b.draw() });
-        this.#drawDroneProgressBar();
-        this.#drawHoverTooltip();
+        this.drawDroneProgressBar();
+        this.drawHoverTooltip();
     }
 
     setMousePos(mousePos) {
         this.lastMousePos = mousePos;
     }
 
-    #drawHoverTooltip() {
+    drawHoverTooltip() {
         if (!this.lastMousePos) return;
-        const hovered = this.buttons.find((b) => this.#isHoveringButton(b, this.lastMousePos));
+        const hovered = this.buttons.find((b) => this.isHoveringButton(b, this.lastMousePos));
         if (!hovered || !hovered.tooltip || hovered.tooltip.length === 0) return;
         game.ctx.save();
         UIHelper.drawTooltipLines(this.lastMousePos.x + 14, this.lastMousePos.y - 18, hovered.tooltip);
         game.ctx.restore();
     }
 
-    #drawDroneProgressBar() {
+    drawDroneProgressBar() {
         const droneButton = this.buttons.find((b) => b.key === '4');
         if (!droneButton || !droneButton.pos || !droneButton.show) return;
 
@@ -108,7 +108,7 @@ export class UIButtons {
         game.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 
-    #isHoveringButton(button, pos) {
+    isHoveringButton(button, pos) {
         if (!button.pos || !pos) return false;
         if (!button.isEnabled()) return false;
         const centerX = button.pos.x + ICON_SIZE / 2;

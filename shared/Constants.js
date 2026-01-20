@@ -101,7 +101,6 @@ export const UI_COLORS = {
     // Health/Status
     SHIELD_BG: 'rgba(30, 30, 40, 0.7)',
     SHIELD_FILL: 'rgba(100, 150, 255, 0.8)',
-    HULL_BG: 'rgba(40, 30, 30, 0.7)',
     HULL_FILL: 'rgba(255, 100, 100, 0.8)',
     BAR_GREEN: 'rgba(30, 150, 30, 0.8)',
     BAR_YELLOW: 'rgba(200, 200, 50, 0.8)',

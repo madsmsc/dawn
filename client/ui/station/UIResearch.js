@@ -18,7 +18,7 @@ export class UIResearch {
         const centerX = dialogX + dialogWidth / 2;
 
         // Info text
-        this.#drawText('Drag a module to the research slot', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        this.drawText('Drag a module to the research slot', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 25;
 
         // Draw research slot and description side by side
@@ -53,7 +53,7 @@ export class UIResearch {
         const descY = slotY;
         
         if (this.researchSlot) {
-            this.#drawItemDescription(this.researchSlot, descX, descY, descWidth);
+            this.drawItemDescription(this.researchSlot, descX, descY, descWidth);
         } else {
             game.ctx.fillStyle = UI_COLORS.TEXT_DISABLED;
             game.ctx.font = UI_FONTS.SMALL;
@@ -113,7 +113,7 @@ export class UIResearch {
         y += totalRows * buttonHeight + (totalRows - 1) * buttonSpacing + 20;
         
         // Draw instructions
-        this.#drawText('Select an action to modify the item', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+        this.drawText('Select an action to modify the item', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
     }
 
     handleClick(clickPos) {
@@ -122,7 +122,7 @@ export class UIResearch {
             if (btn.enabled &&
                 clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
                 clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
-                this.#applyResearch(btn.research);
+                this.applyResearch(btn.research);
                 return true;
             }
         }
@@ -141,14 +141,14 @@ export class UIResearch {
         this.inventoryGrid.handleMouseMove(mousePos);
     }
 
-    #drawText(text, x, y, color, font, align = 'center') {
+    drawText(text, x, y, color, font, align = 'center') {
         game.ctx.fillStyle = color;
         game.ctx.font = font;
         game.ctx.textAlign = align;
         game.ctx.fillText(text, x, y);
     }
 
-    #drawItemDescription(item, x, y, width) {
+    drawItemDescription(item, x, y, width) {
         game.ctx.fillStyle = UI_COLORS.TEXT_PRIMARY;
         game.ctx.font = UI_FONTS.HEADER;
         game.ctx.textAlign = 'left';
@@ -195,7 +195,7 @@ export class UIResearch {
         }
     }
     
-    #applyResearch(research) {
+    applyResearch(research) {
         if (!this.researchSlot) return;
         
         if (game.player.credits < research.cost) {

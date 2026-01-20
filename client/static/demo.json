@@ -10,7 +10,8 @@
         "quantumStash": [],
         "settings": {
           "showVelocityVectors": false
-        }
+        },
+        "system": "sys.A"
       },
       "spaceship": {
         "type": "frigate",
@@ -20,7 +21,11 @@
         "maxHull": 50,
         "size": 15,
         "acceleration": 0.00005,
-        "vel": 0,
+        "dam": 4,
+        "velVec": {
+          "x": 0,
+          "y": 0
+        },
         "maxVel": 10,
         "pos": {
           "x": 500.5,
@@ -30,7 +35,7 @@
           "x": 500.5,
           "y": 382
         },
-        "miningRange": 100,
+        "miningRange": 200,
         "mode": 0,
         "modules": [
           {
@@ -94,7 +99,7 @@
               "x": 400,
               "y": 250
             },
-            "targetWarpable": "gate.B.A"
+            "targetGate": "gate.B.A"
           }
         },
         {
@@ -107,7 +112,7 @@
               "x": 600,
               "y": 200
             },
-            "targetWarpable": "gate.C.A"
+            "targetGate": "gate.C.A"
           }
         }
       ]
@@ -139,7 +144,7 @@
               "x": 200,
               "y": 250
             },
-            "targetWarpable": "gate.A.B"
+            "targetGate": "gate.A.B"
           }
         },
         {
@@ -152,7 +157,7 @@
               "x": 500,
               "y": 300
             },
-            "targetWarpable": "gate.C.B"
+            "targetGate": "gate.C.B"
           }
         }
       ]
@@ -184,7 +189,7 @@
               "x": 300,
               "y": 150
             },
-            "targetWarpable": "gate.A.C"
+            "targetGate": "gate.A.C"
           }
         },
         {
@@ -197,7 +202,7 @@
               "x": 350,
               "y": 400
             },
-            "targetWarpable": "gate.B.C"
+            "targetGate": "gate.B.C"
           }
         }
       ]

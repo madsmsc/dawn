@@ -17,7 +17,7 @@ export class UIStashTab {
         const centerX = dialogX + dialogWidth / 2;
         
         // Info text
-        this.#drawText('Shared storage across all stations', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        this.drawText('Shared storage across all stations', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 30;
         
         // Draw buttons
@@ -56,7 +56,7 @@ export class UIStashTab {
         
         // Show salvage instructions when active
         if (this.salvageMode) {
-            this.#drawText('Click non-ore items to salvage for credits', centerX, y, UI_COLORS.TEXT_HIGHLIGHT, UI_FONTS.SMALL);
+            this.drawText('Click non-ore items to salvage for credits', centerX, y, UI_COLORS.TEXT_HIGHLIGHT, UI_FONTS.SMALL);
             y += 20;
         }
         
@@ -76,7 +76,7 @@ export class UIStashTab {
             const btn = this.stashButtonBounds.stashAll;
             if (clickPos.x >= btn.x && clickPos.x <= btn.x + btn.width &&
                 clickPos.y >= btn.y && clickPos.y <= btn.y + btn.height) {
-                this.#stashAll();
+                this.stashAll();
                 return true;
             }
         }
@@ -97,7 +97,7 @@ export class UIStashTab {
         
         // If in salvage mode, handle salvage clicks
         if (this.salvageMode && !this.salvageButtonClickStart) {
-            this.salvageClickStart = this.#getSalvageItemIndex(clickPos);
+            this.salvageClickStart = this.getSalvageItemIndex(clickPos);
             return this.salvageClickStart !== null;
         }
         
@@ -121,9 +121,9 @@ export class UIStashTab {
         
         // If in salvage mode and we have a click start, check if mouse up is on same item
         if (this.salvageMode && this.salvageClickStart !== null) {
-            const mouseUpIndex = this.#getSalvageItemIndex(clickPos);
+            const mouseUpIndex = this.getSalvageItemIndex(clickPos);
             if (mouseUpIndex === this.salvageClickStart) {
-                const salvaged = this.#handleSalvageAtIndex(mouseUpIndex);
+                const salvaged = this.handleSalvageAtIndex(mouseUpIndex);
                 this.salvageClickStart = null;
                 if (salvaged) return true;
             }
@@ -138,14 +138,14 @@ export class UIStashTab {
         this.inventoryGrid.handleMouseMove(mousePos);
     }
 
-    #stashAll() {
+    stashAll() {
         const itemsToMove = [...game.player.ship.inventory];
         game.player.ship.inventory = [];
         game.player.quantumStash.push(...itemsToMove);
         game.ui.messages.addMessage(`Stashed ${itemsToMove.length} items`);
     }
     
-    #getSalvageItemIndex(clickPos) {
+    getSalvageItemIndex(clickPos) {
         const stashGrid = this.inventoryGrid.stashGrid;
         const relX = clickPos.x - stashGrid.x;
         const relY = clickPos.y - stashGrid.y;
@@ -169,7 +169,7 @@ export class UIStashTab {
         return index;
     }
     
-    #handleSalvageAtIndex(index) {
+    handleSalvageAtIndex(index) {
         if (index === null || index >= game.player.quantumStash.length) return false;
         
         const item = game.player.quantumStash[index];
@@ -189,7 +189,7 @@ export class UIStashTab {
         return true;
     }
 
-    #drawText(text, x, y, color, font, align = 'center') {
+    drawText(text, x, y, color, font, align = 'center') {
         game.ctx.fillStyle = color;
         game.ctx.font = font;
         game.ctx.textAlign = align;

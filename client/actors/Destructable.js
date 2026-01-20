@@ -1,21 +1,11 @@
-import { Selectable } from "../selectables/Selectable.js";
 import { Vec } from "../util/Vec.js"
 import { MOVE } from "../../shared/Constants.js"
 import { game } from "../controllers/game.js";
 import { Particle } from "../util/Particle.js";
 
-export class Destructable extends Selectable {
+export class Destructable {
     constructor() {
-        super();
-
-        this.maxShield = 0;
-        this.shield = 0;
-        this.maxHull = 0;
-        this.hull = 0;
-        // Engine trail settings
-        this.trailSpawnInterval = 30; // ms between trail particle spawns
-        this.trailSpawnTimer = 0;
-        // Movement and combat
+        // enemy default
         this.type = '';
         this.acceleration = 0.05;
         this.vel = 0;
@@ -25,24 +15,25 @@ export class Destructable extends Selectable {
         // TODO: should depend on the ship type and weapons/modules
         this.modules = []; // "equipped" modules
         this.inventory = []; // unequipped modules and ore
-        this.orbitRadius = 120; 
-        this.scanRange = 10000; 
-        this.attackRange = 150; 
-        this.dam = 2; 
+        this.orbitRadius = 120;
+        this.scanRange = 10000;
+        this.attackRange = 150;
+        this.dam = 2;
         this.attackTime = 1000;
         this.attackCount = 0;
+        // UI
+        this.particles = [];
+        this.trailParticles = [];
+        this.trailSpawnInterval = 30; // ms between trail particle spawns
+        this.trailSpawnTimer = 0;
     }
-
-    #particles = [];
-    #trailParticles = [];
 
     update(delta) {
         this.move(delta);
-        this.#updateEngineTrails(delta);
+        this.updateEngineTrails(delta);
     }
 
     draw(sprite) {
-        super.draw();
         game.ctx.save();
         // position correctly
         game.ctx.translate(this.pos.x, this.pos.y);
@@ -85,13 +76,13 @@ export class Destructable extends Selectable {
         }
 
         // Update engine trail particles
-        this.#trailParticles = this.#trailParticles.filter(p => {
+        this.trailParticles = this.trailParticles.filter(p => {
             p.update();
             return p.alpha > 0;
         });
 
         // Update death explosion particles
-        this.#particles = this.#particles.filter(p => {
+        this.particles = this.particles.filter(p => {
             p.update();
             return p.alpha > 0;
         });
@@ -112,7 +103,7 @@ export class Destructable extends Selectable {
         this.hull -= dam;
     }
 
-    #updateEngineTrails(delta) {
+    updateEngineTrails(delta) {
         // Only emit trails when ship is moving
         if (this.vel < 0.1) return;
         this.trailSpawnTimer += delta;
@@ -137,13 +128,13 @@ export class Destructable extends Selectable {
             const radius = 2 + Math.random() * 2;
             const particle = new Particle(trailX + spreadX, trailY + spreadY, radius, dx, dy, this.pos.clone());
             particle.fadeSpeed = 0.02; // Custom fade speed for trails
-            particle.color = this.#getTrailColor();
+            particle.color = this.getTrailColor();
 
-            this.#trailParticles.push(particle);
+            this.trailParticles.push(particle);
         }
     }
 
-    #getTrailColor() {
+    getTrailColor() {
         // Blue-ish engine trail for players, red-ish for enemies
         if (this.isPlayer) {
             return `rgba(100, 150, 255, ${1})`;
@@ -158,7 +149,7 @@ export class Destructable extends Selectable {
             const dy = (Math.random() - 0.5) * (Math.random() * 6);
             const radius = Math.random() * 3;
             const particle = new Particle(this.pos.x, this.pos.y, radius, dx, dy, this.pos);
-            this.#particles.push(particle);
+            this.particles.push(particle);
         }
         // overridden and called in the children.
     }

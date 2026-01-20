@@ -14,11 +14,11 @@ export class UIStationTab {
         // Welcome message
         y = UIHelper.drawCenteredHeader(`Docked at ${game.player.docked.name}`, dialogWidth, y, dialogX);
         
-        this.#drawText('Welcome, pilot. How can we assist you today?', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        this.drawText('Welcome, pilot. How can we assist you today?', centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 30;
 
         // Status info
-        this.#drawText('Station Services:', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+        this.drawText('Station Services:', centerX, y, UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
         y += 25;
         
         // Ship status
@@ -28,11 +28,11 @@ export class UIStationTab {
         const maxHull = game.player.ship.maxHull;
         const needsRepair = shield < maxShield || hull < maxHull;
         
-        this.#drawText(`Ship Status:`, centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
+        this.drawText(`Ship Status:`, centerX, y, UI_COLORS.TEXT_PRIMARY, UI_FONTS.SMALL);
         y += 20;
-        this.#drawText(`Shield: ${shield.toFixed(0)}/${maxShield.toFixed(0)}`, centerX, y, shield < maxShield ? UI_COLORS.TEXT_COST : UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+        this.drawText(`Shield: ${shield.toFixed(0)}/${maxShield.toFixed(0)}`, centerX, y, shield < maxShield ? UI_COLORS.TEXT_COST : UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
         y += 18;
-        this.#drawText(`Hull: ${hull.toFixed(0)}/${maxHull.toFixed(0)}`, centerX, y, hull < maxHull ? UI_COLORS.TEXT_COST : UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
+        this.drawText(`Hull: ${hull.toFixed(0)}/${maxHull.toFixed(0)}`, centerX, y, hull < maxHull ? UI_COLORS.TEXT_COST : UI_COLORS.TEXT_SECONDARY, UI_FONTS.SMALL);
         y += 30;
         
         // Repair button
@@ -67,12 +67,12 @@ export class UIStationTab {
             
             y += buttonHeight + 20;
         } else {
-            this.#drawText('Ship is in perfect condition!', centerX, y, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL);
+            this.drawText('Ship is in perfect condition!', centerX, y, UI_COLORS.TEXT_REWARD, UI_FONTS.SMALL);
             y += 30;
         }
         
         // Info
-        this.#drawText('Switch tabs to access other station services', centerX, y, UI_COLORS.TEXT_DISABLED, UI_FONTS.SMALL);
+        this.drawText('Switch tabs to access other station services', centerX, y, UI_COLORS.TEXT_DISABLED, UI_FONTS.SMALL);
     }
 
     handleClick(clickPos) {
@@ -93,7 +93,7 @@ export class UIStationTab {
         return false;
     }
 
-    #drawText(text, x, y, color, font, align = 'center') {
+    drawText(text, x, y, color, font, align = 'center') {
         game.ctx.fillStyle = color;
         game.ctx.font = font;
         game.ctx.textAlign = align;

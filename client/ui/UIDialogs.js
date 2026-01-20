@@ -30,7 +30,7 @@ export class UIDialogs {
         // Draw all warpables as clickable items (except current instance)
         const currentWarpable = game.system.currentInstance?.warpable;
 
-        game.system.warpables.forEach((warpable) => {
+        game.system.instances.map(i => i.warpable).forEach((warpable) => {
             // Skip the warpable we're currently at
             if (warpable === currentWarpable) return;
 

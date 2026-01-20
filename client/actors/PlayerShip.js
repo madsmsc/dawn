@@ -13,7 +13,7 @@ export class PlayerShip extends Destructable {
         // convert to vectors
         this.pos = new Vec(obj.pos.x, obj.pos.y);
         this.target = new Vec(obj.target.x, obj.target.y);
-
+        this.velVec = new Vec(obj.velVec.x, obj.velVec.y);
         // Convert modules to Module instances
         if (this.modules) {
             this.modules = this.modules.map(m => {
@@ -24,7 +24,6 @@ export class PlayerShip extends Destructable {
                 return module;
             });
         }
-
         // Convert inventory to Module instances
         if (this.inventory) {
             this.inventory = this.inventory.map(m => {
@@ -34,23 +33,14 @@ export class PlayerShip extends Destructable {
                 return module;
             });
         }
+        // local
         // TODO: should be a function of the mining module equipped
-        this.miningRange = 22; 
-        this.dam = 4; // override dam, 2x the enemy
-
-        // mark as player-controlled so AI movement is skipped in Destructable.move
         this.isPlayer = true;
-        // velocity vector for directional movement (WASD)
-        this.velVec = new Vec(0, 0);
-
-        // Mining state
         this.miningTarget = null; // which asteroid we're mining
         this.miningProgress = 0; // 0-1 progress on current target
         this.miningDuration = 2000; // 2 seconds to mine an asteroid
-
-        // Drone state
-        this.drones = []; // Active drones
-        this.maxDrones = 3; // Maximum number of drones
+        this.drones = []; // active drones
+        this.maxDrones = 3;
     }
 
     update(delta) {
@@ -101,6 +91,7 @@ export class PlayerShip extends Destructable {
             // Out of range - cancel mining
             this.miningTarget = null;
             this.miningProgress = 0;
+            // console.log('out of range')
             return;
         }
 
@@ -110,7 +101,8 @@ export class PlayerShip extends Destructable {
         if (this.miningProgress >= 1) {
             // Mining complete - harvest the ore
             const ores = this.miningTarget.mine();
-            const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
+            // console.log('complete mining: #ores = ' + ores.length);
+            const instanceAsteroids = game.system.currentInstance.asteroids;
             const asteroidIndex = instanceAsteroids.indexOf(this.miningTarget);
             if (asteroidIndex !== -1) {
                 instanceAsteroids.splice(asteroidIndex, 1);
@@ -121,6 +113,7 @@ export class PlayerShip extends Destructable {
             if (mineButton) mineButton.show = false;
 
             ores.forEach(ore => {
+                // console.log(`processing ore. type=${ore.type} amount=${ore.amount}`);
                 let remaining = ore.amount;
 
                 // Try to add to existing stacks first
@@ -142,7 +135,9 @@ export class PlayerShip extends Destructable {
                 }
 
                 // Show message about mined ore
-                game.ui.messages.addMessage(`Mined: ${ore.amount.toFixed(0)} kg ${ore.type}`);
+                const msg = `Mined: ${ore.amount.toFixed(0)} kg ${ore.type}`;
+                // console.log(msg);
+                game.ui.messages.addMessage(msg);
             });
 
             this.miningTarget = null;
@@ -175,14 +170,11 @@ export class PlayerShip extends Destructable {
     findMiningTarget() {
         // If already mining, continue current operation
         if (this.miningTarget) return;
-
         // Find an asteroid in mining range and target it
-        const instanceAsteroids = game.system.currentInstance ? game.system.currentInstance.asteroids : [];
-        instanceAsteroids.forEach((a) => {
+        game.system.currentInstance.asteroids.forEach((a) => {
             const dist = this.pos.clone().sub(a.pos).length();
             const range = this.miningRange + a.size;
             if (dist > range) return;
-
             // Target this asteroid if we haven't already
             if (!this.miningTarget) {
                 this.miningTarget = a;

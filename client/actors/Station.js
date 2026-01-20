@@ -1,16 +1,13 @@
 import { SPRITE, ORE, ICON_SIZE, UI_COLORS, UI_FONTS } from '../../shared/Constants.js';
-import { Selectable } from './Selectable.js';
 import { game } from '../controllers/game.js';
 import { Vec } from '../util/Vec.js';
 
 // TODO: can buy more quantum storage for credits
-export class Station extends Selectable {
-    constructor(name, pos) {
-        super();
-        this.pos = pos;
-        this.name = name;
+export class Station {
+    constructor(obj) {
+        Object.assign(this, obj);
+
         this.dockingRadius = 100;
-        this.inventory = [];
         this.prices = {
             buy: {
                 [ORE.IRON]: 50,
@@ -36,7 +33,6 @@ export class Station extends Selectable {
 
     draw() {
         if (game.player.docked) return;
-        super.draw();
         game.ctx.save();
         const p = new Vec(this.pos.x - ICON_SIZE / 2, this.pos.y - ICON_SIZE / 2);
         game.sprites.draw(SPRITE.STATION, p, false, undefined, false, 1);
