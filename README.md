@@ -9,6 +9,12 @@
 
 # TODOs
 
+- add possibility to have multiple players
+  - with their own names and pfps
+- move inventory down under pilot/equipment and when not docked, move to the left, like when docked
+- add 'hangar' tab to station
+  - show all ships owned by player in tree structure - first as ascii?
+  - make the hangar UI as "narrow" as it can be and still fit the tabs/text.
 - when not in demo mode, enter into intro space with intro missions:
   - the player needs to be introduced to warping at some point - are the missions instanced?
   - #1 given a frigate and 1 laser weapon: "we're under attack. please help. take out this frigate by flying to them, and firing your guns." (intros weapons)
