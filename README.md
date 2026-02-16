@@ -8,7 +8,9 @@
 - the front-end and back-end communicate via websockets.
 
 # TODOs
-
+- gather all stations in one image
+  - and same with new pfps
+  - both will be 200x200
 - add possibility to have multiple players
   - with their own names and pfps
 - move inventory down under pilot/equipment and when not docked, move to the left, like when docked

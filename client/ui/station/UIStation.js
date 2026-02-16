@@ -4,6 +4,8 @@ import { UIStationTab } from './UIStationTab.js';
 import { UIMissionsTab } from './UIMissionsTab.js';
 import { UIResearch } from './UIResearch.js';
 import { UIStashTab } from './UIStashTab.js';
+
+import { UIHangarTab } from './UIHangarTab.js';
 import { UI_COLORS, UI_FONTS } from '../../../shared/Constants.js';
 
 export class UIStation {
@@ -16,6 +18,7 @@ export class UIStation {
         this.missionsTab = new UIMissionsTab();
         this.researchTab = new UIResearch(inventoryGrid);
         this.stashTab = new UIStashTab(inventoryGrid);
+        this.hangarTab = new UIHangarTab();
         
         // Load station background image (randomly select one)
         const backgrounds = ['station_blue.png', 'station_gold.png', 'station_rust.png'];
@@ -103,6 +106,8 @@ export class UIStation {
             this.researchTab.draw(dialogX, yOffset, dialogWidth, dialogHeight);
         } else if (this.currentTab === 'stash') {
             this.stashTab.draw(dialogX, yOffset, dialogWidth, dialogHeight);
+        } else if (this.currentTab === 'hangar') {
+            this.hangarTab.draw(dialogX, yOffset, dialogWidth, dialogHeight);
         }
         
         // Reset canvas state so HUD/mission list keep their alignment
@@ -114,10 +119,11 @@ export class UIStation {
             { key: 'station', label: 'Station' },
             { key: 'missions', label: 'Missions' },
             { key: 'research', label: 'Research' },
-            { key: 'stash', label: 'Stash' }
+            { key: 'stash', label: 'Stash' },
+            { key: 'hangar', label: 'Hangar' }
         ];
 
-        const tabWidth = dialogWidth / 4;
+        const tabWidth = dialogWidth / tabs.length;
         const tabHeight = 40;
 
         tabs.forEach((tab, index) => {
@@ -167,6 +173,9 @@ export class UIStation {
                 return this.researchTab.handleClick(clickPos);
             case 'stash':
                 return this.stashTab.handleClick(clickPos);
+            case 'hangar':
+                // No click handling for hangar yet
+                return false;
         }
 
         return false;
